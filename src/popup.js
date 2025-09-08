@@ -1,6 +1,6 @@
 /**
- * Enhanced Popup Script with Updated Dashboard Auto-Discovery Messaging
- * UPDATED: Reflects new dashboard capabilities and fallback options
+ * Enhanced Popup Script with Real-time Assignment Updates
+ * FIXED: Popup now updates immediately when content script extracts new assignments
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -14,6 +14,142 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Create auto-sync section
     createAutoSyncSection();
+
+    // 🌟 NEW: Set up real-time storage listener for assignment updates
+    setupStorageListener();
+
+    // 🌟 NEW: Check if this is first-time setup
+    await checkFirstTimeSetup();
+
+    /**
+     * 🌟 NEW: Real-time storage listener for assignment updates
+     */
+    function setupStorageListener() {
+        // Listen for changes to chrome.storage.local
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'local') {
+                // Check if any assignment data was added/changed
+                const hasAssignmentChanges = Object.keys(changes).some(key => 
+                    key.startsWith('assignments_')
+                );
+                
+                if (hasAssignmentChanges) {
+                    console.log('📡 Assignment data changed, updating popup...');
+                    
+                    // Update assignment count immediately
+                    countStoredAssignments();
+                    
+                    // Show a brief "updated" indicator
+                    showUpdateIndicator();
+                }
+            }
+        });
+    }
+
+    /**
+     * 🌟 NEW: Show brief visual indicator when data updates
+     */
+    function showUpdateIndicator() {
+        // Add a subtle animation to assignment count
+        assignmentCountDiv.style.transition = 'background-color 0.3s ease';
+        assignmentCountDiv.style.backgroundColor = '#e8f5e8';
+        
+        setTimeout(() => {
+            assignmentCountDiv.style.backgroundColor = '';
+        }, 1000);
+    }
+
+    /**
+     * 🌟 NEW: Check if this is first-time setup and provide guidance
+     */
+    async function checkFirstTimeSetup() {
+        try {
+            // Check if we have any stored assignment data
+            const assignments = await getAllStoredAssignments();
+            const hasData = assignments.length > 0;
+            
+            // Check if user has ever authenticated
+            const authStatus = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
+            const hasAuth = authStatus.success && authStatus.authenticated;
+            
+            // Check if we're on a Gradescope page
+            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            const isOnGradescope = tab?.url?.includes('gradescope.com');
+            
+            if (!hasData && !hasAuth && !isOnGradescope) {
+                // Complete first-time user
+                updateStatus('👋 Welcome! Visit Gradescope dashboard to get started', 'info');
+                showFirstTimeHelp();
+            } else if (!hasData && isOnGradescope) {
+                // On Gradescope but no data yet - probably just installed
+                updateStatus('🔄 Extension starting up... assignments will appear shortly', 'info');
+                
+                // Add a longer timeout for first extraction
+                setTimeout(async () => {
+                    const newAssignments = await getAllStoredAssignments();
+                    if (newAssignments.length === 0) {
+                        updateStatus('🔄 Still extracting... this may take a moment on first use', 'info');
+                        
+                        // Suggest manual extraction if needed
+                        setTimeout(() => {
+                            updateStatus('💡 Try clicking "Extract Assignments Now" if data doesn\'t appear', 'info');
+                        }, 10000);
+                    }
+                }, 5000);
+            }
+            
+        } catch (error) {
+            console.error('Error checking first-time setup:', error);
+        }
+    }
+
+    /**
+     * 🌟 NEW: Show first-time setup help
+     */
+    function showFirstTimeHelp() {
+        // Create a small help section
+        const helpDiv = document.createElement('div');
+        helpDiv.style.cssText = `
+            background: #f0f8ff;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        `;
+        
+        helpDiv.innerHTML = `
+            <strong>🚀 Quick Setup:</strong><br>
+            1. Visit your <a href="https://gradescope.com" target="_blank" style="color: #007bff;">Gradescope dashboard</a><br>
+            2. Connect Google Calendar below<br>
+            3. Enjoy automatic sync! ✨
+            
+            <div style="margin-top: 8px; font-size: 11px; color: #666;">
+                💡 <em>Tip: Works best from the main dashboard page</em>
+            </div>
+        `;
+        
+        // Insert after the status div
+        statusDiv.parentNode.insertBefore(helpDiv, statusDiv.nextSibling);
+        
+        // Auto-remove after user gets data
+        const checkForData = setInterval(async () => {
+            const assignments = await getAllStoredAssignments();
+            if (assignments.length > 0) {
+                helpDiv.remove();
+                clearInterval(checkForData);
+            }
+        }, 2000);
+        
+        // Auto-remove after 60 seconds anyway
+        setTimeout(() => {
+            if (helpDiv.parentNode) {
+                helpDiv.remove();
+            }
+            clearInterval(checkForData);
+        }, 60000);
+    }
 
     /**
      * 🌟 Create Auto-Sync Controls Section
@@ -41,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         `;
 
-        // 🌟 FIXED: Insert AFTER the Google Calendar section (better UX flow)
+        // Insert AFTER the Google Calendar section (better UX flow)
         const calendarSection = authStatusDiv.closest('.section');
         const nextSection = calendarSection.nextElementSibling;
         
@@ -77,13 +213,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (url.includes('gradescope.com')) {
                     if (url.includes('/courses/') && !url.endsWith('/')) {
                         // On a specific course page
-                        updateStatus('📄 On course page - assignments will be extracted automatically', 'info');
+                        updateStatus('🔄 On course page - assignments will be extracted automatically', 'info');
                     } else if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
                         // On dashboard
                         updateStatus('🏠 Perfect! Dashboard detected - all courses will be auto-discovered', 'success');
                     } else {
                         // Other Gradescope page
-                        updateStatus('📍 On Gradescope - navigate to dashboard for full auto-discovery', 'info');
+                        updateStatus('🔍 On Gradescope - navigate to dashboard for full auto-discovery', 'info');
                     }
                 } else {
                     // Not on Gradescope
@@ -385,7 +521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * 🌟 ENHANCED: Count and display stored assignments with better messaging
+     * 🌟 ENHANCED: Count and display stored assignments with better messaging + REAL-TIME UPDATES
      */
     async function countStoredAssignments() {
         try {
@@ -438,7 +574,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (tab.url.includes('gradescope.com') && (tab.url.endsWith('/') || tab.url.includes('/account'))) {
                 updateStatus('🏠 Dashboard detected - starting full auto-discovery...', 'info');
             } else if (tab.url.includes('/courses/')) {
-                updateStatus('📄 Course page detected - extracting assignments...', 'info');
+                updateStatus('🔄 Course page detected - extracting assignments...', 'info');
             }
 
             try {
@@ -452,16 +588,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
+            // 🌟 ENHANCED: Show better progress feedback for first-time users
+            let progressCount = 0;
+            const progressMessages = [
+                '🔄 Scanning Gradescope page structure...',
+                '📚 Detecting courses and semesters...',
+                '📋 Extracting assignment details...',
+                '💾 Saving assignment data...'
+            ];
+
+            const progressInterval = setInterval(() => {
+                if (progressCount < progressMessages.length) {
+                    updateStatus(progressMessages[progressCount], 'info');
+                    progressCount++;
+                }
+            }, 1500);
+
             setTimeout(async () => {
-                await countStoredAssignments();
+                clearInterval(progressInterval);
+                
+                const newCount = await countStoredAssignments();
+                
                 // If auto-sync is enabled and user is authenticated, suggest they don't need manual sync
                 const autoSyncStatus = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
                 const authStatus = await checkAuthStatus();
                 
-                if (autoSyncStatus.success && autoSyncStatus.status.enabled && authStatus) {
+                if (autoSyncStatus.success && autoSyncStatus.status.enabled && authStatus && newCount > 0) {
                     updateStatus('ℹ️ Assignments extracted! Auto-sync will handle calendar updates automatically.', 'info');
+                } else if (newCount > 0) {
+                    updateStatus('✅ Extraction complete! Ready for calendar sync.', 'success');
                 }
-            }, 3000);
+            }, 6000); // Longer timeout for more thorough feedback
 
         } catch (error) {
             console.error('Manual sync error:', error);
@@ -543,7 +700,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkAuthStatus();
     await updateAutoSyncStatus();
     
-    // Refresh status periodically
+    // 🌟 ENHANCED: More frequent checks during active usage
+    // Refresh status periodically (but less frequently since we have real-time updates)
     setInterval(checkAuthStatus, 30000);
-    setInterval(updateAutoSyncStatus, 10000); // Check auto-sync status more frequently
+    setInterval(updateAutoSyncStatus, 10000);
+    
+    // 🌟 NEW: Check for assignment count changes more frequently for fallback
+    // (In case storage listener fails for any reason)
+    setInterval(countStoredAssignments, 5000);
 });
