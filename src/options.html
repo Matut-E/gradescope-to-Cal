@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Gradescope Calendar Sync - Settings</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .button.danger {
+            background-color: #dc3545;
+        }
+
+        .button.danger:hover {
+            background-color: #c82333;
+        }
+
+        .button.success {
+            background-color: #28a745;
+        }
+
+        .button.success:hover {
+            background-color: #218838;
+        }
+
+        .info-box {
+            background: #e9ecef;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .privacy-section {
+            background: #f1f3f4;
+            border-left: 4px solid #34a853;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .privacy-section h3 {
+            color: #1a73e8;
+            margin-top: 0;
+        }
+
+        .setting-item {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .setting-item label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .setting-item input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 Gradescope Calendar Sync</h1>
+        <p>Automatically sync your Gradescope assignments to Google Calendar</p>
+    </div>
+
+    <!-- Authentication Section -->
+    <div class="section">
+        <h2>🔑 Google Calendar Authentication</h2>
+        
+        <div id="authStatus" class="status info">
+            <div>Checking authentication status...</div>
+        </div>
+
+        <div id="authControls">
+            <button id="authenticate" class="button success">
+                Connect Google Calendar
+            </button>
+            
+            <button id="disconnect" class="button danger" style="display: none;">
+                Disconnect
+            </button>
+        </div>
+
+        <div class="info-box">
+            <strong>Privacy Note:</strong> Your Google account authentication is stored locally in your browser. 
+            No data is sent to external servers - all processing happens locally in your browser extension.
+        </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div class="section">
+        <h2>⚙️ Sync Settings</h2>
+        
+        <div class="setting-item">
+            <label for="autoSync">Enable automatic background sync</label>
+            <input type="checkbox" id="autoSync" checked>
+        </div>
+
+        <div class="setting-item">
+            <label for="syncFrequency">Sync frequency</label>
+            <select id="syncFrequency">
+                <option value="15">Every 15 minutes</option>
+                <option value="30" selected>Every 30 minutes</option>
+                <option value="60">Every hour</option>
+                <option value="120">Every 2 hours</option>
+            </select>
+        </div>
+
+        <div class="setting-item">
+            <label for="createReminders">Create calendar reminders</label>
+            <input type="checkbox" id="createReminders" checked>
+        </div>
+
+        <button id="saveSettings" class="button">Save Settings</button>
+    </div>
+
+    <!-- Data Management Section -->
+    <div class="section">
+        <h2>📊 Data Management</h2>
+        
+        <p>Manage your locally stored assignment data and extension settings.</p>
+
+        <button id="clearAssignments" class="button">Clear Assignment Data</button>
+        <button id="clearAuth" class="button danger">Clear Authentication</button>
+        <button id="clearAll" class="button danger">Clear All Data</button>
+
+        <div class="info-box">
+            <strong>Data Storage:</strong> All your data is stored locally in your browser. 
+            Assignment data includes: titles, due dates, course names, and Gradescope URLs.
+        </div>
+    </div>
+
+    <!-- Privacy Information -->
+    <div class="privacy-section">
+        <h3>🔒 Privacy & Security</h3>
+        <p><strong>Zero-server architecture:</strong> This extension processes everything locally in your browser. 
+        No assignment data, personal information, or authentication tokens are ever sent to external servers.</p>
+        
+        <p><strong>Data collection:</strong> We collect zero user data. The extension only stores:</p>
+        <ul>
+            <li>Assignment information you choose to extract from Gradescope</li>
+            <li>Your Google Calendar authentication tokens (stored securely in browser)</li>
+            <li>Your sync preferences</li>
+        </ul>
+        
+        <p><strong>Permissions:</strong> This extension only requests the minimum permissions needed:</p>
+        <ul>
+            <li><code>storage</code> - Store your settings and extracted assignments locally</li>
+            <li><code>identity</code> - Handle Google OAuth authentication</li>
+            <li><code>gradescope.com</code> - Extract assignment data from Gradescope pages</li>
+            <li><code>googleapis.com</code> - Sync events to your Google Calendar</li>
+        </ul>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 320px;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .button.primary {
+            background-color: #28a745;
+        }
+
+        .button.primary:hover {
+            background-color: #218838;
+        }
+
+        .button.secondary {
+            background-color: #6c757d;
+        }
+
+        .button.secondary:hover {
+            background-color: #545b62;
+        }
+
+        .assignment-count {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* 🌟 Auto-Sync Specific Styles */
+        .auto-sync-details {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+
+        .auto-sync-info {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .auto-sync-info small {
+            display: inline-block;
+            margin-bottom: 2px;
+        }
+
+        /* Enhanced status indicators */
+        .status.auto-sync-enabled {
+            background-color: #d1f2eb;
+            color: #0c5460;
+            border: 1px solid #7dcea0;
+        }
+
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .footer-enhanced {
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin: 15px 0;
+        }
+
+        /* Highlight for new features */
+        .feature-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #007bff, #28a745);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h3>📅 Gradescope Calendar Sync</h3>
+        <span class="feature-badge">Auto-Sync Ready</span>
+    </div>
+
+    <div id="status" class="status info">
+        <div>🔍 Checking for assignments...</div>
+    </div>
+
+    <!-- Assignment Extraction Section -->
+    <div class="section">
+        <div class="section-title">Assignment Extraction</div>
+        
+        <button id="manualSync" class="button">
+            🔄 Extract Assignments Now
+        </button>
+
+        <button id="viewStorage" class="button secondary">
+            📊 View Extracted Data
+        </button>
+
+        <div id="assignmentCount" class="assignment-count">
+            No assignment data found yet
+        </div>
+    </div>
+
+    <!-- 🌟 REORDERED: Google Calendar Integration Section (now comes BEFORE Auto-Sync) -->
+    <div class="section">
+        <div class="section-title">Google Calendar Sync</div>
+        
+        <div id="authStatus" class="status info">
+            <div>🔍 Checking authentication...</div>
+        </div>
+
+        <button id="authenticate" class="button" style="display: none;">
+            🔐 Connect Google Calendar
+        </button>
+
+        <button id="calendarSync" class="button primary" disabled>
+            📅 Sync to Calendar (All-Day Events)
+        </button>
+    </div>
+
+    <!-- 🌟 REORDERED: Auto-Sync Section (now comes AFTER Calendar Sync) -->
+    <!-- This section will be dynamically inserted by JavaScript in the correct position -->
+
+    <div class="footer-enhanced">
+        <strong>✨ New Features:</strong><br>
+        • All-day events for better visibility<br>
+        • Automatic background sync every 30 minutes<br>
+        • "Set it and forget it" functionality
+    </div>
+
+    <div class="footer">
+        Privacy-first • No servers • Local processing only
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

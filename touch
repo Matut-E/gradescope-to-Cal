@@ -128,3 +128,21 @@ TODO.md
 # Archive of old versions
 /archive/
 /old-versions/
+
+# ===========================================
+# WHAT TO KEEP (COMMENTS FOR CLARITY)
+# ===========================================
+
+# ✅ SAFE TO COMMIT:
+# - manifest.json (contains public OAuth client ID)
+# - All .js, .html, .css source files
+# - icons/ folder with app icons
+# - README.md
+# - privacy-policy.html
+# - LICENSE file
+
+# ❌ NEVER COMMIT:
+# - Private keys (.key, .pem files)  
+# - Personal test data
+# - Packaged extension files for distribution
+# - Any files with real user data
