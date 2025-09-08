@@ -99,4 +99,4 @@ MIT License - feel free to fork and improve!
 
 ## Acknowledgments
 
-Built for UC Berkeley EECS students. Inspired by the need for better assignment tracking without compromising privacy.
+Built for UC Berkeley students. Usable by all Gradescope users. Inspired by the need for better assignment tracking without compromising privacy.
