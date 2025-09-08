@@ -1,4 +1,4 @@
-# Gradescope Calendar Sync - .gitignore
+# Gradescope to Cal - .gitignore
 
 # ===========================================
 # BROWSER EXTENSION SPECIFIC
@@ -15,7 +15,6 @@
 key.pem
 
 # Chrome extension private key (auto-generated)
-# Note: Never commit private keys!
 *.key
 
 # Development builds
@@ -83,22 +82,6 @@ $RECYCLE.BIN/
 *.sublime-project
 *.sublime-workspace
 
-# Vim
-*.swp
-*.swo
-*~
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-
-# ===========================================
-# DEVELOPMENT NOTES & PERSONAL FILES
-# ===========================================
-
 # Personal development notes
 NOTES.md
 TODO.md
@@ -113,18 +96,3 @@ TODO.md
 *.tmp
 *.temp
 *.log
-
-# ===========================================
-# CHROME WEB STORE PREPARATION
-# ===========================================
-
-# Store listing drafts (keep final versions)
-/store-listing/drafts/
-
-# Screenshots with personal data
-/screenshots/*personal*
-/screenshots/*test*
-
-# Archive of old versions
-/archive/
-/old-versions/

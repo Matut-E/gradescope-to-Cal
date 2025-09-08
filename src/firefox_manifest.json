@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Gradescope Calendar Sync",
+  "name": "Gradescope To Cal",
   "version": "0.1.0",
   "description": "Automatically sync Gradescope assignments to Google Calendar",
   
@@ -21,7 +21,7 @@
   
   "browser_action": {
     "default_popup": "popup.html",
-    "default_title": "Gradescope Calendar Sync"
+    "default_title": "Gradescope To Cal"
   },
   
   "web_accessible_resources": []
