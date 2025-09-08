@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradescope to Cal - Automatic Assignment Tracking</title>
+    <meta name="description" content="Automatically sync your Gradescope assignments to Google Calendar. Privacy-first browser extension for seamless deadline management.">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #5a67d8;
+        }
+
+        .logo::before {
+            content: "📅";
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #4a5568;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #5a67d8;
+        }
+
+        .hero {
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #48bb78;
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            background: white;
+            padding: 4rem 0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 12px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .feature p {
+            color: #4a5568;
+        }
+
+        .privacy-section {
+            background: linear-gradient(135deg, #e6fffa 0%, #f0fff4 100%);
+            padding: 3rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border-left: 4px solid #48bb78;
+        }
+
+        .privacy-section h2 {
+            color: #22543d;
+            margin-bottom: 1rem;
+        }
+
+        .privacy-section p {
+            color: #2f855a;
+            font-size: 1.1rem;
+        }
+
+        .how-it-works {
+            margin: 4rem 0;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .step-number {
+            background: #5a67d8;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links a {
+            color: #cbd5e0;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-enhanced {
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="container">
+            <div class="nav">
+                <div class="logo">
+                    Gradescope to Cal
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#privacy">Privacy</a></li>
+                    <li><a href="#install">Install</a></li>
+                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Never Miss Another Assignment</h1>
+                <p>Automatically sync your Gradescope assignments to Google Calendar. Visit Gradescope as you normally would – we'll handle the calendar management completely.</p>
+                
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary">Add to Chrome</a>
+                    <a href="https://github.com/Matut-E/gradescope-to-Cal" class="btn btn-secondary">View on GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="content">
+            <div class="container">
+                <section id="features" class="features">
+                    <div class="feature">
+                        <div class="feature-icon">📅</div>
+                        <h3>Smart Detection</h3>
+                        <p>Automatically discovers assignments when you visit your Gradescope dashboard or course pages. Handles complex due date formats and prevents duplicates.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Background Sync</h3>
+                        <p>Every 30 minutes, discovered assignments automatically appear as all-day events in your Google Calendar. Syncs across all your devices.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Privacy First</h3>
+                        <p>Zero-server architecture. All processing happens locally in your browser. We never see your assignment data or personal information.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">📱</div>
+                        <h3>Cross-Device Access</h3>
+                        <p>Google Calendar events sync to your phone, laptop, tablet – everywhere you use Google Calendar. Get notifications wherever you are.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">🎯</div>
+                        <h3>All-Day Events</h3>
+                        <p>Creates prominent all-day calendar events with assignment details and direct submission links. No more tiny calendar entries you miss.</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">⚡</div>
+                        <h3>One-Time Setup</h3>
+                        <p>Connect your Google Calendar once, then visit Gradescope as you normally would. The extension handles calendar management automatically.</p>
+                    </div>
+                </section>
+
+                <div class="privacy-section" id="privacy">
+                    <h2>🛡️ Privacy Guarantee</h2>
+                    <p><strong>Your data stays in your browser.</strong> This extension processes everything locally using a zero-server architecture. We don't collect analytics, track usage, or see your assignment data. Only you and Google Calendar have access to your information.</p>
+                </div>
+
+                <section class="how-it-works" id="how-it-works">
+                    <h2 style="text-align: center; margin-bottom: 2rem; font-size: 2.5rem;">How It Works</h2>
+                    
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div>
+                                <h3>Install & Connect</h3>
+                                <p>Add the extension to your browser and connect your Google Calendar with one-click OAuth authentication.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div>
+                                <h3>Use Gradescope Normally</h3>
+                                <p>Visit your Gradescope dashboard or course pages as you usually do. The extension automatically discovers assignments.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div>
+                                <h3>Calendar Magic</h3>
+                                <p>Every 30 minutes, discovered assignments appear as all-day events in your calendar. Check your phone for instant access.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="install" style="text-align: center; margin: 4rem 0; padding: 3rem; background: #f7fafc; border-radius: 12px;">
+                    <h2 style="margin-bottom: 1rem;">Ready to Simplify Your Schedule?</h2>
+                    <p style="margin-bottom: 2rem; font-size: 1.1rem; color: #4a5568;">Join students at Berkeley and beyond who never miss another deadline.</p>
+                    
+                    <div class="cta-buttons">
+                        <a href="#" class="btn btn-primary">Install from Chrome Web Store</a>
+                        <a href="https://github.com/Matut-E/gradescope-to-Cal" class="btn btn-secondary">View Source Code</a>
+                    </div>
+                    
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: #718096;">Compatible with Chrome, Brave, Edge, and Firefox</p>
+                </section>
+
+                <div class="footer-enhanced">
+                    <strong>What makes it different:</strong><br>
+                    • All-day events for better visibility<br>
+                    • Background sync every 30 minutes<br>
+                    • Works with your existing Gradescope routine
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="privacy-policy.html">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="mailto:gradescope.to.cal@gmail.com">Support</a>
+                <a href="https://github.com/Matut-E/gradescope-to-Cal">GitHub</a>
+                <a href="#">Chrome Web Store</a>
+            </div>
+            <p>&copy; 2025 Gradescope to Cal. Built for students, privacy-first always.</p>
+            <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">Privacy-first • No servers • Local processing only</p>
+        </div>
+    </footer>
+</body>
+</html>
