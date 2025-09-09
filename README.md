@@ -1,4 +1,4 @@
-# Gradescope-To-Cal
+# Gradescope to Cal
 
 A privacy-first browser extension that automatically syncs UC Berkeley Gradescope assignments to Google Calendar.
 
