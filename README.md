@@ -9,7 +9,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 - **All-day calendar events**: Creates prominent events with assignment details and direct links
 - **Smart deduplication**: Prevents duplicate events for the same assignments
 - **Zero-server architecture**: All processing happens locally in your browser
-- **Cross-browser support**: Chrome (Manifest v3) and Firefox (Manifest v2) compatible
+- **Cross-browser support**: Chrome (Manifest v3) compatible
 
 ## Privacy First
 
@@ -31,9 +31,6 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 4. Click "Load Unpacked" and select the `src` folder
 5. Navigate to Gradescope and authenticate with Google Calendar when prompted
 
-### Firefox Installation
-Use the `firefox_manifest.json` file and follow Firefox's extension loading process.
-
 ## How It Works
 
 1. **One-time setup**: Connect your Google Calendar via OAuth authentication
@@ -49,7 +46,7 @@ Use the `firefox_manifest.json` file and follow Firefox's extension loading proc
 - [x] Background sync automation (30-minute intervals)
 - [x] Rich calendar event creation with assignment metadata
 - [x] Smart deduplication and error handling
-- [x] Cross-browser compatibility (Chrome/Firefox)
+- [x] Cross-browser compatibility (Chrome/Chromium-based)
 - [x] Privacy policy and Chrome Web Store preparation
 - [ ] Chrome Web Store publication (in review)
 
@@ -80,7 +77,7 @@ Full privacy policy available at: [Privacy Policy](https://matut-e.github.io/gra
 ## Development
 
 ### Prerequisites
-- Chrome/Firefox browser
+- Chrome/Chromium browser
 - Google Cloud Console project with Calendar API enabled
 - Basic understanding of browser extension development
 
