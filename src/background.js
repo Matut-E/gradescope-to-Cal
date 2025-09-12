@@ -13,6 +13,295 @@ const CONFIG = {
 };
 
 console.log('🌟 Enhanced background script with auto-sync loaded');
+/**
+ * OPTIMIZATION 2: Event Caching System
+ * Eliminates O(n²) API calls for duplicate detection
+ * Converts from multiple API calls per assignment to single cached lookup
+ */
+
+class EventCache {
+    constructor(calendarClient) {
+        this.client = calendarClient;
+        this.cache = new Map(); // assignmentId -> { eventId, lastUpdated, eventData }
+        this.lastFullRefresh = null;
+        this.CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+        this.MAX_CACHE_SIZE = 1000; // Prevent memory leaks
+        this.refreshPromise = null; // Prevent concurrent refreshes
+        
+        console.log('💾 Event cache initialized');
+    }
+
+    /**
+     * Main entry point - get existing event with smart caching
+     */
+    async getExistingEvent(assignmentId) {
+        try {
+            await this.ensureCacheValid();
+            
+            const cachedData = this.cache.get(assignmentId);
+            if (cachedData) {
+                console.log(`💾 Cache hit for assignment ${assignmentId} -> event ${cachedData.eventId}`);
+                return { id: cachedData.eventId, ...cachedData.eventData };
+            }
+            
+            console.log(`💾 Cache miss for assignment ${assignmentId}`);
+            return null;
+            
+        } catch (cacheError) {
+            console.warn('🔄 Event cache failed, falling back to direct API:', cacheError.message);
+            
+            // Graceful degradation - use original method
+            return await this.fallbackToDirectAPI(assignmentId);
+        }
+    }
+
+    /**
+     * Ensure cache is valid, refresh if needed
+     */
+    async ensureCacheValid() {
+        const now = Date.now();
+        const cacheAge = this.lastFullRefresh ? (now - this.lastFullRefresh) : Infinity;
+        
+        // Cache is still fresh
+        if (cacheAge < this.CACHE_DURATION) {
+            return;
+        }
+        
+        // Prevent concurrent refresh requests
+        if (this.refreshPromise) {
+            return await this.refreshPromise;
+        }
+        
+        console.log('🔄 Event cache expired, refreshing...');
+        this.refreshPromise = this.refreshCache();
+        
+        try {
+            await this.refreshPromise;
+        } finally {
+            this.refreshPromise = null;
+        }
+    }
+
+    /**
+     * Refresh the entire cache with a single efficient API call
+     */
+    /**
+ * Refresh the entire cache with a single efficient API call
+ */
+    async refreshCache() {
+        console.log('🔄 Starting cache refresh...');
+        
+        try {
+            console.log('📡 Calling getAllGradescopeEvents...');
+            const events = await this.getAllGradescopeEvents();
+            
+            console.log(`📡 getAllGradescopeEvents returned ${events.length} events`);
+            
+            // Clear old cache and rebuild
+            this.cache.clear();
+            console.log('🧹 Cache cleared, rebuilding...');
+
+            let cachedCount = 0;
+            events.forEach(event => {
+                const assignmentId = event.extendedProperties?.private?.gradescope_assignment_id;
+                if (assignmentId) {
+                    // FIXED: Only cache the first occurrence of each assignment ID
+                    if (!this.cache.has(assignmentId)) {
+                        this.cache.set(assignmentId, {
+                            eventId: event.id,
+                            lastUpdated: Date.now(),
+                            eventData: {
+                                summary: event.summary,
+                                start: event.start,
+                                end: event.end,
+                                htmlLink: event.htmlLink
+                            }
+                        });
+                        cachedCount++;
+                        console.log(`💾 Cached event: "${event.summary}" with ID: ${assignmentId}`);
+                    } else {
+                        console.log(`🔄 Duplicate assignment ID ${assignmentId} found for "${event.summary}", using first occurrence`);
+                    }
+                }
+            });
+            
+            this.lastFullRefresh = Date.now();
+            console.log(`✅ Cache refresh complete: ${cachedCount} events cached out of ${events.length} total`);
+            
+            // Enforce cache size limit
+            this.enforceCacheLimit();
+            
+        } catch (error) {
+            console.error('❌ Cache refresh failed with error:', error);
+            console.error('❌ Error stack:', error.stack);
+            throw error;
+        }
+    }
+
+    /**
+     * Single efficient API call to get all Gradescope events
+     */
+    /**
+ * Single efficient API call to get all Gradescope events
+ */
+    async getAllGradescopeEvents() {
+        console.log('📡 getAllGradescopeEvents: Starting API call...');
+        
+        // Get events from 6 months ago to 6 months in the future
+        const now = new Date();
+        const sixMonthsAgo = new Date(now);
+        sixMonthsAgo.setMonth(now.getMonth() - 6);
+        
+        const sixMonthsFromNow = new Date(now);
+        sixMonthsFromNow.setMonth(now.getMonth() + 6);
+        
+        const params = new URLSearchParams({
+            timeMin: sixMonthsAgo.toISOString(),
+            timeMax: sixMonthsFromNow.toISOString(),
+            singleEvents: 'true',
+            maxResults: '1000'
+        });
+        
+        try {
+            console.log('📡 Making Calendar API request...');
+            const response = await this.client.makeAPIRequest(`/calendars/primary/events?${params}`);
+            
+            const allEvents = response.items || [];
+            console.log(`📡 API returned ${allEvents.length} total calendar events`);
+            
+            // BROADENED FILTER: Look for any event that looks like a Gradescope assignment
+            const gradescopeEvents = allEvents.filter(event => {
+                const hasAssignmentId = !!event.extendedProperties?.private?.gradescope_assignment_id;
+                const summaryMatches = event.summary && (
+                    event.summary.includes('Gradescope') ||
+                    event.summary.includes('EE105:') ||
+                    event.summary.includes('Math 53:') ||
+                    event.summary.includes('Lab') ||
+                    event.summary.includes('Homework') ||
+                    event.summary.includes('HW')
+                );
+                const descriptionMatches = event.description && event.description.includes('Gradescope');
+                const locationMatches = event.location && event.location.includes('Gradescope');
+                
+                const isGradescopeEvent = hasAssignmentId || summaryMatches || descriptionMatches || locationMatches;
+                
+                if (isGradescopeEvent) {
+                    console.log(`📊 Found potential Gradescope event: "${event.summary}"`);
+                    console.log(`   - Has assignment ID: ${hasAssignmentId ? event.extendedProperties.private.gradescope_assignment_id : 'NO'}`);
+                    console.log(`   - Summary matches: ${summaryMatches}`);
+                    console.log(`   - Description matches: ${descriptionMatches}`);
+                    console.log(`   - Event ID: ${event.id}`);
+                }
+                
+                return isGradescopeEvent;
+            });
+            
+            console.log(`📡 Found ${gradescopeEvents.length} Gradescope-like events out of ${allEvents.length} total`);
+            
+            // Show a few examples of what we're finding
+            allEvents.slice(0, 5).forEach((event, i) => {
+                console.log(`📋 Event ${i+1}: "${event.summary}" (description: ${event.description ? 'yes' : 'no'})`);
+            });
+            
+            return gradescopeEvents;
+            
+        } catch (error) {
+            console.error('❌ getAllGradescopeEvents API call failed:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Fallback to original direct API method
+     */
+    async fallbackToDirectAPI(assignmentId) {
+        try {
+            // Use the original strategy from findExistingEvent
+            const searchParams = new URLSearchParams({
+                q: `gradescope_assignment_id:${assignmentId}`,
+                singleEvents: 'true',
+                maxResults: '10'
+            });
+            
+            const response = await this.client.makeAPIRequest(`/calendars/primary/events?${searchParams}`);
+            
+            if (response.items && response.items.length > 0) {
+                const exactMatch = response.items.find(event => 
+                    event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
+                );
+                
+                if (exactMatch) {
+                    console.log(`✅ Fallback API found event: ${exactMatch.id}`);
+                    return exactMatch;
+                }
+            }
+            
+            return null;
+            
+        } catch (error) {
+            console.error('❌ Fallback API also failed:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Prevent cache from growing too large (memory management)
+     */
+    enforceCacheLimit() {
+        if (this.cache.size <= this.MAX_CACHE_SIZE) {
+            return;
+        }
+        
+        console.log(`🧹 Cache size (${this.cache.size}) exceeded limit, cleaning up...`);
+        
+        // Convert to array and sort by last updated time
+        const entries = Array.from(this.cache.entries())
+            .sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
+        
+        // Keep only the most recent entries
+        const keepCount = Math.floor(this.MAX_CACHE_SIZE * 0.8); // Keep 80% after cleanup
+        const toKeep = entries.slice(-keepCount);
+        
+        this.cache.clear();
+        toKeep.forEach(([key, value]) => {
+            this.cache.set(key, value);
+        });
+        
+        console.log(`✅ Cache cleaned up: ${this.cache.size} entries retained`);
+    }
+
+    /**
+     * Invalidate specific assignment from cache (useful after creating new events)
+     */
+    invalidateAssignment(assignmentId) {
+        const removed = this.cache.delete(assignmentId);
+        if (removed) {
+            console.log(`🗑️ Invalidated cache entry for assignment ${assignmentId}`);
+        }
+    }
+
+    /**
+     * Force full cache refresh (useful for testing or after bulk operations)
+     */
+    async forceRefresh() {
+        this.lastFullRefresh = null;
+        this.cache.clear();
+        await this.ensureCacheValid();
+    }
+
+    /**
+     * Get cache statistics for debugging
+     */
+    getStats() {
+        return {
+            size: this.cache.size,
+            lastRefresh: this.lastFullRefresh ? new Date(this.lastFullRefresh).toISOString() : 'Never',
+            cacheAge: this.lastFullRefresh ? Date.now() - this.lastFullRefresh : null,
+            maxSize: this.MAX_CACHE_SIZE,
+            isValid: this.lastFullRefresh && (Date.now() - this.lastFullRefresh) < this.CACHE_DURATION
+        };
+    }
+}
 
 class EnhancedGoogleCalendarClient {
     constructor() {
@@ -20,6 +309,7 @@ class EnhancedGoogleCalendarClient {
         this.refreshToken = null;
         this.tokenExpiry = null;
         this.browserCapabilities = null;
+        this.eventCache = new EventCache(this); 
     }
 
     // [Previous authentication methods remain the same - keeping existing code]
@@ -351,78 +641,35 @@ class EnhancedGoogleCalendarClient {
             body: JSON.stringify(event)
         });
 
+        // Invalidate cache for this assignment after creating event
+        this.eventCache.invalidateAssignment(assignment.assignmentId);
+
         console.log('✅ ALL-DAY calendar event created:', response.id);
         return response;
     }
 
     /**
-     * FIXED: Find existing calendar event by assignment ID
-     * Addresses deduplication issues by using proper API parameters
+     * OPTIMIZED: Find existing calendar event by assignment ID using cache
+     * Converts O(n²) API calls to O(1) cached lookups
      */
     async findExistingEvent(assignmentId) {
+        console.log(`🔍 Looking for existing event for assignment: ${assignmentId}`);
+        
         try {
-            console.log(`🔍 Searching for existing event with assignment ID: ${assignmentId}`);
+            // Use cache-first approach
+            const cachedEvent = await this.eventCache.getExistingEvent(assignmentId);
             
-            // Strategy 1: Use search query with assignment ID
-            // This should be more reliable than filtering all events
-            const searchQuery = `gradescope_assignment_id:${assignmentId}`;
-            
-            try {
-                const searchResponse = await this.makeAPIRequest(
-                    `/calendars/primary/events?q=${encodeURIComponent(searchQuery)}&singleEvents=true&maxResults=50`
-                );
-                
-                if (searchResponse.items && searchResponse.items.length > 0) {
-                    // Double-check by looking for exact match in extended properties
-                    const exactMatch = searchResponse.items.find(event => 
-                        event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
-                    );
-                    
-                    if (exactMatch) {
-                        console.log(`✅ Found existing event via search: ${exactMatch.id}`);
-                        return exactMatch;
-                    }
-                }
-            } catch (searchError) {
-                console.warn('⚠️ Search query failed, falling back to list method:', searchError.message);
+            if (cachedEvent) {
+                console.log(`✅ Found existing event via cache: ${cachedEvent.id}`);
+                return cachedEvent;
             }
             
-            // Strategy 2: Fallback - Get events with extended time range
-            // Look for events from 3 months ago to 6 months in the future
-            const now = new Date();
-            const threeMonthsAgo = new Date(now);
-            threeMonthsAgo.setMonth(now.getMonth() - 3);
-            
-            const sixMonthsFromNow = new Date(now);
-            sixMonthsFromNow.setMonth(now.getMonth() + 6);
-            
-            const params = new URLSearchParams({
-                timeMin: threeMonthsAgo.toISOString(),
-                timeMax: sixMonthsFromNow.toISOString(),
-                singleEvents: 'true',
-                maxResults: '500', // Increased limit
-                orderBy: 'startTime'
-            });
-            
-            const listResponse = await this.makeAPIRequest(`/calendars/primary/events?${params}`);
-            
-            if (listResponse.items) {
-                const existingEvent = listResponse.items.find(event => 
-                    event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
-                );
-                
-                if (existingEvent) {
-                    console.log(`✅ Found existing event via list: ${existingEvent.id}`);
-                    return existingEvent;
-                }
-            }
-            
-            console.log(`❌ No existing event found for assignment ID: ${assignmentId}`);
+            console.log(`❌ No existing event found for assignment: ${assignmentId}`);
             return null;
             
         } catch (error) {
-            console.error(`❌ Error searching for existing events for ID ${assignmentId}:`, error.message);
-            // Return null to allow creation - better to have duplicates than miss assignments
+            console.error(`❌ Error searching for existing event ${assignmentId}:`, error.message);
+            // Return null to allow creation - better to have potential duplicates than miss assignments
             return null;
         }
     }
@@ -684,6 +931,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const isForceSync = request.forceSync === true;
                 const result = await calendarClient.performBackgroundSync(isForceSync);
                 return result; // This method already returns proper format
+
+            case 'getCacheStats':
+                const stats = calendarClient.eventCache.getStats();
+                return { success: true, cacheStats: stats };
+
+            case 'forceCacheRefresh':
+                await calendarClient.eventCache.forceRefresh();
+                return { success: true, message: 'Cache forcefully refreshed' };
 
             default:
                 console.warn('⚠️ Unknown message action:', request.action);
