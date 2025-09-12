@@ -4,77 +4,125 @@
     <meta charset="utf-8">
     <style>
         body {
-            width: 320px;
+            width: 360px;
             padding: 20px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
+            margin: 0;
+            background: #f8f9fa;
         }
 
         .header {
             text-align: center;
             margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: -20px -20px 20px -20px;
+        }
+
+        .header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-top: 5px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
         }
 
         .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
             text-align: center;
+            font-size: 13px;
+            line-height: 1.4;
+            border: 1px solid transparent;
         }
 
         .status.success {
-            background-color: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border-color: #c3e6cb;
         }
 
         .status.info {
-            background-color: #d1ecf1;
+            background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
             color: #0c5460;
-            border: 1px solid #bee5eb;
+            border-color: #bee5eb;
         }
 
         .status.warning {
-            background-color: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             color: #856404;
-            border: 1px solid #ffeaa7;
+            border-color: #ffeaa7;
+        }
+
+        .status.auto-sync-enabled {
+            background: linear-gradient(135deg, #d1f2eb 0%, #c3e6cb 100%);
+            color: #155724;
+            border-color: #7dcea0;
         }
 
         .button {
             width: 100%;
-            padding: 10px;
-            background-color: #007bff;
+            padding: 12px;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             margin-bottom: 10px;
             font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .button:hover {
-            background-color: #0056b3;
+        .button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .button:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .button:disabled {
-            background-color: #6c757d;
+            background: #6c757d;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .button.primary {
-            background-color: #28a745;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
-        .button.primary:hover {
-            background-color: #218838;
+        .button.primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
         }
 
         .button.secondary {
-            background-color: #6c757d;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
         }
 
-        .button.secondary:hover {
-            background-color: #545b62;
+        .button.secondary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #545b62 0%, #343a40 100%);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
         }
 
         .assignment-count {
@@ -82,53 +130,74 @@
             color: #666;
             text-align: center;
             margin-bottom: 15px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
         }
 
         .section {
             margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .section:last-child {
-            border-bottom: none;
             margin-bottom: 0;
         }
 
         .section-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #495057;
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 8px;
         }
 
-        /* 🌟 Auto-Sync Specific Styles */
+        /* Enhanced Auto-Sync Specific Styles */
         .auto-sync-details {
-            margin-top: 10px;
-            padding: 8px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
             border-left: 3px solid #007bff;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .auto-sync-info {
-            font-size: 11px;
+            font-size: 12px;
             color: #666;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .auto-sync-info small {
-            display: inline-block;
-            margin-bottom: 2px;
+            display: block;
+            margin-bottom: 4px;
         }
 
-        /* Enhanced status indicators */
-        .status.auto-sync-enabled {
-            background-color: #d1f2eb;
-            color: #0c5460;
-            border: 1px solid #7dcea0;
+        /* Enhanced Footer Styles */
+        .footer-enhanced {
+            font-size: 11px;
+            color: #999;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            line-height: 1.4;
         }
 
         .footer {
@@ -136,66 +205,154 @@
             text-align: center;
             font-size: 12px;
             color: #888;
-        }
-
-        .footer-enhanced {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
+            padding: 10px;
         }
 
         .divider {
             height: 1px;
-            background-color: #eee;
+            background: linear-gradient(90deg, transparent, #e9ecef, transparent);
             margin: 15px 0;
         }
 
-        /* Highlight for new features */
-        .feature-badge {
-            display: inline-block;
-            background: linear-gradient(45deg, #007bff, #28a745);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-left: 5px;
-            font-weight: bold;
+        /* Status Animation */
+        .status {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Button Loading Animation */
+        .button:disabled::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Enhanced Links */
+        a {
+            color: #007bff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        /* Small enhancements */
+        .status small {
+            opacity: 0.8;
+            font-size: 11px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 400px) {
+            body {
+                width: 320px;
+                padding: 16px;
+            }
+            
+            .header {
+                margin: -16px -16px 16px -16px;
+                padding: 12px;
+            }
+        }
+
+        /* Debug/Help section styles */
+        #firstTimeHelp {
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); max-height: 0; }
+            to { opacity: 1; transform: translateY(0); max-height: 200px; }
+        }
+
+        /* Hover effects for interactive elements */
+        .assignment-count:hover {
+            background: #f1f3f4;
+            border-color: #dee2e6;
+        }
+
+        /* Success pulse animation */
+        .status.success {
+            animation: successPulse 0.6s ease;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Warning shake animation */
+        .status.warning {
+            animation: warningShake 0.5s ease;
+        }
+
+        @keyframes warningShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Improved visual hierarchy */
+        .section {
+            transition: box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h3>📅 Gradescope to Cal</h3>
-        <span class="feature-badge">Auto-Sync Ready</span>
+        <div class="feature-badge">Enhanced Auto-Sync Ready</div>
     </div>
 
     <div id="status" class="status info">
-        <div>🔍 Checking for assignments...</div>
+        <div>🔍 Initializing extension...</div>
     </div>
 
     <!-- Assignment Extraction Section -->
     <div class="section">
-        <div class="section-title">Assignment Extraction</div>
+        <div class="section-title">Assignment Discovery</div>
         
         <button id="manualSync" class="button">
             🔄 Extract Assignments Now
         </button>
 
         <button id="viewStorage" class="button secondary">
-            📊 View Extracted Data
+            📊 View Stored Data
         </button>
 
         <div id="assignmentCount" class="assignment-count">
-            No assignment data found yet
+            Checking for assignment data...
         </div>
     </div>
 
-    <!-- 🌟 REORDERED: Google Calendar Integration Section (now comes BEFORE Auto-Sync) -->
+    <!-- Google Calendar Integration Section -->
     <div class="section">
-        <div class="section-title">Google Calendar Sync</div>
+        <div class="section-title">Google Calendar Integration</div>
         
         <div id="authStatus" class="status info">
             <div>🔍 Checking authentication...</div>
@@ -210,18 +367,22 @@
         </button>
     </div>
 
-    <!-- 🌟 REORDERED: Auto-Sync Section (now comes AFTER Calendar Sync) -->
-    <!-- This section will be dynamically inserted by JavaScript in the correct position -->
+    <!-- Auto-Sync Section will be dynamically inserted here by JavaScript -->
+
+    <div class="divider"></div>
 
     <div class="footer-enhanced">
-        <strong>✨ New Features:</strong><br>
-        • All-day events for better visibility<br>
+        <strong>✨ Key Features:</strong><br>
+        • All-day events for maximum visibility<br>
         • Automatic background sync every 30 minutes<br>
-        • "Set it and forget it" functionality
+        • Smart duplicate prevention<br>
+        • Works with your existing Gradescope routine<br>
+        • Privacy-first: zero server processing
     </div>
 
     <div class="footer">
-        Privacy-first • No servers • Local processing only
+        <strong>Privacy-First Architecture</strong><br>
+        No servers • Local processing only • Your data stays in your browser
     </div>
 
     <script src="popup.js"></script>

@@ -1,39 +1,29 @@
-/**
- * Enhanced Background Script with Automatic Sync
- * Adds periodic background checking and all-day events
- */
-
 const CONFIG = {
     CALENDAR_API_BASE: 'https://www.googleapis.com/calendar/v3',
-    CLIENT_ID: '589515007396-nofmk5v0dhegv5fmp1700v8ve94624ih.apps.googleusercontent.com',
+    CLIENT_ID: '589515007396-nofmk5v0dhegv5fmp1700v8ve94624ih.apps.googleusercontent.com', 
     SCOPE: 'https://www.googleapis.com/auth/calendar',
-    // Auto-sync settings
     AUTO_SYNC_INTERVAL: 30, // minutes
     ALARM_NAME: 'gradescope_auto_sync'
 };
 
 console.log('🌟 Enhanced background script with auto-sync loaded');
-/**
- * OPTIMIZATION 2: Event Caching System
- * Eliminates O(n²) API calls for duplicate detection
- * Converts from multiple API calls per assignment to single cached lookup
- */
+console.log('🔑 Using Client ID:', CONFIG.CLIENT_ID);
 
+/**
+ * OPTIMIZATION: Event Caching System
+ */
 class EventCache {
     constructor(calendarClient) {
         this.client = calendarClient;
-        this.cache = new Map(); // assignmentId -> { eventId, lastUpdated, eventData }
+        this.cache = new Map();
         this.lastFullRefresh = null;
         this.CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-        this.MAX_CACHE_SIZE = 1000; // Prevent memory leaks
-        this.refreshPromise = null; // Prevent concurrent refreshes
+        this.MAX_CACHE_SIZE = 1000;
+        this.refreshPromise = null;
         
         console.log('💾 Event cache initialized');
     }
 
-    /**
-     * Main entry point - get existing event with smart caching
-     */
     async getExistingEvent(assignmentId) {
         try {
             await this.ensureCacheValid();
@@ -49,25 +39,18 @@ class EventCache {
             
         } catch (cacheError) {
             console.warn('🔄 Event cache failed, falling back to direct API:', cacheError.message);
-            
-            // Graceful degradation - use original method
             return await this.fallbackToDirectAPI(assignmentId);
         }
     }
 
-    /**
-     * Ensure cache is valid, refresh if needed
-     */
     async ensureCacheValid() {
         const now = Date.now();
         const cacheAge = this.lastFullRefresh ? (now - this.lastFullRefresh) : Infinity;
         
-        // Cache is still fresh
         if (cacheAge < this.CACHE_DURATION) {
             return;
         }
         
-        // Prevent concurrent refresh requests
         if (this.refreshPromise) {
             return await this.refreshPromise;
         }
@@ -82,22 +65,12 @@ class EventCache {
         }
     }
 
-    /**
-     * Refresh the entire cache with a single efficient API call
-     */
-    /**
- * Refresh the entire cache with a single efficient API call
- */
     async refreshCache() {
         console.log('🔄 Starting cache refresh...');
         
         try {
-            console.log('📡 Calling getAllGradescopeEvents...');
             const events = await this.getAllGradescopeEvents();
             
-            console.log(`📡 getAllGradescopeEvents returned ${events.length} events`);
-            
-            // Clear old cache and rebuild
             this.cache.clear();
             console.log('🧹 Cache cleared, rebuilding...');
 
@@ -105,7 +78,6 @@ class EventCache {
             events.forEach(event => {
                 const assignmentId = event.extendedProperties?.private?.gradescope_assignment_id;
                 if (assignmentId) {
-                    // FIXED: Only cache the first occurrence of each assignment ID
                     if (!this.cache.has(assignmentId)) {
                         this.cache.set(assignmentId, {
                             eventId: event.id,
@@ -118,36 +90,24 @@ class EventCache {
                             }
                         });
                         cachedCount++;
-                        console.log(`💾 Cached event: "${event.summary}" with ID: ${assignmentId}`);
-                    } else {
-                        console.log(`🔄 Duplicate assignment ID ${assignmentId} found for "${event.summary}", using first occurrence`);
                     }
                 }
             });
             
             this.lastFullRefresh = Date.now();
-            console.log(`✅ Cache refresh complete: ${cachedCount} events cached out of ${events.length} total`);
+            console.log(`✅ Cache refresh complete: ${cachedCount} events cached`);
             
-            // Enforce cache size limit
             this.enforceCacheLimit();
             
         } catch (error) {
-            console.error('❌ Cache refresh failed with error:', error);
-            console.error('❌ Error stack:', error.stack);
+            console.error('❌ Cache refresh failed:', error);
             throw error;
         }
     }
 
-    /**
-     * Single efficient API call to get all Gradescope events
-     */
-    /**
- * Single efficient API call to get all Gradescope events
- */
     async getAllGradescopeEvents() {
         console.log('📡 getAllGradescopeEvents: Starting API call...');
         
-        // Get events from 6 months ago to 6 months in the future
         const now = new Date();
         const sixMonthsAgo = new Date(now);
         sixMonthsAgo.setMonth(now.getMonth() - 6);
@@ -163,13 +123,11 @@ class EventCache {
         });
         
         try {
-            console.log('📡 Making Calendar API request...');
             const response = await this.client.makeAPIRequest(`/calendars/primary/events?${params}`);
             
             const allEvents = response.items || [];
             console.log(`📡 API returned ${allEvents.length} total calendar events`);
             
-            // BROADENED FILTER: Look for any event that looks like a Gradescope assignment
             const gradescopeEvents = allEvents.filter(event => {
                 const hasAssignmentId = !!event.extendedProperties?.private?.gradescope_assignment_id;
                 const summaryMatches = event.summary && (
@@ -183,26 +141,10 @@ class EventCache {
                 const descriptionMatches = event.description && event.description.includes('Gradescope');
                 const locationMatches = event.location && event.location.includes('Gradescope');
                 
-                const isGradescopeEvent = hasAssignmentId || summaryMatches || descriptionMatches || locationMatches;
-                
-                if (isGradescopeEvent) {
-                    console.log(`📊 Found potential Gradescope event: "${event.summary}"`);
-                    console.log(`   - Has assignment ID: ${hasAssignmentId ? event.extendedProperties.private.gradescope_assignment_id : 'NO'}`);
-                    console.log(`   - Summary matches: ${summaryMatches}`);
-                    console.log(`   - Description matches: ${descriptionMatches}`);
-                    console.log(`   - Event ID: ${event.id}`);
-                }
-                
-                return isGradescopeEvent;
+                return hasAssignmentId || summaryMatches || descriptionMatches || locationMatches;
             });
             
             console.log(`📡 Found ${gradescopeEvents.length} Gradescope-like events out of ${allEvents.length} total`);
-            
-            // Show a few examples of what we're finding
-            allEvents.slice(0, 5).forEach((event, i) => {
-                console.log(`📋 Event ${i+1}: "${event.summary}" (description: ${event.description ? 'yes' : 'no'})`);
-            });
-            
             return gradescopeEvents;
             
         } catch (error) {
@@ -211,12 +153,8 @@ class EventCache {
         }
     }
 
-    /**
-     * Fallback to original direct API method
-     */
     async fallbackToDirectAPI(assignmentId) {
         try {
-            // Use the original strategy from findExistingEvent
             const searchParams = new URLSearchParams({
                 q: `gradescope_assignment_id:${assignmentId}`,
                 singleEvents: 'true',
@@ -244,9 +182,6 @@ class EventCache {
         }
     }
 
-    /**
-     * Prevent cache from growing too large (memory management)
-     */
     enforceCacheLimit() {
         if (this.cache.size <= this.MAX_CACHE_SIZE) {
             return;
@@ -254,12 +189,10 @@ class EventCache {
         
         console.log(`🧹 Cache size (${this.cache.size}) exceeded limit, cleaning up...`);
         
-        // Convert to array and sort by last updated time
         const entries = Array.from(this.cache.entries())
             .sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
         
-        // Keep only the most recent entries
-        const keepCount = Math.floor(this.MAX_CACHE_SIZE * 0.8); // Keep 80% after cleanup
+        const keepCount = Math.floor(this.MAX_CACHE_SIZE * 0.8);
         const toKeep = entries.slice(-keepCount);
         
         this.cache.clear();
@@ -270,9 +203,6 @@ class EventCache {
         console.log(`✅ Cache cleaned up: ${this.cache.size} entries retained`);
     }
 
-    /**
-     * Invalidate specific assignment from cache (useful after creating new events)
-     */
     invalidateAssignment(assignmentId) {
         const removed = this.cache.delete(assignmentId);
         if (removed) {
@@ -280,18 +210,12 @@ class EventCache {
         }
     }
 
-    /**
-     * Force full cache refresh (useful for testing or after bulk operations)
-     */
     async forceRefresh() {
         this.lastFullRefresh = null;
         this.cache.clear();
         await this.ensureCacheValid();
     }
 
-    /**
-     * Get cache statistics for debugging
-     */
     getStats() {
         return {
             size: this.cache.size,
@@ -303,16 +227,18 @@ class EventCache {
     }
 }
 
+/**
+ * Enhanced Google Calendar Client with Automatic Token Refresh
+ */
 class EnhancedGoogleCalendarClient {
     constructor() {
         this.accessToken = null;
         this.refreshToken = null;
         this.tokenExpiry = null;
         this.browserCapabilities = null;
-        this.eventCache = new EventCache(this); 
+        this.eventCache = new EventCache(this);
     }
 
-    // [Previous authentication methods remain the same - keeping existing code]
     async detectBrowserCapabilities() {
         if (this.browserCapabilities) {
             return this.browserCapabilities;
@@ -397,57 +323,44 @@ class EnhancedGoogleCalendarClient {
         return 'Unknown';
     }
 
+    /**
+     * 🔧 ENHANCED: Authentication with refresh token support
+     */
     async authenticate() {
         const capabilities = await this.detectBrowserCapabilities();
         
-        console.log(`🔐 Starting authentication using ${capabilities.recommendedMethod} method`);
+        console.log(`🔐 Starting enhanced authentication with refresh token support...`);
         
-        if (capabilities.recommendedMethod === 'getAuthToken' && capabilities.getAuthTokenWorks) {
+        // Try the more reliable method that can get refresh tokens
+        if (capabilities.getAuthTokenWorks) {
             return await this.authenticateWithGetAuthToken();
         } else {
-            return await this.authenticateWithLaunchWebAuthFlow();
+            return await this.authenticateWithAuthorizationCode();
         }
     }
 
-    async authenticateWithGetAuthToken() {
-        console.log('🔐 Using Chrome native getAuthToken...');
-        
-        return new Promise((resolve, reject) => {
-            chrome.identity.getAuthToken({
-                interactive: true
-            }, (token) => {
-                if (chrome.runtime.lastError) {
-                    console.error('❌ getAuthToken failed:', chrome.runtime.lastError.message);
-                    reject(new Error(chrome.runtime.lastError.message));
-                    return;
-                }
-
-                if (!token) {
-                    reject(new Error('No token received from getAuthToken'));
-                    return;
-                }
-
-                this.accessToken = token;
-                this.tokenExpiry = Date.now() + (3600 * 1000);
-                
-                console.log('✅ Chrome native authentication successful');
-                resolve(true);
-            });
-        });
-    }
-
-    async authenticateWithLaunchWebAuthFlow() {
-        console.log('🌐 Using universal launchWebAuthFlow...');
+    /**
+     * Authorization code flow for refresh token support
+     */
+    async authenticateWithAuthorizationCode() {
+        console.log('🔐 Using authorization code flow for refresh tokens...');
         
         const redirectUri = chrome.identity.getRedirectURL();
         console.log('🔗 Using redirect URI:', redirectUri);
         
+        // Generate PKCE parameters for security
+        const codeVerifier = this.generateCodeVerifier();
+        const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+        
         const authParams = new URLSearchParams({
             client_id: CONFIG.CLIENT_ID,
-            response_type: 'token',
+            response_type: 'code',  // Use 'code' instead of 'token'
             scope: CONFIG.SCOPE,
             redirect_uri: redirectUri,
-            prompt: 'select_account'
+            code_challenge: codeChallenge,
+            code_challenge_method: 'S256',
+            access_type: 'offline',  // Request refresh token
+            prompt: 'consent'        // Force consent to ensure refresh token
         });
 
         const authURL = `https://accounts.google.com/o/oauth2/v2/auth?${authParams}`;
@@ -457,9 +370,8 @@ class EnhancedGoogleCalendarClient {
             chrome.identity.launchWebAuthFlow({
                 url: authURL,
                 interactive: true
-            }, (redirectURL) => {
+            }, async (redirectURL) => {
                 console.log('🌐 OAuth callback received');
-                console.log('🔗 Redirect URL:', redirectURL);
                 
                 if (chrome.runtime.lastError) {
                     console.error('❌ launchWebAuthFlow failed:', chrome.runtime.lastError.message);
@@ -473,87 +385,282 @@ class EnhancedGoogleCalendarClient {
                 }
 
                 try {
+                    // Extract authorization code from redirect URL
                     const url = new URL(redirectURL);
-                    const fragment = url.hash.substring(1);
-                    const params = new URLSearchParams(fragment);
+                    const code = url.searchParams.get('code');
                     
-                    console.log('🔍 Parsing URL fragment params:', Object.fromEntries(params));
-                    
-                    const accessToken = params.get('access_token');
-                    const expiresIn = params.get('expires_in') || '3600';
-                    const tokenType = params.get('token_type');
-
-                    if (!accessToken) {
-                        throw new Error('No access token received from OAuth flow');
+                    if (!code) {
+                        throw new Error('No authorization code received');
                     }
 
-                    this.accessToken = accessToken;
-                    this.tokenExpiry = Date.now() + (parseInt(expiresIn) * 1000);
+                    // Exchange code for tokens
+                    await this.exchangeCodeForTokens(code, codeVerifier, redirectUri);
                     
-                    console.log('✅ Universal authentication successful');
-                    console.log('⏰ Token expires in:', expiresIn, 'seconds');
-                    
+                    console.log('✅ Authorization code authentication successful with refresh token');
                     resolve(true);
 
                 } catch (error) {
-                    console.error('❌ Token parsing failed:', error);
+                    console.error('❌ Token exchange failed:', error);
                     reject(error);
                 }
             });
         });
     }
 
-    async getAuthStatus() {
-        const capabilities = await this.detectBrowserCapabilities();
-        const hasValidToken = this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
+    /**
+     * Exchange authorization code for access + refresh tokens
+     */
+    async exchangeCodeForTokens(authCode, codeVerifier, redirectUri) {
+        console.log('🔄 Exchanging authorization code for tokens...');
 
-        if (!hasValidToken && capabilities.getAuthTokenWorks) {
-            try {
-                const tokenFromCache = await this.tryGetCachedToken();
-                if (tokenFromCache) {
-                    this.accessToken = tokenFromCache;
-                    this.tokenExpiry = Date.now() + (3600 * 1000);
-                }
-            } catch (error) {
-                console.log('ℹ️ No cached token available:', error.message);
-            }
+        const tokenParams = new URLSearchParams({
+            client_id: CONFIG.CLIENT_ID,
+            code: authCode,
+            code_verifier: codeVerifier,
+            grant_type: 'authorization_code',
+            redirect_uri: redirectUri
+        });
+
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: tokenParams
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`Token exchange failed: ${response.status} - ${errorData}`);
         }
 
-        return {
-            authenticated: !!this.accessToken,
-            tokenValid: hasValidToken,
-            expiresAt: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
-            authMethod: capabilities.recommendedMethod,
-            browserInfo: {
-                type: capabilities.browser,
-                extensionId: capabilities.extensionId,
-                supportsGetAuthToken: capabilities.getAuthTokenWorks,
-                supportsLaunchWebAuthFlow: capabilities.hasLaunchWebAuthFlow
-            }
-        };
+        const tokens = await response.json();
+        console.log('📨 Token response:', {
+            access_token: tokens.access_token ? 'received' : 'missing',
+            refresh_token: tokens.refresh_token ? 'received' : 'missing',
+            expires_in: tokens.expires_in
+        });
+
+        // Store tokens
+        this.accessToken = tokens.access_token;
+        this.refreshToken = tokens.refresh_token; // Critical: Now we have refresh token!
+        this.tokenExpiry = Date.now() + (tokens.expires_in * 1000);
+
+        await this.saveTokens();
+        console.log('✅ Tokens saved with refresh capability');
     }
 
-    async tryGetCachedToken() {
+    /**
+     * Chrome's getAuthToken with better error handling
+     */
+    async authenticateWithGetAuthToken() {
+        console.log('🔐 Using Chrome native getAuthToken...');
+        
         return new Promise((resolve, reject) => {
             chrome.identity.getAuthToken({
-                interactive: false
+                interactive: true,
+                scopes: [CONFIG.SCOPE]
             }, (token) => {
-                if (chrome.runtime.lastError || !token) {
-                    reject(new Error(chrome.runtime.lastError?.message || 'No cached token'));
-                } else {
-                    resolve(token);
+                if (chrome.runtime.lastError) {
+                    console.error('❌ getAuthToken failed:', chrome.runtime.lastError.message);
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
                 }
+
+                if (!token) {
+                    reject(new Error('No token received from getAuthToken'));
+                    return;
+                }
+
+                this.accessToken = token;
+                this.tokenExpiry = Date.now() + (3600 * 1000); // Chrome manages refresh internally
+                
+                console.log('✅ Chrome native authentication successful');
+                resolve(true);
             });
         });
     }
 
-    async getValidToken() {
-        if (!this.accessToken || !this.tokenExpiry || Date.now() >= this.tokenExpiry - 60000) {
-            throw new Error('Token is expired or missing. Please authenticate again.');
+    /**
+     * Automatic token refresh using stored refresh token
+     */
+    async refreshAccessToken() {
+        if (!this.refreshToken) {
+            console.log('⚠️ No refresh token available, need to re-authenticate');
+            throw new Error('No refresh token available - please re-authenticate');
         }
+
+        console.log('🔄 Refreshing access token using refresh token...');
+
+        const refreshParams = new URLSearchParams({
+            client_id: CONFIG.CLIENT_ID,
+            refresh_token: this.refreshToken,
+            grant_type: 'refresh_token'
+        });
+
+        try {
+            const response = await fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: refreshParams
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('❌ Token refresh failed:', response.status, errorData);
+                
+                // If refresh token is invalid, clear everything and require re-auth
+                if (response.status === 400 || response.status === 401) {
+                    await this.clearTokens();
+                    throw new Error('Refresh token expired - please re-authenticate');
+                }
+                
+                throw new Error(`Token refresh failed: ${response.status} - ${errorData}`);
+            }
+
+            const tokens = await response.json();
+            
+            // Update tokens
+            this.accessToken = tokens.access_token;
+            this.tokenExpiry = Date.now() + (tokens.expires_in * 1000);
+            
+            // Refresh token might be rotated
+            if (tokens.refresh_token) {
+                this.refreshToken = tokens.refresh_token;
+            }
+
+            await this.saveTokens();
+            console.log('✅ Access token refreshed successfully');
+            
+        } catch (error) {
+            console.error('❌ Token refresh failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get valid token with automatic refresh
+     */
+    async getValidToken() {
+        // Load tokens if not in memory
+        if (!this.accessToken) {
+            const hasTokens = await this.loadTokens();
+            if (!hasTokens) {
+                throw new Error('No authentication tokens found - please authenticate');
+            }
+        }
+
+        // Check if token is expired or about to expire (5 min buffer)
+        const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
+        
+        if (!this.tokenExpiry || this.tokenExpiry < fiveMinutesFromNow) {
+            console.log('🔄 Token expired or expiring soon, attempting refresh...');
+            
+            try {
+                await this.refreshAccessToken();
+            } catch (error) {
+                // If refresh fails, clear tokens and throw error for re-authentication
+                await this.clearTokens();
+                throw new Error('Token refresh failed - authentication required');
+            }
+        }
+
         return this.accessToken;
     }
 
+    /**
+     * Save tokens to secure storage
+     */
+    async saveTokens() {
+        try {
+            await chrome.storage.local.set({
+                'google_access_token': this.accessToken,
+                'google_refresh_token': this.refreshToken,
+                'google_token_expiry': this.tokenExpiry,
+                'token_saved_at': new Date().toISOString()
+            });
+            console.log('💾 Tokens saved securely');
+        } catch (error) {
+            console.error('❌ Failed to save tokens:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load tokens from secure storage
+     */
+    async loadTokens() {
+        try {
+            const result = await chrome.storage.local.get([
+                'google_access_token',
+                'google_refresh_token', 
+                'google_token_expiry',
+                'token_saved_at'
+            ]);
+
+            this.accessToken = result.google_access_token;
+            this.refreshToken = result.google_refresh_token;
+            this.tokenExpiry = result.google_token_expiry;
+
+            const hasTokens = !!(this.accessToken && this.refreshToken);
+            
+            if (hasTokens) {
+                const savedAt = result.token_saved_at;
+                console.log(`📥 Tokens loaded from storage (saved: ${savedAt})`);
+                console.log(`🕐 Token expires: ${new Date(this.tokenExpiry).toLocaleString()}`);
+            }
+
+            return hasTokens;
+        } catch (error) {
+            console.error('❌ Failed to load tokens:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Clear all authentication tokens
+     */
+    async clearTokens() {
+        this.accessToken = null;
+        this.refreshToken = null;
+        this.tokenExpiry = null;
+        
+        await chrome.storage.local.remove([
+            'google_access_token',
+            'google_refresh_token',
+            'google_token_expiry',
+            'token_saved_at'
+        ]);
+        
+        console.log('🧹 All tokens cleared');
+    }
+
+    /**
+     * Auth status with better token validation
+     */
+    async getAuthStatus() {
+        await this.loadTokens(); // Always load latest tokens
+        
+        const hasTokens = !!(this.accessToken && this.refreshToken);
+        const isValid = hasTokens && this.tokenExpiry && Date.now() < this.tokenExpiry - 60000;
+        
+        const status = {
+            authenticated: hasTokens,
+            tokenValid: isValid,
+            expiresAt: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
+            hasRefreshToken: !!this.refreshToken,
+            authMethod: hasTokens ? 'stored' : 'none'
+        };
+        
+        console.log('🔍 Auth status check:', status);
+        return status;
+    }
+
+    /**
+     * Enhanced API request method
+     */
     async makeAPIRequest(endpoint, options = {}) {
         const token = await this.getValidToken();
 
@@ -588,21 +695,18 @@ class EnhancedGoogleCalendarClient {
     }
 
     /**
-     * ⭐ ENHANCED: Create ALL-DAY calendar events for better visibility
+     * Create ALL-DAY calendar events for better visibility
      */
     async createEventFromAssignment(assignment) {
         console.log('📅 Creating ALL-DAY calendar event for:', assignment.title);
 
-        // Parse the due date to create an all-day event
         const dueDate = new Date(assignment.dueDate);
-
-        // 🔧 FIX: Use Pacific Time date to avoid timezone shift issues
-        // Berkeley assignments should appear on the correct date for Pacific Time users
         const dueDateOnly = dueDate.toLocaleDateString('en-CA', {
             timeZone: 'America/Los_Angeles'
-        }); // en-CA format gives YYYY-MM-DD in specified timezone
+        });
 
         console.log(`📅 Due date conversion: ${assignment.dueDate} → ${dueDateOnly} (Pacific Time)`);
+        
         const event = {
             summary: `${assignment.course}: ${assignment.title}`,
             description: `Gradescope Assignment: ${assignment.title}\n\nCourse: ${assignment.course}\n\nDue: ${dueDate.toLocaleString('en-US', { 
@@ -611,12 +715,11 @@ class EnhancedGoogleCalendarClient {
                 timeStyle: 'short'
             })}\n\nSubmit at: ${assignment.url}\n\nExtracted from: ${assignment.pageUrl}`,
             
-            // 🌟 ALL-DAY EVENT: Use date format instead of dateTime
             start: {
-                date: dueDateOnly // This makes it an all-day event
+                date: dueDateOnly
             },
             end: {
-                date: dueDateOnly // Same date for single-day event
+                date: dueDateOnly
             },
             
             location: 'Gradescope',
@@ -629,10 +732,9 @@ class EnhancedGoogleCalendarClient {
                     gradescope_assignment_id: assignment.assignmentId,
                     gradescope_course: assignment.course,
                     gradescope_url: assignment.url,
-                    gradescope_due_time: assignment.dueDate // Keep exact due time for reference
+                    gradescope_due_time: assignment.dueDate
                 }
             },
-            // Add color coding for assignments
             colorId: '9' // Blue color for assignments
         };
 
@@ -649,8 +751,7 @@ class EnhancedGoogleCalendarClient {
     }
 
     /**
-     * OPTIMIZED: Find existing calendar event by assignment ID using cache
-     * Converts O(n²) API calls to O(1) cached lookups
+     * Find existing calendar event by assignment ID using cache
      */
     async findExistingEvent(assignmentId) {
         console.log(`🔍 Looking for existing event for assignment: ${assignmentId}`);
@@ -669,11 +770,13 @@ class EnhancedGoogleCalendarClient {
             
         } catch (error) {
             console.error(`❌ Error searching for existing event ${assignmentId}:`, error.message);
-            // Return null to allow creation - better to have potential duplicates than miss assignments
             return null;
         }
     }
 
+    /**
+     * Sync assignments to calendar
+     */
     async syncAssignments(assignments) {
         console.log(`🔄 Starting calendar sync for ${assignments.length} assignments...`);
         
@@ -737,46 +840,47 @@ class EnhancedGoogleCalendarClient {
     }
 
     /**
-     * 🌟 NEW: Auto-sync functionality for background processing
+     * Background sync with better error handling
      */
     async performBackgroundSync() {
         console.log('🔄 Starting automatic background sync...');
         
         try {
-            // Check if we're authenticated
-            const authStatus = await this.getAuthStatus();
-            if (!authStatus.authenticated || !authStatus.tokenValid) {
-                console.log('⚠️ Background sync skipped: not authenticated');
-                return { success: false, reason: 'Not authenticated' };
-            }
+            // Check authentication with automatic refresh
+            const token = await this.getValidToken();
+            console.log('✅ Valid authentication token obtained for background sync');
 
             // Get all stored assignments
             const assignments = await this.getAllStoredAssignments();
             if (assignments.length === 0) {
-                console.log('ℹ️ Background sync skipped: no assignments found');
+                console.log('ℹ️ Background sync: no assignments found');
                 return { success: true, reason: 'No assignments to sync', results: { created: 0, skipped: 0, errors: 0 } };
             }
 
             // Perform sync
             const results = await this.syncAssignments(assignments);
-            console.log('✅ Background sync completed:', results);
+            console.log('✅ Background sync completed successfully:', results);
             
-            // Store last sync timestamp
+            // Store successful sync timestamp
             await chrome.storage.local.set({
                 last_auto_sync: new Date().toISOString(),
-                last_sync_results: results
+                last_sync_results: results,
+                last_auto_sync_error: null // Clear any previous errors
             });
 
             return { success: true, results };
 
         } catch (error) {
             console.error('❌ Background sync failed:', error);
+            
+            // Store error details
             await chrome.storage.local.set({
                 last_auto_sync_error: {
                     timestamp: new Date().toISOString(),
                     error: error.message
                 }
             });
+            
             return { success: false, error: error.message };
         }
     }
@@ -807,10 +911,33 @@ class EnhancedGoogleCalendarClient {
             return [];
         }
     }
+
+    /**
+     * PKCE helper methods
+     */
+    generateCodeVerifier() {
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return this.base64URLEncode(array);
+    }
+
+    async generateCodeChallenge(verifier) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(verifier);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return this.base64URLEncode(new Uint8Array(digest));
+    }
+
+    base64URLEncode(array) {
+        return btoa(String.fromCharCode(...array))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+    }
 }
 
 /**
- * 🌟 AUTO-SYNC MANAGEMENT
+ * AUTO-SYNC MANAGEMENT
  */
 class AutoSyncManager {
     static async setupAutoSync() {
@@ -853,7 +980,7 @@ class AutoSyncManager {
 const calendarClient = new EnhancedGoogleCalendarClient();
 
 /**
- * 🌟 ALARM LISTENER: Handles automatic background sync
+ * ALARM LISTENER: Handles automatic background sync
  */
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === CONFIG.ALARM_NAME) {
@@ -864,7 +991,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 /**
  * Enhanced message handler with consistent response format
- * Fixed version that ensures all responses have { success: boolean } format
  */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('📨 Background script received message:', request.action);
@@ -873,47 +999,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         switch (request.action) {
             case 'authenticate':
                 await calendarClient.authenticate();
-                // Automatically enable auto-sync after successful authentication
-                await AutoSyncManager.setupAutoSync();
-                return { success: true, message: 'Authentication successful, auto-sync enabled' };
+                await AutoSyncManager.setupAutoSync(); // Enable auto-sync after auth
+                return { success: true, message: 'Authentication successful with refresh token support' };
 
             case 'getAuthStatus':
-                // 🔧 FIX: Wrap the auth status in success format
                 const authStatus = await calendarClient.getAuthStatus();
                 return { 
                     success: true, 
                     authenticated: authStatus.authenticated,
                     tokenValid: authStatus.tokenValid,
                     expiresAt: authStatus.expiresAt,
-                    authMethod: authStatus.authMethod,
-                    browserInfo: authStatus.browserInfo
+                    hasRefreshToken: authStatus.hasRefreshToken,
+                    authMethod: authStatus.authMethod
                 };
-
-            case 'syncToCalendar':
-                return await handleCalendarSync(request.assignments);
 
             case 'clearAuth':
                 await AutoSyncManager.disableAutoSync();
-                // Clear stored tokens
-                await chrome.storage.local.remove([
-                    'google_access_token',
-                    'google_refresh_token', 
-                    'google_token_expiry'
-                ]);
-                // Clear client tokens
-                calendarClient.accessToken = null;
-                calendarClient.refreshToken = null;
-                calendarClient.tokenExpiry = null;
-                return { success: true, message: 'Authentication cleared, auto-sync disabled' };
+                await calendarClient.clearTokens();
+                return { success: true, message: 'Authentication cleared completely' };
 
-            case 'testAPI':
-                // If this method exists
-                if (typeof calendarClient.testAPIAccess === 'function') {
-                    const testResult = await calendarClient.testAPIAccess();
-                    return { success: true, testResult };
-                } else {
-                    return { success: false, error: 'Test API method not implemented' };
-                }
+            case 'syncToCalendar':
+                return await handleCalendarSync(request.assignments);
 
             case 'enableAutoSync':
                 await AutoSyncManager.setupAutoSync();
@@ -930,7 +1036,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             case 'performBackgroundSync':
                 const isForceSync = request.forceSync === true;
                 const result = await calendarClient.performBackgroundSync(isForceSync);
-                return result; // This method already returns proper format
+                return result;
 
             case 'getCacheStats':
                 const stats = calendarClient.eventCache.getStats();
@@ -948,10 +1054,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     handleMessage()
         .then(result => {
-            // 🔧 SAFETY CHECK: Ensure all responses have success property
+            // Ensure all responses have success property
             if (typeof result === 'object' && result !== null && !result.hasOwnProperty('success')) {
                 console.warn(`⚠️ Handler for ${request.action} returned object without success property:`, result);
-                // Wrap in success format
                 result = { success: true, data: result };
             }
             
@@ -967,14 +1072,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 /**
- * Handle calendar sync request - FIXED to update last sync time
+ * Handle calendar sync request
  */
 async function handleCalendarSync(assignments) {
     try {
         console.log('📅 Handling calendar sync request...');
         const results = await calendarClient.syncAssignments(assignments);
         
-        // 🌟 FIX: Also update last sync timestamp for manual syncs
+        // Update last sync timestamp for manual syncs
         await chrome.storage.local.set({
             last_auto_sync: new Date().toISOString(),
             last_sync_results: results
@@ -1000,11 +1105,15 @@ async function handleCalendarSync(assignments) {
 chrome.runtime.onStartup.addListener(async () => {
     console.log('🌟 Extension startup - checking auto-sync status...');
     
-    const authStatus = await calendarClient.getAuthStatus();
-    if (authStatus.authenticated && authStatus.tokenValid) {
-        await AutoSyncManager.setupAutoSync();
-        console.log('✅ Auto-sync re-enabled on startup');
+    try {
+        const authStatus = await calendarClient.getAuthStatus();
+        if (authStatus.authenticated && authStatus.tokenValid) {
+            await AutoSyncManager.setupAutoSync();
+            console.log('✅ Auto-sync re-enabled on startup');
+        }
+    } catch (error) {
+        console.log('⚠️ Could not check auth status on startup:', error.message);
     }
 });
 
-console.log('✅ Enhanced background script with auto-sync initialized');
+console.log('✅ Enhanced background script with automatic token refresh loaded');
