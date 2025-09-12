@@ -355,17 +355,74 @@ class EnhancedGoogleCalendarClient {
         return response;
     }
 
+    /**
+     * FIXED: Find existing calendar event by assignment ID
+     * Addresses deduplication issues by using proper API parameters
+     */
     async findExistingEvent(assignmentId) {
         try {
-            const response = await this.makeAPIRequest('/calendars/primary/events');
+            console.log(`🔍 Searching for existing event with assignment ID: ${assignmentId}`);
             
-            const existingEvent = response.items?.find(event => 
-                event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
-            );
-
-            return existingEvent || null;
+            // Strategy 1: Use search query with assignment ID
+            // This should be more reliable than filtering all events
+            const searchQuery = `gradescope_assignment_id:${assignmentId}`;
+            
+            try {
+                const searchResponse = await this.makeAPIRequest(
+                    `/calendars/primary/events?q=${encodeURIComponent(searchQuery)}&singleEvents=true&maxResults=50`
+                );
+                
+                if (searchResponse.items && searchResponse.items.length > 0) {
+                    // Double-check by looking for exact match in extended properties
+                    const exactMatch = searchResponse.items.find(event => 
+                        event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
+                    );
+                    
+                    if (exactMatch) {
+                        console.log(`✅ Found existing event via search: ${exactMatch.id}`);
+                        return exactMatch;
+                    }
+                }
+            } catch (searchError) {
+                console.warn('⚠️ Search query failed, falling back to list method:', searchError.message);
+            }
+            
+            // Strategy 2: Fallback - Get events with extended time range
+            // Look for events from 3 months ago to 6 months in the future
+            const now = new Date();
+            const threeMonthsAgo = new Date(now);
+            threeMonthsAgo.setMonth(now.getMonth() - 3);
+            
+            const sixMonthsFromNow = new Date(now);
+            sixMonthsFromNow.setMonth(now.getMonth() + 6);
+            
+            const params = new URLSearchParams({
+                timeMin: threeMonthsAgo.toISOString(),
+                timeMax: sixMonthsFromNow.toISOString(),
+                singleEvents: 'true',
+                maxResults: '500', // Increased limit
+                orderBy: 'startTime'
+            });
+            
+            const listResponse = await this.makeAPIRequest(`/calendars/primary/events?${params}`);
+            
+            if (listResponse.items) {
+                const existingEvent = listResponse.items.find(event => 
+                    event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
+                );
+                
+                if (existingEvent) {
+                    console.log(`✅ Found existing event via list: ${existingEvent.id}`);
+                    return existingEvent;
+                }
+            }
+            
+            console.log(`❌ No existing event found for assignment ID: ${assignmentId}`);
+            return null;
+            
         } catch (error) {
-            console.warn('⚠️ Error searching for existing events:', error.message);
+            console.error(`❌ Error searching for existing events for ID ${assignmentId}:`, error.message);
+            // Return null to allow creation - better to have duplicates than miss assignments
             return null;
         }
     }
