@@ -1,24 +1,14 @@
 {
   "manifest_version": 2,
   "name": "Gradescope to Cal",
-  "version": "0.4.0",
-  "description": "Automatically sync Gradescope assignments to Google Calendar (Firefox compatible)",
-
+  "version": "0.1.0",
+  "description": "Automatically sync Gradescope assignments to Google Calendar",
+  
   "permissions": [
     "storage",
-    "identity",
-    "alarms",
-    "activeTab",
-    "*://*.gradescope.com/*",
-    "https://accounts.google.com/*",
-    "https://www.googleapis.com/*"
+    "*://*.gradescope.com/*"
   ],
-
-  "background": {
-    "scripts": ["background.js"],
-    "persistent": false
-  },
-
+  
   "content_scripts": [
     {
       "matches": [
@@ -28,18 +18,22 @@
       "run_at": "document_idle"
     }
   ],
-
+  
   "browser_action": {
     "default_popup": "popup.html",
-    "default_title": "Gradescope to Cal"
+    "default_title": "Gradescope to Cal",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   },
 
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
-
-  "web_accessible_resources": [
-    "options.html"
-  ]
+  
+  "web_accessible_resources": []
 }
