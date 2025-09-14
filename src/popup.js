@@ -12,6 +12,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viewStorageBtn = document.getElementById('viewStorage');
     const assignmentCountDiv = document.getElementById('assignmentCount');
 
+    /**
+     * 🕒 Smart time formatting - shows hours for long durations, minutes for short
+     */
+    function formatDuration(minutes) {
+        if (minutes >= 60) {
+            const hours = Math.round(minutes / 60 * 10) / 10; // Round to 1 decimal
+            return hours === 1 ? '1 hour' : `${hours} hours`;
+        } else {
+            return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+        }
+    }
+
+    /**
+     * 🕒 Smart interval formatting for status display
+     */
+    function formatInterval(minutes) {
+        if (minutes >= 60) {
+            const hours = minutes / 60;
+            return hours === 1 ? '1 hour' : `${hours} hours`;
+        } else {
+            return `${minutes} min`;
+        }
+    }
+
     // Create auto-sync section
     createAutoSyncSection();
 
@@ -256,7 +280,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     /**
      * 🌟 Update Auto-Sync Status Display
      */
-    async function updateAutoSyncStatus() {
+        async function updateAutoSyncStatus() {
         try {
             const response = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
             
@@ -270,24 +294,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (status.enabled) {
                     autoSyncStatusDiv.className = 'status success';
-                    autoSyncStatusDiv.innerHTML = `<div>🔄 Auto-sync enabled (every ${status.interval} min)</div>`;
+                    // 🔧 FIX: Use smart interval formatting instead of hardcoded "min"
+                    autoSyncStatusDiv.innerHTML = `<div>🔄 Auto-sync enabled (every ${formatInterval(status.interval)})</div>`;
                     toggleBtn.textContent = '🛑 Disable Auto-Sync';
                     toggleBtn.className = 'button secondary';
                     
                     // Show details
                     detailsDiv.style.display = 'block';
                     
-                    // Format next sync time
+                    // Format next sync time with smart duration
                     if (status.nextSync) {
                         const nextSync = new Date(status.nextSync);
                         const now = new Date();
                         const diffMinutes = Math.round((nextSync - now) / (1000 * 60));
-                        nextSyncDiv.textContent = `Next sync: in ${diffMinutes} minutes (${nextSync.toLocaleTimeString()})`;
+                        
+                        // 🔧 FIX: Use smart duration formatting instead of always showing minutes
+                        nextSyncDiv.textContent = `Next sync: in ${formatDuration(diffMinutes)} (${nextSync.toLocaleTimeString()})`;
                     } else {
                         nextSyncDiv.textContent = 'Next sync: calculating...';
                     }
                     
-                    // Format last sync time
+                    // Format last sync time (unchanged)
                     if (status.lastSync) {
                         const lastSync = new Date(status.lastSync);
                         const results = status.lastResults;
@@ -300,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         lastSyncDiv.textContent = 'Last sync: never';
                     }
                     
-                    // Show error if there was one
+                    // Show error if there was one (unchanged)
                     if (status.lastError) {
                         const errorTime = new Date(status.lastError.timestamp);
                         if (errorTime > new Date(status.lastSync || 0)) {
@@ -326,7 +353,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     /**
      * 🌟 Toggle Auto-Sync
      */
-    async function toggleAutoSync() {
+        async function toggleAutoSync() {
         try {
             const statusResponse = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
             const isEnabled = statusResponse.success && statusResponse.status.enabled;
@@ -344,7 +371,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 toggleBtn.textContent = '⏳ Enabling...';
                 const response = await chrome.runtime.sendMessage({ action: 'enableAutoSync' });
                 if (response.success) {
-                    updateStatus('▶️ Auto-sync enabled - assignments will sync automatically every 30 minutes', 'success');
+                    // 🔧 FIX: Get actual interval and format it properly instead of hardcoded "30 minutes"
+                    const newStatusResponse = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+                    if (newStatusResponse.success) {
+                        const interval = formatInterval(newStatusResponse.status.interval);
+                        updateStatus(`▶️ Auto-sync enabled - assignments will sync automatically every ${interval}`, 'success');
+                    } else {
+                        updateStatus('▶️ Auto-sync enabled', 'success');
+                    }
                 }
             }
             

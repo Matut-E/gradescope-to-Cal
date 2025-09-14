@@ -5,7 +5,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 ## Features
 
 - **Automatic dashboard discovery**: Extracts all assignments from all enrolled courses
-- **Background sync**: Checks for new assignments every 30 minutes
+- **Background sync**: Checks for new assignments daily
 - **All-day calendar events**: Creates prominent events with assignment details and direct links
 - **Smart deduplication**: Prevents duplicate events for the same assignments
 - **Zero-server architecture**: All processing happens locally in your browser
