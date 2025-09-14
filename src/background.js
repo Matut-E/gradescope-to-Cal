@@ -1,23 +1,26 @@
 /**
- * Enhanced Background Script with Automatic Sync
- * Adds periodic background checking and all-day events
+ * Enhanced Background Script with Dual OAuth Client Support
+ * UPDATED: Supports both Chrome native getAuthToken AND universal launchWebAuthFlow
  */
 
 const CONFIG = {
     CALENDAR_API_BASE: 'https://www.googleapis.com/calendar/v3',
-    CLIENT_ID: '589515007396-nofmk5v0dhegv5fmp1700v8ve94624ih.apps.googleusercontent.com',
+    
+    // 🔧 DUAL CLIENT CONFIGURATION
+    // Web Application client (for launchWebAuthFlow - universal compatibility)
+    WEB_CLIENT_ID: '589515007396-nofmk5v0dhegv5fmp1700v8ve94624ih.apps.googleusercontent.com',
+    
+    // Chrome Extension client (for getAuthToken - Chrome native)
+    CHROME_EXTENSION_CLIENT_ID: '589515007396-aje4t3afip1e9piitlp817t0g9ro4kab.apps.googleusercontent.com',
+    
     SCOPE: 'https://www.googleapis.com/auth/calendar',
+    
     // Auto-sync settings
     AUTO_SYNC_INTERVAL: 30, // minutes
     ALARM_NAME: 'gradescope_auto_sync'
 };
 
-console.log('🌟 Enhanced background script with auto-sync loaded');
-/**
- * OPTIMIZATION 2: Event Caching System
- * Eliminates O(n²) API calls for duplicate detection
- * Converts from multiple API calls per assignment to single cached lookup
- */
+console.log('🌟 Enhanced background script with dual OAuth clients loaded');
 
 class EventCache {
     constructor(calendarClient) {
@@ -82,10 +85,8 @@ class EventCache {
         }
     }
 
-    /**
-     * Refresh the entire cache with a single efficient API call
-     */
-    /**
+
+/**
  * Refresh the entire cache with a single efficient API call
  */
     async refreshCache() {
@@ -138,10 +139,8 @@ class EventCache {
         }
     }
 
-    /**
-     * Single efficient API call to get all Gradescope events
-     */
-    /**
+
+/**
  * Single efficient API call to get all Gradescope events
  */
     async getAllGradescopeEvents() {
@@ -309,12 +308,50 @@ class EnhancedGoogleCalendarClient {
         this.refreshToken = null;
         this.tokenExpiry = null;
         this.browserCapabilities = null;
+        this.authMethod = null; // Track which method was used
         this.eventCache = new EventCache(this); 
     }
 
-    // [Previous authentication methods remain the same - keeping existing code]
+    /**
+     * 🆔 Get appropriate client ID for authentication method
+     */
+    getClientIdForMethod(method) {
+        if (method === 'getAuthToken') {
+            console.log('🔑 Using Chrome Extension client ID for getAuthToken');
+            return CONFIG.CHROME_EXTENSION_CLIENT_ID;
+        } else {
+            console.log('🌐 Using Web Application client ID for launchWebAuthFlow');
+            return CONFIG.WEB_CLIENT_ID;
+        }
+    }
+
+    /**
+     * 🔍 Validate client ID configuration
+     */
+    validateClientIdConfiguration() {
+        const chromeClientId = CONFIG.CHROME_EXTENSION_CLIENT_ID;
+        const webClientId = CONFIG.WEB_CLIENT_ID;
+        
+        const issues = [];
+        
+        if (!chromeClientId || chromeClientId.includes('YOUR_NEW_CHROME_EXTENSION_CLIENT_ID')) {
+            issues.push('Chrome Extension client ID not configured');
+        }
+        
+        if (!webClientId || !webClientId.includes('apps.googleusercontent.com')) {
+            issues.push('Web Application client ID invalid');
+        }
+        
+        if (chromeClientId === webClientId) {
+            issues.push('Both client IDs are the same - they should be different');
+        }
+        
+        return issues;
+    }
+    
     async detectBrowserCapabilities() {
         if (this.browserCapabilities) {
+            console.log('🔄 Using cached browser capabilities:', this.browserCapabilities);
             return this.browserCapabilities;
         }
 
@@ -331,61 +368,65 @@ class EnhancedGoogleCalendarClient {
             recommendedMethod: 'launchWebAuthFlow'
         };
 
+        // 🔧 ENHANCED LOGGING - Add this detailed breakdown
+        console.log('📊 Browser Capability Detection Results:');
+        console.log(`   🌐 Browser Type: ${capabilities.browser}`);
+        console.log(`   🆔 Extension ID: ${capabilities.extensionId}`);
+        console.log(`   🔧 Has chrome.identity: ${capabilities.hasIdentityAPI}`);
+        console.log(`   🔑 Has getAuthToken function: ${capabilities.hasGetAuthToken}`);
+        console.log(`   🌍 Has launchWebAuthFlow function: ${capabilities.hasLaunchWebAuthFlow}`);
+        console.log(`   🔗 Redirect URI: ${capabilities.redirectUri}`);
+
         if (capabilities.hasGetAuthToken) {
             try {
+                console.log('🧪 Testing getAuthToken capability (non-interactive)...');
                 capabilities.getAuthTokenWorks = await this.testGetAuthTokenCapability();
+                console.log(`✅ getAuthToken test result: ${capabilities.getAuthTokenWorks}`);
+                
+                if (capabilities.getAuthTokenWorks) {
+                    console.log('🎉 getAuthToken is available and working!');
+                } else {
+                    console.log('❌ getAuthToken test returned false');
+                }
+                
             } catch (error) {
-                console.log('⚠️ getAuthToken test failed:', error.message);
+                console.log('⚠️ getAuthToken test threw an error:', error.message);
+                console.log('📜 Full error details:', error);
                 capabilities.getAuthTokenWorks = false;
             }
+        } else {
+            console.log('❌ getAuthToken function not available in this browser');
         }
 
+        // 🔧 DECISION LOGIC - Make this more explicit
+        console.log('🤔 Making authentication method decision...');
+        
         if (capabilities.getAuthTokenWorks && capabilities.browser === 'Chrome') {
             capabilities.recommendedMethod = 'getAuthToken';
-            console.log('✅ Chrome native getAuthToken available and working');
+            console.log('🏆 DECISION: Chrome native getAuthToken will be used!');
+            console.log('   ✅ Reason: getAuthToken is available, working, and this is Chrome');
         } else {
             capabilities.recommendedMethod = 'launchWebAuthFlow';
-            console.log('✅ Using universal launchWebAuthFlow for cross-browser compatibility');
+            console.log('🔄 DECISION: Universal launchWebAuthFlow will be used');
+            
+            // Explain why
+            const reasons = [];
+            if (!capabilities.getAuthTokenWorks) reasons.push('getAuthToken test failed');
+            if (capabilities.browser !== 'Chrome') reasons.push(`browser is ${capabilities.browser}, not Chrome`);
+            if (!capabilities.hasGetAuthToken) reasons.push('getAuthToken function not available');
+            
+            console.log('   📝 Reasons:', reasons.join(', '));
         }
+
+        console.log('📋 Final capability summary:', {
+            browser: capabilities.browser,
+            method: capabilities.recommendedMethod,
+            getAuthTokenAvailable: capabilities.hasGetAuthToken,
+            getAuthTokenWorks: capabilities.getAuthTokenWorks
+        });
 
         this.browserCapabilities = capabilities;
         return capabilities;
-    }
-
-    async testGetAuthTokenCapability() {
-        return new Promise((resolve) => {
-            chrome.identity.getAuthToken({
-                interactive: false
-            }, (token) => {
-                const error = chrome.runtime.lastError?.message || '';
-                
-                const supportedErrors = [
-                    'OAuth2 not granted or revoked',
-                    'OAuth2 request was rejected', 
-                    'The user is not signed in',
-                    'No such OAuth2 token in cache'
-                ];
-                
-                const unsupportedErrors = [
-                    'not supported',
-                    'not available',
-                    'not implemented', 
-                    'turned off browser signin',
-                    'Custom URI scheme',
-                    'invalid_request'
-                ];
-
-                const isSupported = !!token || supportedErrors.some(err => 
-                    error.toLowerCase().includes(err.toLowerCase())
-                );
-
-                const isUnsupported = unsupportedErrors.some(err => 
-                    error.toLowerCase().includes(err.toLowerCase())
-                );
-                
-                resolve(isSupported && !isUnsupported);
-            });
-        });
     }
 
     detectBrowserType() {
@@ -397,28 +438,117 @@ class EnhancedGoogleCalendarClient {
         return 'Unknown';
     }
 
+    /**
+     * 🧪 Enhanced getAuthToken test with proper client validation
+     */
+    async testGetAuthTokenCapability() {
+        console.log('🔬 Testing getAuthToken with Chrome Extension client...');
+        
+        const chromeClientId = CONFIG.CHROME_EXTENSION_CLIENT_ID;
+        console.log('🔑 Testing with Chrome Extension client ID:', chromeClientId);
+        
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+            
+            chrome.identity.getAuthToken({
+                interactive: false
+            }, (token) => {
+                const duration = Date.now() - startTime;
+                const error = chrome.runtime.lastError?.message || '';
+                
+                console.log('🔬 getAuthToken test results:');
+                console.log(`   ⏱️ Duration: ${duration}ms`);
+                console.log(`   🎫 Token received: ${!!token}`);
+                console.log(`   ⚠️ Error: ${error || 'None'}`);
+                
+                if (token) {
+                    console.log('✅ getAuthToken working perfectly with Chrome Extension client!');
+                    resolve(true);
+                    return;
+                }
+                
+                // Handle specific errors
+                if (error.includes('Invalid OAuth2 Client ID')) {
+                    console.log('❌ Invalid OAuth2 Client ID for Chrome Extension');
+                    console.log('   💡 Verify Chrome Extension client is created in Google Cloud Console');
+                    console.log('   💡 Check extension ID matches: pembhpamnbbklhjdimchmgoogfddabbi');
+                    resolve(false);
+                    return;
+                }
+                
+                // Standard OAuth errors (these mean getAuthToken works, just no cached token)
+                const supportedErrors = [
+                    'OAuth2 not granted or revoked',
+                    'OAuth2 request was rejected', 
+                    'The user is not signed in',
+                    'No such OAuth2 token in cache',
+                    'OAuth2 access denied'
+                ];
+                
+                const isSupported = supportedErrors.some(err => 
+                    error.toLowerCase().includes(err.toLowerCase())
+                );
+                
+                if (isSupported) {
+                    console.log('✅ getAuthToken supported - just needs user authentication');
+                    resolve(true);
+                } else {
+                    console.log(`❌ Unsupported error: ${error}`);
+                    resolve(false);
+                }
+            });
+            
+            setTimeout(() => {
+                console.log('⏰ getAuthToken test timeout');
+                resolve(false);
+            }, 5000);
+        });
+    }
+
+    /**
+     * 🔐 Main authentication method - chooses best approach
+     */
     async authenticate() {
         const capabilities = await this.detectBrowserCapabilities();
         
         console.log(`🔐 Starting authentication using ${capabilities.recommendedMethod} method`);
         
         if (capabilities.recommendedMethod === 'getAuthToken' && capabilities.getAuthTokenWorks) {
-            return await this.authenticateWithGetAuthToken();
+            const success = await this.authenticateWithGetAuthToken();
+            if (success) {
+                this.authMethod = 'getAuthToken';
+                console.log('🎉 Successfully authenticated with Chrome native method!');
+            }
+            return success;
         } else {
-            return await this.authenticateWithLaunchWebAuthFlow();
+            const success = await this.authenticateWithLaunchWebAuthFlow();
+            if (success) {
+                this.authMethod = 'launchWebAuthFlow';
+                console.log('🎉 Successfully authenticated with universal method!');
+            }
+            return success;
         }
     }
 
+    /**
+     * 🔑 Chrome native authentication using getAuthToken
+     */
     async authenticateWithGetAuthToken() {
-        console.log('🔐 Using Chrome native getAuthToken...');
+        console.log('🔐 Authenticating with Chrome native getAuthToken...');
         
         return new Promise((resolve, reject) => {
             chrome.identity.getAuthToken({
                 interactive: true
             }, (token) => {
                 if (chrome.runtime.lastError) {
-                    console.error('❌ getAuthToken failed:', chrome.runtime.lastError.message);
-                    reject(new Error(chrome.runtime.lastError.message));
+                    const error = chrome.runtime.lastError.message;
+                    console.error('❌ getAuthToken failed:', error);
+                    
+                    if (error.includes('Invalid OAuth2 Client ID')) {
+                        console.error('💡 Solution: Create Chrome Extension OAuth client in Google Cloud Console');
+                    }
+                    
+                    reject(new Error(error));
                     return;
                 }
 
@@ -430,20 +560,28 @@ class EnhancedGoogleCalendarClient {
                 this.accessToken = token;
                 this.tokenExpiry = Date.now() + (3600 * 1000);
                 
-                console.log('✅ Chrome native authentication successful');
+                console.log('✅ Chrome native authentication successful!');
+                console.log(`🎫 Token length: ${token.length} characters`);
+                
                 resolve(true);
             });
         });
     }
 
+    /**
+     * 🌐 Universal authentication using launchWebAuthFlow
+     */
     async authenticateWithLaunchWebAuthFlow() {
-        console.log('🌐 Using universal launchWebAuthFlow...');
+        console.log('🌐 Authenticating with universal launchWebAuthFlow...');
         
         const redirectUri = chrome.identity.getRedirectURL();
+        const clientId = this.getClientIdForMethod('launchWebAuthFlow');
+        
         console.log('🔗 Using redirect URI:', redirectUri);
+        console.log('🆔 Using Web Application client ID:', clientId);
         
         const authParams = new URLSearchParams({
-            client_id: CONFIG.CLIENT_ID,
+            client_id: clientId,
             response_type: 'token',
             scope: CONFIG.SCOPE,
             redirect_uri: redirectUri,
@@ -451,16 +589,12 @@ class EnhancedGoogleCalendarClient {
         });
 
         const authURL = `https://accounts.google.com/o/oauth2/v2/auth?${authParams}`;
-        console.log('🌐 Auth URL constructed:', authURL);
 
         return new Promise((resolve, reject) => {
             chrome.identity.launchWebAuthFlow({
                 url: authURL,
                 interactive: true
             }, (redirectURL) => {
-                console.log('🌐 OAuth callback received');
-                console.log('🔗 Redirect URL:', redirectURL);
-                
                 if (chrome.runtime.lastError) {
                     console.error('❌ launchWebAuthFlow failed:', chrome.runtime.lastError.message);
                     reject(new Error(chrome.runtime.lastError.message));
@@ -477,11 +611,8 @@ class EnhancedGoogleCalendarClient {
                     const fragment = url.hash.substring(1);
                     const params = new URLSearchParams(fragment);
                     
-                    console.log('🔍 Parsing URL fragment params:', Object.fromEntries(params));
-                    
                     const accessToken = params.get('access_token');
                     const expiresIn = params.get('expires_in') || '3600';
-                    const tokenType = params.get('token_type');
 
                     if (!accessToken) {
                         throw new Error('No access token received from OAuth flow');
@@ -490,8 +621,8 @@ class EnhancedGoogleCalendarClient {
                     this.accessToken = accessToken;
                     this.tokenExpiry = Date.now() + (parseInt(expiresIn) * 1000);
                     
-                    console.log('✅ Universal authentication successful');
-                    console.log('⏰ Token expires in:', expiresIn, 'seconds');
+                    console.log('✅ Universal authentication successful!');
+                    console.log(`🎫 Token length: ${accessToken.length} characters`);
                     
                     resolve(true);
 
@@ -503,48 +634,30 @@ class EnhancedGoogleCalendarClient {
         });
     }
 
+    /**
+     * 📊 Enhanced auth status with method tracking
+     */
     async getAuthStatus() {
         const capabilities = await this.detectBrowserCapabilities();
         const hasValidToken = this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
-
-        if (!hasValidToken && capabilities.getAuthTokenWorks) {
-            try {
-                const tokenFromCache = await this.tryGetCachedToken();
-                if (tokenFromCache) {
-                    this.accessToken = tokenFromCache;
-                    this.tokenExpiry = Date.now() + (3600 * 1000);
-                }
-            } catch (error) {
-                console.log('ℹ️ No cached token available:', error.message);
-            }
-        }
 
         return {
             authenticated: !!this.accessToken,
             tokenValid: hasValidToken,
             expiresAt: this.tokenExpiry ? new Date(this.tokenExpiry).toISOString() : null,
             authMethod: capabilities.recommendedMethod,
+            actualMethodUsed: this.authMethod, // Which method was actually used for current token
             browserInfo: {
                 type: capabilities.browser,
                 extensionId: capabilities.extensionId,
                 supportsGetAuthToken: capabilities.getAuthTokenWorks,
-                supportsLaunchWebAuthFlow: capabilities.hasLaunchWebAuthFlow
+                supportsLaunchWebAuthFlow: capabilities.hasLaunchWebAuthFlow,
+                clientConfiguration: {
+                    chromeExtensionClientConfigured: !CONFIG.CHROME_EXTENSION_CLIENT_ID.includes('YOUR_NEW_CHROME_EXTENSION_CLIENT_ID'),
+                    webApplicationClientConfigured: !!CONFIG.WEB_CLIENT_ID
+                }
             }
         };
-    }
-
-    async tryGetCachedToken() {
-        return new Promise((resolve, reject) => {
-            chrome.identity.getAuthToken({
-                interactive: false
-            }, (token) => {
-                if (chrome.runtime.lastError || !token) {
-                    reject(new Error(chrome.runtime.lastError?.message || 'No cached token'));
-                } else {
-                    resolve(token);
-                }
-            });
-        });
     }
 
     async getValidToken() {
@@ -1007,4 +1120,4 @@ chrome.runtime.onStartup.addListener(async () => {
     }
 });
 
-console.log('✅ Enhanced background script with auto-sync initialized');
+console.log('✅ Enhanced background script with dual OAuth clients initialized');
