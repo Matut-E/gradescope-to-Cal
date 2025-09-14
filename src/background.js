@@ -16,7 +16,7 @@ const CONFIG = {
     SCOPE: 'https://www.googleapis.com/auth/calendar',
     
     // Auto-sync settings
-    AUTO_SYNC_INTERVAL: 30, // minutes
+    AUTO_SYNC_INTERVAL: 1440, // minutes
     ALARM_NAME: 'gradescope_auto_sync'
 };
 
@@ -357,6 +357,12 @@ class EnhancedGoogleCalendarClient {
 
         console.log('🔍 Detecting browser capabilities...');
         
+        // Check client ID configuration first
+        const configIssues = this.validateClientIdConfiguration();
+        if (configIssues.length > 0) {
+            console.warn('⚠️ Client ID configuration issues:', configIssues);
+        }
+        
         const capabilities = {
             browser: this.detectBrowserType(),
             extensionId: chrome.runtime.id,
@@ -368,7 +374,6 @@ class EnhancedGoogleCalendarClient {
             recommendedMethod: 'launchWebAuthFlow'
         };
 
-        // 🔧 ENHANCED LOGGING - Add this detailed breakdown
         console.log('📊 Browser Capability Detection Results:');
         console.log(`   🌐 Browser Type: ${capabilities.browser}`);
         console.log(`   🆔 Extension ID: ${capabilities.extensionId}`);
@@ -377,9 +382,9 @@ class EnhancedGoogleCalendarClient {
         console.log(`   🌍 Has launchWebAuthFlow function: ${capabilities.hasLaunchWebAuthFlow}`);
         console.log(`   🔗 Redirect URI: ${capabilities.redirectUri}`);
 
-        if (capabilities.hasGetAuthToken) {
+        if (capabilities.hasGetAuthToken && configIssues.length === 0) {
             try {
-                console.log('🧪 Testing getAuthToken capability (non-interactive)...');
+                console.log('🧪 Testing getAuthToken capability with Chrome Extension client...');
                 capabilities.getAuthTokenWorks = await this.testGetAuthTokenCapability();
                 console.log(`✅ getAuthToken test result: ${capabilities.getAuthTokenWorks}`);
                 
@@ -395,25 +400,24 @@ class EnhancedGoogleCalendarClient {
                 capabilities.getAuthTokenWorks = false;
             }
         } else {
-            console.log('❌ getAuthToken function not available in this browser');
+            console.log('❌ Skipping getAuthToken test - missing function or configuration issues');
         }
 
-        // 🔧 DECISION LOGIC - Make this more explicit
+        // 🔧 ENHANCED DECISION LOGIC
         console.log('🤔 Making authentication method decision...');
         
-        if (capabilities.getAuthTokenWorks && capabilities.browser === 'Chrome') {
+        if (capabilities.getAuthTokenWorks && capabilities.browser === 'Chrome' && configIssues.length === 0) {
             capabilities.recommendedMethod = 'getAuthToken';
             console.log('🏆 DECISION: Chrome native getAuthToken will be used!');
-            console.log('   ✅ Reason: getAuthToken is available, working, and this is Chrome');
+            console.log('   ✅ Reason: getAuthToken available, working, Chrome detected, clients configured');
         } else {
             capabilities.recommendedMethod = 'launchWebAuthFlow';
             console.log('🔄 DECISION: Universal launchWebAuthFlow will be used');
             
-            // Explain why
             const reasons = [];
             if (!capabilities.getAuthTokenWorks) reasons.push('getAuthToken test failed');
-            if (capabilities.browser !== 'Chrome') reasons.push(`browser is ${capabilities.browser}, not Chrome`);
-            if (!capabilities.hasGetAuthToken) reasons.push('getAuthToken function not available');
+            if (capabilities.browser !== 'Chrome') reasons.push(`browser is ${capabilities.browser}`);
+            if (configIssues.length > 0) reasons.push(`config issues: ${configIssues.join(', ')}`);
             
             console.log('   📝 Reasons:', reasons.join(', '));
         }
@@ -660,6 +664,9 @@ class EnhancedGoogleCalendarClient {
         };
     }
 
+    /**
+     * 🔧 ENHANCED: Smart token validation optimized for daily sync intervals
+     */
     async getValidToken() {
         if (!this.accessToken || !this.tokenExpiry || Date.now() >= this.tokenExpiry - 60000) {
             throw new Error('Token is expired or missing. Please authenticate again.');
@@ -850,24 +857,39 @@ class EnhancedGoogleCalendarClient {
     }
 
     /**
-     * 🌟 NEW: Auto-sync functionality for background processing
+     * 🔧 ENHANCED: Background sync optimized for daily intervals
      */
     async performBackgroundSync() {
-        console.log('🔄 Starting automatic background sync...');
+        console.log('🔄 Starting daily background sync...');
         
         try {
-            // Check if we're authenticated
+            // Simple auth check - with daily sync, we don't need complex persistence
             const authStatus = await this.getAuthStatus();
             if (!authStatus.authenticated || !authStatus.tokenValid) {
-                console.log('⚠️ Background sync skipped: not authenticated');
-                return { success: false, reason: 'Not authenticated' };
+                console.log('⚠️ Background sync skipped: authentication needed');
+                // Don't disable auto-sync - just skip this attempt
+                // User will re-auth next time they use the extension
+                return { 
+                    success: false, 
+                    reason: 'Authentication needed - please reconnect Google Calendar',
+                    needsReauth: true,
+                    silent: true // Don't treat as failure for daily sync
+                };
             }
 
             // Get all stored assignments
             const assignments = await this.getAllStoredAssignments();
             if (assignments.length === 0) {
-                console.log('ℹ️ Background sync skipped: no assignments found');
-                return { success: true, reason: 'No assignments to sync', results: { created: 0, skipped: 0, errors: 0 } };
+                console.log('ℹ️ Background sync: no assignments to sync');
+                await chrome.storage.local.set({
+                    last_auto_sync: new Date().toISOString(),
+                    last_sync_results: { created: 0, skipped: 0, errors: 0 }
+                });
+                return { 
+                    success: true, 
+                    reason: 'No assignments to sync', 
+                    results: { created: 0, skipped: 0, errors: 0 } 
+                };
             }
 
             // Perform sync
@@ -884,13 +906,21 @@ class EnhancedGoogleCalendarClient {
 
         } catch (error) {
             console.error('❌ Background sync failed:', error);
+            
             await chrome.storage.local.set({
                 last_auto_sync_error: {
                     timestamp: new Date().toISOString(),
                     error: error.message
                 }
             });
-            return { success: false, error: error.message };
+            
+            // For daily sync, we don't need to disable on first failure
+            // Just log it and try again tomorrow
+            return { 
+                success: false, 
+                error: error.message, 
+                silent: true // Don't treat as critical failure
+            };
         }
     }
 

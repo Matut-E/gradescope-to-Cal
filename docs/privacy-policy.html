@@ -58,7 +58,7 @@
         <li>No servers are used to process, store, or transmit your data</li>
         <li>Assignment data is stored only in your browser's local storage</li>
         <li>Authentication tokens are stored securely using browser extension APIs</li>
-        <li><strong>Automatic Background Sync</strong>: Every 30 minutes, the extension checks locally stored assignment data and syncs new items to your Google Calendar - no external data fetching occurs during this process</li>
+        <li><strong>Automatic Background Sync</strong>: Every 24 hours, the extension checks locally stored assignment data and syncs new items to your Google Calendar - no external data fetching occurs during this process</li>
     </ul>
 
     <h3>Data Retention</h3>
@@ -138,7 +138,7 @@
         <li><code>identity</code>: Handle Google OAuth authentication</li>
         <li><code>scripting</code>: Inject content scripts to extract assignment data from Gradescope pages</li>
         <li><code>activeTab</code>: Access the currently active Gradescope tab for assignment extraction</li>
-        <li><code>alarms</code>: Schedule automatic background sync every 30 minutes</li>
+        <li><code>alarms</code>: Schedule automatic background sync every 24 hours</li>
         <li><code>*://*.gradescope.com/*</code>: Access Gradescope pages to extract assignment data</li>
         <li><code>https://www.googleapis.com/*</code>: Communicate with Google Calendar API</li>
     </ul>

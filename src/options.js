@@ -18,6 +18,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const createRemindersCheckbox = document.getElementById('createReminders');
 
     /**
+     * 🕒 Smart interval formatting for options page (same as popup.js)
+     */
+    function formatInterval(minutes) {
+        if (minutes >= 60) {
+            const hours = minutes / 60;
+            return hours === 1 ? '1 hour' : `${hours} hours`;
+        } else {
+            return `${minutes} minutes`;
+        }
+    }
+
+    /**
      * 🌟 Enhanced Authentication Status Display
      */
     async function checkAuthStatus() {
@@ -75,8 +87,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Show detailed status in the authentication section
                 let autoSyncInfo = '';
                 if (status.enabled) {
-                    autoSyncInfo += `<br><small>🔄 Auto-sync: Every ${status.interval} minutes</small>`;
-                    
+                    autoSyncInfo += `<br><small>🔄 Auto-sync: Every ${formatInterval(status.interval)}</small>`;
+
                     if (status.lastSync) {
                         const lastSync = new Date(status.lastSync);
                         autoSyncInfo += `<br><small>Last sync: ${lastSync.toLocaleString()}</small>`;
