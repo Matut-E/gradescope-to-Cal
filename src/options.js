@@ -1,5 +1,5 @@
 /**
- * Enhanced Options page functionality
+ * Enhanced Options page functionality - Updated for 24-hour Auto-sync
  * Complete integration with all extension features
  */
 
@@ -11,11 +11,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const clearAuthBtn = document.getElementById('clearAuth');
     const clearAllBtn = document.getElementById('clearAll');
     const saveSettingsBtn = document.getElementById('saveSettings');
+    const showStatsBtn = document.getElementById('showStats');
 
     // Get references to all settings controls
     const autoSyncCheckbox = document.getElementById('autoSync');
-    const syncFrequencySelect = document.getElementById('syncFrequency');
     const createRemindersCheckbox = document.getElementById('createReminders');
+    
+    // Advanced settings (read-only, for display purposes)
+    const allDayEventsCheckbox = document.getElementById('allDayEvents');
+    const autoDiscoveryCheckbox = document.getElementById('autoDiscovery');
 
     /**
      * 🕒 Smart interval formatting for options page (same as popup.js)
@@ -48,7 +52,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 
                 if (response.authMethod) {
-                    statusHTML += `<small>Method: ${response.authMethod}</small><br>`;
+                    const methodDisplay = response.authMethod === 'getAuthToken' ? 'Chrome Native (Fast)' : 'Universal';
+                    statusHTML += `<small>Method: ${methodDisplay}</small><br>`;
                 }
                 
                 if (response.browserInfo) {
@@ -72,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * 🌟 Auto-Sync Status Display
+     * 🌟 Auto-Sync Status Display - Updated for 24-hour sync
      */
     async function updateAutoSyncStatus() {
         try {
@@ -87,7 +92,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Show detailed status in the authentication section
                 let autoSyncInfo = '';
                 if (status.enabled) {
-                    autoSyncInfo += `<br><small>🔄 Auto-sync: Every ${formatInterval(status.interval)}</small>`;
+                    // Format the interval (should be 24 hours)
+                    const intervalText = formatInterval(status.interval);
+                    autoSyncInfo += `<br><small>🔄 Auto-sync: Every ${intervalText} (Optimized)</small>`;
 
                     if (status.lastSync) {
                         const lastSync = new Date(status.lastSync);
@@ -101,8 +108,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     if (status.nextSync) {
                         const nextSync = new Date(status.nextSync);
+                        const hoursUntilNext = Math.round((nextSync - new Date()) / (1000 * 60 * 60));
                         const minutesUntilNext = Math.round((nextSync - new Date()) / (1000 * 60));
-                        autoSyncInfo += `<br><small>Next sync: in ${minutesUntilNext} minutes</small>`;
+                        
+                        if (hoursUntilNext >= 1) {
+                            autoSyncInfo += `<br><small>Next sync: in ${hoursUntilNext} hour${hoursUntilNext !== 1 ? 's' : ''} (${nextSync.toLocaleTimeString()})</small>`;
+                        } else {
+                            autoSyncInfo += `<br><small>Next sync: in ${minutesUntilNext} minutes (${nextSync.toLocaleTimeString()})</small>`;
+                        }
                     }
                 } else {
                     autoSyncInfo += '<br><small>⏸️ Auto-sync disabled</small>';
@@ -119,20 +132,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * 🌟 Load Settings from Storage
+     * 🌟 Load Settings from Storage - Updated for new structure
      */
     async function loadSettings() {
         try {
             const settings = await chrome.storage.local.get([
                 'settings_auto_sync',
-                'settings_sync_frequency', 
-                'settings_create_reminders'
+                'settings_create_reminders',
+                'settings_all_day_events',
+                'settings_auto_discovery'
             ]);
 
             // Set default values and load saved settings
             autoSyncCheckbox.checked = settings.settings_auto_sync !== false; // Default true
-            syncFrequencySelect.value = settings.settings_sync_frequency || '30'; // Default 30 minutes
             createRemindersCheckbox.checked = settings.settings_create_reminders !== false; // Default true
+            
+            // Advanced settings are always enabled but shown for transparency
+            if (allDayEventsCheckbox) {
+                allDayEventsCheckbox.checked = settings.settings_all_day_events !== false; // Default true
+            }
+            if (autoDiscoveryCheckbox) {
+                autoDiscoveryCheckbox.checked = settings.settings_auto_discovery !== false; // Default true
+            }
 
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -140,14 +161,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * 🌟 Save Settings to Storage
+     * 🌟 Save Settings to Storage - Updated for new structure
      */
     async function saveSettings() {
         try {
             const settings = {
                 settings_auto_sync: autoSyncCheckbox.checked,
-                settings_sync_frequency: parseInt(syncFrequencySelect.value),
-                settings_create_reminders: createRemindersCheckbox.checked
+                settings_create_reminders: createRemindersCheckbox.checked,
+                // Advanced settings are always enabled but stored for consistency
+                settings_all_day_events: allDayEventsCheckbox ? allDayEventsCheckbox.checked : true,
+                settings_auto_discovery: autoDiscoveryCheckbox ? autoDiscoveryCheckbox.checked : true,
+                // Store the last save timestamp
+                settings_last_updated: new Date().toISOString()
             };
 
             await chrome.storage.local.set(settings);
@@ -168,6 +193,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 saveSettingsBtn.textContent = originalText;
                 saveSettingsBtn.className = 'button';
             }, 2000);
+
+            // Update auto-sync status to reflect changes
+            setTimeout(updateAutoSyncStatus, 1000);
 
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -273,7 +301,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * 🌟 Assignment Data Statistics
+     * 🌟 Enhanced Assignment Data Statistics
      */
     async function showDataStatistics() {
         try {
@@ -282,8 +310,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             let totalAssignments = 0;
             let courseCount = new Set();
+            let semesterCount = new Set();
             let oldestExtraction = null;
             let newestExtraction = null;
+            let methodCount = {};
 
             assignmentKeys.forEach(key => {
                 const data = storage[key];
@@ -292,7 +322,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     data.assignments.forEach(assignment => {
                         if (assignment.course) courseCount.add(assignment.course);
+                        if (assignment.semester) semesterCount.add(assignment.semester);
                     });
+                }
+                
+                // Track extraction methods
+                if (data.method) {
+                    methodCount[data.method] = (methodCount[data.method] || 0) + 1;
                 }
                 
                 if (data.extractedAt) {
@@ -306,21 +342,81 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            let statsMessage = `📊 DATA STATISTICS\n\n`;
-            statsMessage += `Total assignments: ${totalAssignments}\n`;
-            statsMessage += `Unique courses: ${courseCount.size}\n`;
-            statsMessage += `Storage entries: ${assignmentKeys.length}\n\n`;
-            
-            if (oldestExtraction) {
-                statsMessage += `Oldest data: ${oldestExtraction.toLocaleString()}\n`;
-            }
-            if (newestExtraction) {
-                statsMessage += `Newest data: ${newestExtraction.toLocaleString()}\n`;
-            }
-            
-            statsMessage += `\nCourses: ${Array.from(courseCount).join(', ') || 'None'}`;
+            // Get sync statistics
+            const syncStats = await chrome.storage.local.get(['last_auto_sync', 'last_sync_results']);
 
-            alert(statsMessage);
+            let statsMessage = `📊 GRADESCOPE TO CAL STATISTICS\n\n`;
+            statsMessage += `📚 Assignment Data:\n`;
+            statsMessage += `• Total assignments: ${totalAssignments}\n`;
+            statsMessage += `• Unique courses: ${courseCount.size}\n`;
+            statsMessage += `• Semesters covered: ${semesterCount.size}\n`;
+            statsMessage += `• Storage entries: ${assignmentKeys.length}\n\n`;
+            
+            if (Object.keys(methodCount).length > 0) {
+                statsMessage += `🔍 Extraction Methods:\n`;
+                Object.entries(methodCount).forEach(([method, count]) => {
+                    const methodName = method.includes('dashboard') ? 'Dashboard Auto-Discovery' : 'Individual Course Pages';
+                    statsMessage += `• ${methodName}: ${count} extractions\n`;
+                });
+                statsMessage += `\n`;
+            }
+            
+            if (oldestExtraction && newestExtraction) {
+                statsMessage += `📅 Data Timeline:\n`;
+                statsMessage += `• First extraction: ${oldestExtraction.toLocaleString()}\n`;
+                statsMessage += `• Latest extraction: ${newestExtraction.toLocaleString()}\n\n`;
+            }
+            
+            if (syncStats.last_auto_sync) {
+                const lastSync = new Date(syncStats.last_auto_sync);
+                statsMessage += `🔄 Last Calendar Sync: ${lastSync.toLocaleString()}\n`;
+                
+                if (syncStats.last_sync_results) {
+                    const r = syncStats.last_sync_results;
+                    statsMessage += `• Results: ${r.created} created, ${r.skipped} skipped, ${r.errors} errors\n\n`;
+                }
+            }
+            
+            if (courseCount.size > 0) {
+                statsMessage += `📖 Courses:\n${Array.from(courseCount).map(course => `• ${course}`).join('\n')}`;
+            }
+
+            // Create a scrollable dialog for better readability
+            const newWindow = window.open('', '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+            if (newWindow) {
+                newWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Gradescope to Cal - Statistics</title>
+                        <style>
+                            body { 
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                                padding: 20px; 
+                                white-space: pre-wrap; 
+                                line-height: 1.4;
+                                background: #f8f9fa;
+                            }
+                            .stats-container {
+                                background: white;
+                                padding: 20px;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="stats-container">
+                            ${statsMessage.replace(/\n/g, '<br>')}
+                        </div>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
+            } else {
+                // Fallback to alert if popup is blocked
+                alert(statsMessage);
+            }
+
         } catch (error) {
             alert('Error getting statistics: ' + error.message);
         }
@@ -334,15 +430,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     clearAllBtn.addEventListener('click', clearAllData);
     saveSettingsBtn.addEventListener('click', saveSettings);
 
-    // 🌟 Enhanced event listeners
+    // 🌟 Enhanced event listeners - Updated for new structure
     autoSyncCheckbox.addEventListener('change', saveSettings);
-    syncFrequencySelect.addEventListener('change', saveSettings);
     createRemindersCheckbox.addEventListener('change', saveSettings);
 
-    // Add statistics button functionality (if it exists in HTML)
-    const statsBtn = document.getElementById('showStats');
-    if (statsBtn) {
-        statsBtn.addEventListener('click', showDataStatistics);
+    // Statistics button functionality
+    if (showStatsBtn) {
+        showStatsBtn.addEventListener('click', showDataStatistics);
+    }
+
+    // Advanced settings are disabled but show current state
+    if (allDayEventsCheckbox) {
+        allDayEventsCheckbox.addEventListener('change', (e) => {
+            // Prevent changes to optimized settings
+            e.preventDefault();
+            allDayEventsCheckbox.checked = true;
+        });
+    }
+    
+    if (autoDiscoveryCheckbox) {
+        autoDiscoveryCheckbox.addEventListener('change', (e) => {
+            // Prevent changes to optimized settings
+            e.preventDefault();
+            autoDiscoveryCheckbox.checked = true;
+        });
     }
 
     // Initial load
@@ -350,7 +461,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkAuthStatus();
     await updateAutoSyncStatus();
     
-    // Periodic updates
-    setInterval(checkAuthStatus, 30000);
-    setInterval(updateAutoSyncStatus, 15000);
+    // Periodic updates (less frequent for options page)
+    setInterval(checkAuthStatus, 60000); // Every minute
+    setInterval(updateAutoSyncStatus, 30000); // Every 30 seconds
+    
+    console.log('✅ Enhanced Options page initialized with 24-hour auto-sync support');
 });
