@@ -96,3 +96,6 @@ TODO.md
 *.tmp
 *.temp
 *.log
+key.pem
+*.crx
+*.pem

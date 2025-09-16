@@ -56,8 +56,9 @@
       "matches": ["<all_urls>"]
     }
   ],
+  
   "oauth2": {
-  "client_id": "589515007396-aje4t3afip1e9piitlp817t0g9ro4kab.apps.googleusercontent.com",
+  "client_id": "589515007396-0frm2bh6mhobpqiuec8p2dlb2gs10gla.apps.googleusercontent.com",
   "scopes": [
     "https://www.googleapis.com/auth/calendar"
   ]

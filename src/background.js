@@ -11,7 +11,8 @@ const CONFIG = {
     WEB_CLIENT_ID: '589515007396-nofmk5v0dhegv5fmp1700v8ve94624ih.apps.googleusercontent.com',
     
     // Chrome Extension client (for getAuthToken - Chrome native)
-    CHROME_EXTENSION_CLIENT_ID: '589515007396-aje4t3afip1e9piitlp817t0g9ro4kab.apps.googleusercontent.com',
+    
+    CHROME_EXTENSION_CLIENT_ID: '589515007396-0frm2bh6mhobpqiuec8p2dlb2gs10gla.apps.googleusercontent.com',
     
     SCOPE: 'https://www.googleapis.com/auth/calendar',
     
