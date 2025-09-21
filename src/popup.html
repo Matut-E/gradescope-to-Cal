@@ -13,6 +13,16 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            color: #2d3748;
+            letter-spacing: -0.5px;
         }
 
         .status {
@@ -152,6 +162,21 @@
             background-color: #eee;
             margin: 15px 0;
         }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
         /* Highlight for new features */
         .feature-badge {
@@ -168,12 +193,19 @@
 </head>
 <body>
     <div class="header">
-        <h3>📅 Gradescope to Cal</h3>
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0;">Gradescope to Cal</h3>
         <span class="feature-badge">Auto-Sync Ready</span>
     </div>
 
+
     <div id="status" class="status info">
         <div>🔍 Checking for assignments...</div>
+    </div>
+
+    <div class="section" style="padding: 10px 0; border-bottom: none;">
+        <a href="https://gradescope.com" target="_blank" class="button" style="background-color: #f8f9fa; color: #333; border: 1px solid #dee2e6; font-size: 12px; padding: 8px 16px;">
+            🎯 Go to Gradescope
+        </a>
     </div>
 
     <!-- Assignment Extraction Section -->
@@ -208,16 +240,6 @@
         <button id="calendarSync" class="button primary" disabled>
             📅 Sync to Calendar (All-Day Events)
         </button>
-    </div>
-
-    <!-- 🌟 REORDERED: Auto-Sync Section (now comes AFTER Calendar Sync) -->
-    <!-- This section will be dynamically inserted by JavaScript in the correct position -->
-
-    <div class="footer-enhanced">
-        <strong>✨ New Features:</strong><br>
-        • All-day events for better visibility<br>
-        • Automatic background sync every 30 minutes<br>
-        • "Set it and forget it" functionality
     </div>
 
     <div class="footer">
