@@ -110,6 +110,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
+     * Update extract button based on current page context
+     */
+    async function updateExtractButton() {
+        try {
+            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            const isOnGradescope = tab?.url?.includes('gradescope.com');
+            
+            if (!isOnGradescope) {
+                manualSyncBtn.textContent = '🎯 Go to Gradescope';
+                manualSyncBtn.onclick = () => {
+                    chrome.tabs.create({ url: 'https://gradescope.com' });
+                    window.close(); // Close popup after navigation
+                };
+            } else {
+                manualSyncBtn.textContent = '🔄 Extract Assignments Now';
+                manualSyncBtn.onclick = triggerManualSync;
+            }
+        } catch (error) {
+            console.error('Error updating extract button:', error);
+            // Fallback to extraction mode
+            manualSyncBtn.textContent = '🔄 Extract Assignments Now';
+            manualSyncBtn.onclick = triggerManualSync;
+        }
+    }
+
+    /**
      * Animated progress indicator
      */
     function startProgressAnimation() {
@@ -161,21 +187,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isOnGradescope = tab?.url?.includes('gradescope.com');
             
             if (!hasData && !hasAuth && !isOnGradescope) {
-                updateStatus('👋 Welcome! Visit Gradescope dashboard to get started', 'info');
+                updateStatus('👋 Welcome! Use the button below to get started', 'info');
                 showFirstTimeHelp();
             } else if (!hasData && isOnGradescope) {
-                updateStatus('🔄 Extension starting up... assignments will appear shortly', 'info');
-                
-                setTimeout(async () => {
-                    const newAssignments = await getAllStoredAssignments();
-                    if (newAssignments.length === 0) {
-                        updateStatus('🔄 Still extracting... this may take a moment on first use', 'info');
-                        
-                        setTimeout(() => {
-                            updateStatus('💡 Try clicking "Extract Assignments Now" if data doesn\'t appear', 'info');
-                        }, 600);
-                    }
-                }, 600);
+                updateStatus('🔄 Perfect! Click "Extract Assignments Now" below', 'info');
+            } else if (!hasData && !isOnGradescope) {
+                updateStatus('📍 Click the button below to visit Gradescope first', 'info');
             }
             
         } catch (error) {
@@ -184,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * Show first-time setup help
+     * Show first-time setup help - updated for smart button
      */
     function showFirstTimeHelp() {
         const helpDiv = document.createElement('div');
@@ -200,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         helpDiv.innerHTML = `
             <strong>🚀 Quick Setup:</strong><br>
-            Just click "Go to Gradescope" below, then connect Google Calendar!
+            Click the blue button below to visit Gradescope, then reopen this popup!
             
             <div style="margin-top: 8px; font-size: 11px; color: #666;">
                 💡 <em>Works best from the main dashboard page</em>
@@ -271,23 +288,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * Smart status messaging based on current page
+     * Smart status messaging - simplified since button is now context-aware
      */
     function updateStatusBasedOnPage() {
+        // This function is now much simpler since the button handles context
         chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
             if (tabs[0] && tabs[0].url) {
                 const url = tabs[0].url;
                 
-                if (url.includes('gradescope.com')) {
-                    if (url.includes('/courses/') && !url.endsWith('/')) {
-                        updateStatus('🔄 On course page - assignments will be extracted automatically', 'info');
-                    } else if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
-                        updateStatus('🏠 Perfect! Dashboard detected - all courses will be auto-discovered', 'success');
-                    } else {
-                        updateStatus('🔍 On Gradescope - navigate to dashboard for full auto-discovery', 'info');
-                    }
+                if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
+                    updateStatus('🏠 Perfect! Dashboard detected - ready for extraction', 'success');
+                } else if (url.includes('gradescope.com')) {
+                    updateStatus('📍 On Gradescope - ready for extraction', 'info');
                 } else {
-                    updateStatus('🎯 Visit your Gradescope dashboard for automatic course discovery', 'info');
+                    updateStatus('🎯 Ready to go to Gradescope', 'info');
                 }
             }
         });
@@ -628,6 +642,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            if (!tab.url.includes('gradescope.com')) {
+                updateStatus('❌ Use the button above to go to Gradescope first', 'warning');
+                return;
+            }
+            
             if (tab.url.includes('gradescope.com') && (tab.url.endsWith('/') || tab.url.includes('/account'))) {
                 updateStatus('🏠 Dashboard detected - starting full auto-discovery...', 'info');
             } else if (tab.url.includes('/courses/')) {
@@ -753,6 +772,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await countStoredAssignments();
     await checkAuthStatus();
     await updateAutoSyncStatus();
+    await updateExtractButton();
     
     // Show loading state if on Gradescope
     await showLoadingStateIfOnGradescope();
@@ -761,4 +781,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(checkAuthStatus, 30000);
     setInterval(updateAutoSyncStatus, 10000);
     setInterval(countStoredAssignments, 5000);
+    setInterval(updateExtractButton, 5000);
 });
