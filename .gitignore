@@ -17,6 +17,9 @@ key.pem
 # Chrome extension private key (auto-generated)
 *.key
 
+#Production Zipping Scripts
+*.ps1
+
 # Development builds
 /dist/
 /build/
