@@ -22,7 +22,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 ## Installation
 
 ### From Chrome Web Store (Recommended)
-*Coming soon - currently in review process*
+[Add from Chrome Store](https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco)
 
 ### Manual Installation (Current)
 1. Download the latest release from [Releases](../../releases)
@@ -43,12 +43,12 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 - [x] Competitive analysis and architecture planning
 - [x] Gradescope assignment data extraction (dashboard + individual courses)
 - [x] Google Calendar API integration with OAuth 2.0
-- [x] Background sync automation (30-minute intervals)
+- [x] Background sync automation (daily intervals intervals)
 - [x] Rich calendar event creation with assignment metadata
 - [x] Smart deduplication and error handling
 - [x] Cross-browser compatibility (Chrome/Chromium-based)
 - [x] Privacy policy and Chrome Web Store preparation
-- [ ] Chrome Web Store publication (in review)
+- [x] Chrome Web Store publication 
 
 ## Technical Architecture
 
