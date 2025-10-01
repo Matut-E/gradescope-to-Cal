@@ -3,6 +3,9 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+
     const statusDiv = document.getElementById('status');
     const authStatusDiv = document.getElementById('authStatus');
     const authenticateBtn = document.getElementById('authenticate');
@@ -28,6 +31,42 @@ document.addEventListener('DOMContentLoaded', async () => {
             return `${minutes} min`;
         }
     }
+
+    // =============================================================================
+    // THEME TOGGLE
+    // =============================================================================
+
+    async function initializeThemeToggle() {
+        // Load saved theme preference
+        const { theme } = await chrome.storage.local.get('theme');
+        const savedTheme = theme || 'light';
+
+        // Apply theme
+        document.body.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        // Add click listener
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+
+    async function toggleTheme() {
+        const currentTheme = document.body.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+        // Update UI
+        document.body.setAttribute('data-theme', newTheme);
+        updateThemeIcon(newTheme);
+
+        // Save preference
+        await chrome.storage.local.set({ theme: newTheme });
+    }
+
+    function updateThemeIcon(theme) {
+        themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+    }
+
+    // Initialize theme toggle
+    await initializeThemeToggle();
 
     // Create auto-sync section
     createAutoSyncSection();
