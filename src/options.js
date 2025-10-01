@@ -4,6 +4,51 @@
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // =============================================================================
+    // THEME TOGGLE (INDEPENDENT FROM POPUP)
+    // =============================================================================
+
+    const optionsThemeToggle = document.getElementById('optionsThemeToggle');
+
+    /**
+     * Initialize options page theme toggle
+     */
+    async function initializeOptionsThemeToggle() {
+        // Load saved theme preference for options page (separate from popup)
+        const { optionsTheme } = await chrome.storage.local.get('optionsTheme');
+        const savedTheme = optionsTheme || 'light';
+
+        // Apply theme
+        document.body.setAttribute('data-theme', savedTheme);
+        updateOptionsThemeIcon(savedTheme);
+
+        // Add click listener
+        optionsThemeToggle.addEventListener('click', toggleOptionsTheme);
+    }
+
+    async function toggleOptionsTheme() {
+        const currentTheme = document.body.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+        // Update UI
+        document.body.setAttribute('data-theme', newTheme);
+        updateOptionsThemeIcon(newTheme);
+
+        // Save preference (independent storage key from popup)
+        await chrome.storage.local.set({ optionsTheme: newTheme });
+    }
+
+    function updateOptionsThemeIcon(theme) {
+        optionsThemeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+    }
+
+    // Initialize theme on load
+    await initializeOptionsThemeToggle();
+
+    // =============================================================================
+    // EXISTING OPTIONS PAGE FUNCTIONALITY
+    // =============================================================================
+
     const authStatus = document.getElementById('authStatus');
     const authenticateBtn = document.getElementById('authenticate');
     const disconnectBtn = document.getElementById('disconnect');
