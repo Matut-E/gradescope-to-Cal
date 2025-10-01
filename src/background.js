@@ -549,9 +549,8 @@ class GoogleCalendarClient {
                 redirect_uri: redirectUri,
                 code_challenge: codeChallenge,
                 code_challenge_method: 'S256',
-                prompt: 'select_account',
-                access_type: 'offline',    
-                prompt: 'consent' 
+                access_type: 'offline',
+                prompt: 'consent'
             });
 
             const authURL = `https://accounts.google.com/o/oauth2/v2/auth?${authParams}`;
