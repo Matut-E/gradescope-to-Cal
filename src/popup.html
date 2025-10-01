@@ -24,23 +24,54 @@
             --overlay: rgba(0, 0, 0, 0.5);
         }
 
-        /* Dark Mode */
+        /* Dark Mode - Enhanced with Website Aesthetic */
         [data-theme="dark"] {
+            /* Berkeley Colors */
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+
+            /* Backgrounds */
             --bg-primary: #0A0A0B;
             --bg-secondary: #18181B;
             --bg-tertiary: #27272A;
+            --bg-card: rgba(39, 39, 42, 0.6);
+
+            /* Text */
             --text-primary: #F4F4F5;
             --text-secondary: #A1A1AA;
             --text-tertiary: #71717A;
-            --border-color: #3F3F46;
-            --border-light: #27272A;
+
+            /* Borders */
+            --border-color: rgba(244, 244, 245, 0.1);
+            --border-light: rgba(244, 244, 245, 0.05);
+
+            /* Buttons */
             --button-bg: #003262;
             --button-hover: #004A93;
+            --button-secondary-bg: rgba(113, 113, 122, 0.2);
+            --button-secondary-hover: rgba(113, 113, 122, 0.3);
+
+            /* Status Colors */
             --success: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --success-border: rgba(34, 197, 94, 0.3);
+
             --warning: #F59E0B;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --warning-border: rgba(245, 158, 11, 0.3);
+
             --danger: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --danger-border: rgba(239, 68, 68, 0.3);
+
             --info: #3B82F6;
+            --info-bg: rgba(59, 130, 246, 0.1);
+            --info-border: rgba(59, 130, 246, 0.3);
+
+            /* Shadows & Effects */
             --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+            --shadow-gold: 0 4px 15px rgba(253, 181, 21, 0.3);
             --overlay: rgba(10, 10, 11, 0.8);
         }
 
@@ -93,51 +124,70 @@
             transform: scale(1.1);
         }
 
+        /* Enhanced Header in Dark Mode */
+        [data-theme="dark"] .header {
+            background: linear-gradient(135deg, rgba(0, 50, 98, 0.1) 0%, rgba(39, 39, 42, 0.1) 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin: -10px -10px 20px -10px;
+        }
+
+        /* Enhanced Status Messages */
         .status {
-            padding: 10px;
-            border-radius: 4px;
+            padding: 12px;
+            border-radius: 8px;
             margin-bottom: 15px;
             text-align: center;
+            transition: all 0.2s;
         }
 
         .status.success {
-            background-color: rgba(40, 167, 69, 0.1);
+            background-color: var(--success-bg, rgba(40, 167, 69, 0.1));
             color: var(--success);
-            border: 1px solid rgba(40, 167, 69, 0.3);
+            border: 1px solid var(--success-border, rgba(40, 167, 69, 0.3));
         }
 
         .status.info {
-            background-color: rgba(23, 162, 184, 0.1);
+            background-color: var(--info-bg, rgba(23, 162, 184, 0.1));
             color: var(--info);
-            border: 1px solid rgba(23, 162, 184, 0.3);
+            border: 1px solid var(--info-border, rgba(23, 162, 184, 0.3));
         }
 
         .status.warning {
-            background-color: rgba(255, 193, 7, 0.1);
+            background-color: var(--warning-bg, rgba(255, 193, 7, 0.1));
             color: var(--warning);
-            border: 1px solid rgba(255, 193, 7, 0.3);
+            border: 1px solid var(--warning-border, rgba(255, 193, 7, 0.3));
         }
 
+        [data-theme="dark"] .status {
+            backdrop-filter: blur(10px);
+        }
+
+        /* Enhanced Buttons */
         .button {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background-color: var(--button-bg);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             margin-bottom: 10px;
             font-size: 14px;
+            font-weight: 500;
             text-decoration: none;
+            transition: all 0.2s ease;
         }
 
         .button:hover {
             background-color: var(--button-hover);
+            transform: translateY(-1px);
         }
 
         .button:disabled {
             background-color: var(--text-secondary);
             cursor: not-allowed;
+            opacity: 0.6;
         }
 
         .button.primary {
@@ -156,6 +206,25 @@
             background-color: #545b62;
         }
 
+        [data-theme="dark"] .button {
+            background: linear-gradient(135deg, var(--berkeley-blue), #004A93);
+            box-shadow: 0 2px 8px rgba(0, 50, 98, 0.3);
+        }
+
+        [data-theme="dark"] .button:hover {
+            box-shadow: 0 4px 12px rgba(0, 50, 98, 0.5);
+            transform: translateY(-2px);
+        }
+
+        [data-theme="dark"] .button.secondary {
+            background: var(--button-secondary-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .button.secondary:hover {
+            background: var(--button-secondary-hover);
+        }
+
         .assignment-count {
             font-size: 12px;
             color: var(--text-secondary);
@@ -163,6 +232,7 @@
             margin-bottom: 15px;
         }
 
+        /* Enhanced Sections */
         .section {
             margin-bottom: 20px;
             border-bottom: 1px solid var(--border-light);
@@ -181,6 +251,24 @@
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        [data-theme="dark"] .section {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        [data-theme="dark"] .section:last-child {
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .feature-badge {
+            background: linear-gradient(45deg, var(--berkeley-blue), var(--california-gold));
+            box-shadow: var(--shadow-gold);
         }
 
         /* 🌟 Auto-Sync Specific Styles */
