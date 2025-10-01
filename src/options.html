@@ -4,39 +4,127 @@
     <meta charset="utf-8">
     <title>Gradescope Calendar Sync - Settings</title>
     <style>
+        /* Theme Variables */
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-tertiary: #adb5bd;
+            --border-color: #dee2e6;
+            --border-light: #eee;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            /* Berkeley Colors */
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+
+            /* Backgrounds */
+            --bg-primary: #0A0A0B;
+            --bg-secondary: #18181B;
+            --bg-tertiary: #27272A;
+            --bg-card: rgba(39, 39, 42, 0.6);
+
+            /* Text */
+            --text-primary: #F4F4F5;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+
+            /* Borders */
+            --border-color: rgba(244, 244, 245, 0.1);
+            --border-light: rgba(244, 244, 245, 0.05);
+
+            /* Buttons */
+            --button-bg: #003262;
+            --button-hover: #004A93;
+
+            /* Status Colors */
+            --success: #22C55E;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+
+            /* Shadows & Effects */
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             max-width: 600px;
             margin: 0 auto;
             padding: 40px 20px;
             line-height: 1.6;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 20px;
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
         }
 
         .header {
             text-align: center;
             margin-bottom: 40px;
+            position: relative;
         }
 
         .header h1 {
             margin: 0;
-            color: #333;
+            color: var(--text-primary);
         }
 
         .header p {
-            color: #666;
+            color: var(--text-secondary);
             margin: 10px 0 0 0;
         }
 
         .section {
-            background: #f8f9fa;
+            background: var(--bg-secondary);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        [data-theme="dark"] .section {
+            border: 1px solid var(--border-color);
         }
 
         .section h2 {
             margin-top: 0;
-            color: #333;
+            color: var(--text-primary);
             font-size: 18px;
         }
 
@@ -53,10 +141,22 @@
             border: 1px solid #c3e6cb;
         }
 
+        [data-theme="dark"] .status.success {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
         .status.info {
             background-color: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
+        }
+
+        [data-theme="dark"] .status.info {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+            border-color: rgba(59, 130, 246, 0.3);
         }
 
         .status.warning {
@@ -65,8 +165,14 @@
             border: 1px solid #ffeaa7;
         }
 
+        [data-theme="dark"] .status.warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
         .button {
-            background-color: #007bff;
+            background-color: var(--button-bg);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -75,19 +181,21 @@
             font-size: 14px;
             margin-right: 10px;
             margin-bottom: 10px;
+            transition: all 0.2s;
         }
 
         .button:hover {
-            background-color: #0056b3;
+            background-color: var(--button-hover);
         }
 
         .button:disabled {
-            background-color: #6c757d;
+            background-color: var(--text-secondary);
             cursor: not-allowed;
+            opacity: 0.6;
         }
 
         .button.danger {
-            background-color: #dc3545;
+            background-color: var(--danger);
         }
 
         .button.danger:hover {
@@ -95,18 +203,34 @@
         }
 
         .button.success {
-            background-color: #28a745;
+            background-color: var(--success);
         }
 
         .button.success:hover {
             background-color: #218838;
         }
 
+        [data-theme="dark"] .button {
+            background: linear-gradient(135deg, var(--berkeley-blue), #004A93);
+            box-shadow: 0 2px 8px rgba(0, 50, 98, 0.3);
+        }
+
+        [data-theme="dark"] .button:hover {
+            box-shadow: 0 4px 12px rgba(0, 50, 98, 0.5);
+            transform: translateY(-2px);
+        }
+
         .info-box {
-            background: #e9ecef;
-            border-left: 4px solid #007bff;
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--button-bg);
             padding: 15px;
             margin: 15px 0;
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .info-box {
+            background: rgba(39, 39, 42, 0.6);
+            border-left-color: var(--berkeley-blue);
         }
 
         .optimization-box {
@@ -117,21 +241,39 @@
             border-radius: 4px;
         }
 
+        [data-theme="dark"] .optimization-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--info);
+        }
+
         .optimization-box h4 {
             margin-top: 0;
             color: #0056b3;
         }
 
+        [data-theme="dark"] .optimization-box h4 {
+            color: var(--info);
+        }
+
         .privacy-section {
-            background: #f1f3f4;
+            background: var(--bg-tertiary);
             border-left: 4px solid #34a853;
             padding: 20px;
             margin: 20px 0;
         }
 
+        [data-theme="dark"] .privacy-section {
+            background: rgba(39, 39, 42, 0.6);
+            border-left-color: var(--success);
+        }
+
         .privacy-section h3 {
             color: #1a73e8;
             margin-top: 0;
+        }
+
+        [data-theme="dark"] .privacy-section h3 {
+            color: var(--info);
         }
 
         .setting-item {
@@ -143,26 +285,45 @@
 
         .setting-item label {
             font-weight: 500;
-            color: #333;
+            color: var(--text-primary);
         }
 
         .setting-item input[type="checkbox"] {
             transform: scale(1.2);
         }
 
+        /* Dark mode for form inputs */
+        [data-theme="dark"] input[type="text"],
+        [data-theme="dark"] input[type="number"],
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] input[type="text"]:focus,
+        [data-theme="dark"] input[type="number"]:focus,
+        [data-theme="dark"] select:focus,
+        [data-theme="dark"] textarea:focus {
+            outline: 2px solid var(--berkeley-blue);
+            border-color: var(--berkeley-blue);
+        }
+
         .setting-description {
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
             margin-top: 5px;
             line-height: 1.4;
         }
 
         code {
-            background: #f1f3f4;
+            background: var(--bg-tertiary);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 13px;
+            color: var(--text-primary);
         }
 
         .enhanced-feature {
@@ -192,6 +353,11 @@
     </style>
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="optionsThemeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        🌙
+    </button>
+
     <div class="header">
         <h1>Gradescope to Cal - Settings</h1>
         <p>Automatically sync your Gradescope assignments to Google Calendar</p>
