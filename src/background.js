@@ -18,7 +18,7 @@ const CONFIG = {
     // Chrome Extension clients - mapped by extension ID
     CHROME_EXTENSION_CLIENTS: {
         // Development version (unpacked extension)
-        'pembhpamnbbklhjdimchmgoogfddabbi': '589515007396-aje4t3afip1e9piitlp817t0g9ro4kab.apps.googleusercontent.com',
+        'daelaebdndkaepjmcffbijdffmmbmnlh': '589515007396-h3m48dfo08d16b0t4d2l0bkindklukru.apps.googleusercontent.com',
         // Chrome Web Store version  
         'bbepekfgnpdfclkpfoojmfclnbkkbbco': '589515007396-0frm2bh6mhobpqiuec8p2dlb2gs10gla.apps.googleusercontent.com'
     },
