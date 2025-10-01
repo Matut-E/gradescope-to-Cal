@@ -3,26 +3,94 @@
 <head>
     <meta charset="utf-8">
     <style>
+        /* Theme Variables */
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-tertiary: #adb5bd;
+            --border-color: #dee2e6;
+            --border-light: #eee;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --overlay: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --bg-primary: #0A0A0B;
+            --bg-secondary: #18181B;
+            --bg-tertiary: #27272A;
+            --text-primary: #F4F4F5;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+            --border-color: #3F3F46;
+            --border-light: #27272A;
+            --button-bg: #003262;
+            --button-hover: #004A93;
+            --success: #22C55E;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --overlay: rgba(10, 10, 11, 0.8);
+        }
+
         body {
             width: 320px;
             padding: 20px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .header {
             text-align: center;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
         }
 
         .header h3 {
             font-size: 20px;
             font-weight: 700;
             margin: 0;
-            color: #2d3748;
+            color: var(--text-primary);
             letter-spacing: -0.5px;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
         }
 
         .status {
@@ -33,47 +101,47 @@
         }
 
         .status.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(40, 167, 69, 0.3);
         }
 
         .status.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+            border: 1px solid rgba(23, 162, 184, 0.3);
         }
 
         .status.warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--warning);
+            border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
         .button {
             width: 100%;
             padding: 10px;
-            background-color: #007bff;
+            background-color: var(--button-bg);
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             margin-bottom: 10px;
             font-size: 14px;
-            text-decoration: none; 
+            text-decoration: none;
         }
 
         .button:hover {
-            background-color: #0056b3;
+            background-color: var(--button-hover);
         }
 
         .button:disabled {
-            background-color: #6c757d;
+            background-color: var(--text-secondary);
             cursor: not-allowed;
         }
 
         .button.primary {
-            background-color: #28a745;
+            background-color: var(--success);
         }
 
         .button.primary:hover {
@@ -81,7 +149,7 @@
         }
 
         .button.secondary {
-            background-color: #6c757d;
+            background-color: var(--text-secondary);
         }
 
         .button.secondary:hover {
@@ -90,14 +158,14 @@
 
         .assignment-count {
             font-size: 12px;
-            color: #666;
+            color: var(--text-secondary);
             text-align: center;
             margin-bottom: 15px;
         }
 
         .section {
             margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-light);
             padding-bottom: 15px;
         }
 
@@ -109,7 +177,7 @@
         .section-title {
             font-weight: bold;
             margin-bottom: 10px;
-            color: #333;
+            color: var(--text-primary);
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -119,14 +187,14 @@
         .auto-sync-details {
             margin-top: 10px;
             padding: 8px;
-            background-color: #f8f9fa;
+            background-color: var(--bg-secondary);
             border-radius: 4px;
-            border-left: 3px solid #007bff;
+            border-left: 3px solid var(--button-bg);
         }
 
         .auto-sync-info {
             font-size: 11px;
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.4;
         }
 
@@ -137,30 +205,30 @@
 
         /* Enhanced status indicators */
         .status.auto-sync-enabled {
-            background-color: #d1f2eb;
-            color: #0c5460;
-            border: 1px solid #7dcea0;
+            background-color: rgba(34, 197, 94, 0.1);
+            color: var(--info);
+            border: 1px solid rgba(34, 197, 94, 0.3);
         }
 
         .footer {
             margin-top: 15px;
             text-align: center;
             font-size: 12px;
-            color: #888;
+            color: var(--text-tertiary);
         }
 
         .footer-enhanced {
             font-size: 11px;
-            color: #999;
+            color: var(--text-tertiary);
             text-align: center;
             margin-top: 10px;
             padding-top: 10px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--border-light);
         }
 
         .divider {
             height: 1px;
-            background-color: #eee;
+            background-color: var(--border-light);
             margin: 15px 0;
         }
         .spinner {
@@ -194,6 +262,9 @@
 </head>
 <body>
     <div class="header">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+            🌙
+        </button>
         <h3 style="font-size: 18px; font-weight: 600; margin: 0;">Gradescope to Cal</h3>
         <span class="feature-badge">Auto-Sync Ready</span>
     </div>
