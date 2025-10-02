@@ -4,165 +4,402 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Gradescope to Cal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            color: #333;
+        :root {
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+            --blue-950: #000B1A;
+            --blue-900: #001731;
+            --blue-600: #004A93;
+            --gray-950: #0A0A0B;
+            --gray-900: #18181B;
+            --gray-800: #27272A;
+            --gray-700: #3F3F46;
+            --gray-600: #52525B;
+            --gray-500: #71717A;
+            --gray-400: #A1A1AA;
+            --gray-300: #D4D4D8;
+            --gray-200: #E4E4E7;
+            --gray-100: #F4F4F5;
+            --success: #22C55E;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-12: 3rem;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
         }
-        h1 { color: #2d3748; }
-        h2 { color: #4a5568; margin-top: 2rem; }
-        .header { text-align: center; margin-bottom: 2rem; }
-        .back-link { display: inline-block; margin-bottom: 2rem; color: #3182ce; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            font-size: 1.125rem;
+            line-height: 1.75;
+            color: var(--gray-100);
+            background: linear-gradient(135deg, var(--blue-900) 0%, var(--gray-950) 100%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+        }
+
+        .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 11, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(244, 244, 245, 0.1);
+            z-index: 1000;
+            padding: var(--space-4) var(--space-6);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-100);
+            text-decoration: none;
+        }
+
+        .back-link {
+            color: var(--california-gold);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: calc(80px + var(--space-8)) var(--space-6) var(--space-12);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: var(--space-12);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: var(--space-4);
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-300) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--gray-400);
+            font-style: italic;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            color: var(--california-gold);
+            margin-top: var(--space-12);
+            margin-bottom: var(--space-6);
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-family: var(--font-display);
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+            font-weight: 600;
+            color: var(--gray-200);
+            margin-top: var(--space-8);
+            margin-bottom: var(--space-4);
+            line-height: 1.3;
+        }
+
+        p {
+            color: var(--gray-300);
+            margin-bottom: var(--space-6);
+        }
+
+        ul, ol {
+            margin-bottom: var(--space-6);
+            padding-left: var(--space-8);
+        }
+
+        li {
+            color: var(--gray-300);
+            margin-bottom: var(--space-3);
+        }
+
+        strong {
+            color: var(--gray-100);
+            font-weight: 600;
+        }
+
+        code {
+            background: rgba(253, 181, 21, 0.1);
+            border: 1px solid rgba(253, 181, 21, 0.3);
+            border-radius: 4px;
+            padding: 0.2rem 0.4rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--california-gold);
+        }
+
+        a {
+            color: var(--california-gold);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            opacity: 0.8;
+        }
+
+        .card {
+            background: rgba(39, 39, 42, 0.6);
+            border: 1px solid rgba(244, 244, 245, 0.1);
+            border-radius: var(--radius-lg);
+            padding: var(--space-8);
+            backdrop-filter: blur(10px);
+            margin-bottom: var(--space-6);
+        }
+
+        .highlight-box {
+            background: rgba(34, 197, 94, 0.05);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-left: 4px solid var(--success);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .highlight-box p {
+            margin-bottom: 0;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: rgba(244, 244, 245, 0.1);
+            margin: var(--space-12) 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: var(--space-8) var(--space-6);
+            color: var(--gray-500);
+            font-size: 0.95rem;
+        }
+
+        footer a {
+            color: var(--gray-400);
+            margin: 0 var(--space-3);
+        }
+
+        @media (max-width: 768px) {
+            .nav-logo {
+                font-size: 1.25rem;
+            }
+
+            .container {
+                padding-top: calc(60px + var(--space-6));
+            }
+
+            ul, ol {
+                padding-left: var(--space-6);
+            }
+        }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-link">← Back to Homepage</a>
-    
-    <div class="header">
-        <h1>Privacy Policy for Gradescope to Cal</h1>
-        <p><em>Last Updated: September 2025</em></p>
+    <header class="nav-header">
+        <nav class="nav-container">
+            <a href="index.html" class="nav-logo">Gradescope to Cal</a>
+            <a href="index.html" class="back-link">← Back to Homepage</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <h1>Privacy Policy</h1>
+            <p><em>Last Updated: September 2025</em></p>
+        </div>
+
+        <h2>Overview</h2>
+        <p>Gradescope to Cal is a browser extension that automatically syncs your Gradescope assignments to Google Calendar. We are committed to protecting your privacy through a zero-server architecture that processes all data locally in your browser.</p>
+
+        <h2>Information Collection and Use</h2>
+
+        <h3>What We Collect</h3>
+        <ul>
+            <li><strong>Assignment Data</strong>: Assignment titles, due dates, course names, course IDs, assignment URLs, and assignment IDs from Gradescope pages you visit</li>
+            <li><strong>Extraction Metadata</strong>: Timestamps of when data was extracted, source page URLs, and extraction method used</li>
+            <li><strong>Authentication Tokens</strong>: Google Calendar OAuth access and refresh tokens stored securely in your browser</li>
+            <li><strong>Auto-Sync Data</strong>: Timestamps and results of automatic background sync operations</li>
+            <li><strong>User Preferences</strong>: Sync frequency settings, notification preferences, and auto-sync enable/disable status</li>
+        </ul>
+
+        <h3>What We DON'T Collect</h3>
+        <div class="highlight-box">
+            <ul style="margin-bottom: 0;">
+                <li><strong>Personal Information</strong>: We do not collect names, email addresses, or any personally identifiable information</li>
+                <li><strong>Browsing History</strong>: We only access Gradescope.com pages when yous visit them</li>
+                <li><strong>Assignment Content</strong>: We do not read or store assignment descriptions, submissions, or grades</li>
+                <li><strong>Analytics</strong>: We do not track usage, collect statistics, or send any data to external servers</li>
+            </ul>
+        </div>
+
+        <h2>Data Storage and Processing</h2>
+
+        <h3>Local Processing Only</h3>
+        <ul>
+            <li>All data processing occurs locally in your browser</li>
+            <li>No servers are used to process, store, or transmit your data</li>
+            <li>Assignment data is stored only in your browser's local storage</li>
+            <li>Authentication tokens are stored securely using browser extension APIs</li>
+            <li><strong>Automatic Background Sync</strong>: Every 24 hours, the extension checks locally stored assignment data and syncs new items to your Google Calendar - no external data fetching occurs during this process</li>
+        </ul>
+
+        <h3>Data Retention</h3>
+        <ul>
+            <li>Assignment data is retained until you manually clear it or uninstall the extension</li>
+            <li>Google Calendar authentication tokens are retained until you disconnect or uninstall</li>
+            <li>Auto-sync logs and error data are retained for troubleshooting and automatically cleared periodically</li>
+            <li>No data persists after extension removal</li>
+        </ul>
+
+        <h2>Third-Party Services</h2>
+
+        <h3>Google Calendar API</h3>
+        <ul>
+            <li>We use Google's OAuth 2.0 for authentication (industry standard)</li>
+            <li>Calendar events are created directly between your browser and Google's servers</li>
+            <li>We do not intercept, store, or process your Google account information</li>
+            <li>Google's privacy policy applies to your Google Calendar data</li>
+        </ul>
+
+        <h3>Gradescope.com</h3>
+        <ul>
+            <li>We extract publicly visible assignment information from pages you visit</li>
+            <li>No login credentials or private data are accessed</li>
+            <li>We respect Gradescope's rate limits and terms of service</li>
+        </ul>
+
+        <h2>Data Sharing</h2>
+        <div class="highlight-box">
+            <p><strong>We do not share any data with third parties</strong> because:</p>
+            <ul style="margin-bottom: 0;">
+                <li>We operate with zero servers</li>
+                <li>All processing happens locally in your browser</li>
+                <li>We have no analytics, advertising, or tracking mechanisms</li>
+                <li>No data ever leaves your local environment except for direct Google Calendar API calls</li>
+            </ul>
+        </div>
+
+        <h2>Security</h2>
+
+        <h3>Technical Safeguards</h3>
+        <ul>
+            <li>OAuth 2.0 with PKCE for secure Google authentication</li>
+            <li>HTTPS-only communication with Google APIs</li>
+            <li>Secure browser extension storage for sensitive tokens</li>
+            <li>Content Security Policy to prevent code injection</li>
+        </ul>
+
+        <h3>Privacy by Design</h3>
+        <ul>
+            <li>Minimal permission requests (only Gradescope and Google Calendar access)</li>
+            <li>No external dependencies beyond Google Calendar API</li>
+            <li>Open source codebase available for security review</li>
+            <li>Regular security updates through browser extension stores</li>
+        </ul>
+
+        <h2>User Rights and Control</h2>
+
+        <h3>Your Control</h3>
+        <ul>
+            <li><strong>Enable/Disable</strong>: Turn automatic sync on/off at any time</li>
+            <li><strong>Data Deletion</strong>: Clear all stored assignment data and authentication</li>
+            <li><strong>Selective Sync</strong>: Choose which assignments to sync</li>
+            <li><strong>Revoke Access</strong>: Disconnect Google Calendar access instantly</li>
+        </ul>
+
+        <h3>Data Portability</h3>
+        <ul>
+            <li>All assignment data is stored in standard formats</li>
+            <li>You can export your data through the extension interface</li>
+            <li>No vendor lock-in or proprietary data formats</li>
+        </ul>
+
+        <h2>Technical Details for Transparency</h2>
+
+        <h3>Permissions Explained</h3>
+        <ul>
+            <li><code>storage</code>: Store your preferences and assignment data locally</li>
+            <li><code>identity</code>: Handle Google OAuth authentication</li>
+            <li><code>scripting</code>: Inject content scripts to extract assignment data from Gradescope pages</li>
+            <li><code>activeTab</code>: Access the currently active Gradescope tab for assignment extraction</li>
+            <li><code>alarms</code>: Schedule automatic background sync every 24 hours</li>
+            <li><code>*://*.gradescope.com/*</code>: Access Gradescope pages to extract assignment data</li>
+            <li><code>https://www.googleapis.com/*</code>: Communicate with Google Calendar API</li>
+        </ul>
+
+        <h3>Data Flow</h3>
+        <div class="card">
+            <ol style="margin-bottom: 0;">
+                <li>You visit Gradescope → Extension extracts assignment data → Stored locally</li>
+                <li>Authentication → Direct connection to Google → Tokens stored locally</li>
+                <li>Sync → Direct API call to Google Calendar → Events created in your calendar</li>
+            </ol>
+        </div>
+        <p><strong>No intermediate servers or third-party data processing</strong></p>
+
+        <h2>Contact Information</h2>
+        <div class="card">
+            <p><strong>Data Controller</strong>: Gradescope to Cal Development Team<br>
+            <strong>Support Email</strong>: <a href="mailto:gradescope.to.cal@gmail.com">gradescope.to.cal@gmail.com</a><br>
+            <strong>Response Time</strong>: We aim to respond to privacy inquiries within 7 days</p>
+
+            <p style="margin-bottom: 0;">For privacy-related questions or to exercise your rights under GDPR/CCPA, please contact our support email with "Privacy" in the subject line.</p>
+        </div>
+
+        <hr>
+        <footer>
+            <a href="index.html">Homepage</a> •
+            <a href="terms.html">Terms of Service</a> •
+            <a href="mailto:gradescope.to.cal@gmail.com">Support</a>
+        </footer>
     </div>
-
-    <h2>Overview</h2>
-    <p>Gradescope to Cal is a browser extension that automatically syncs your Gradescope assignments to Google Calendar. We are committed to protecting your privacy through a zero-server architecture that processes all data locally in your browser.</p>
-
-    <h2>Information Collection and Use</h2>
-
-    <h3>What We Collect</h3>
-    <ul>
-        <li><strong>Assignment Data</strong>: Assignment titles, due dates, course names, course IDs, assignment URLs, and assignment IDs from Gradescope pages you visit</li>
-        <li><strong>Extraction Metadata</strong>: Timestamps of when data was extracted, source page URLs, and extraction method used</li>
-        <li><strong>Authentication Tokens</strong>: Google Calendar OAuth access and refresh tokens stored securely in your browser</li>
-        <li><strong>Auto-Sync Data</strong>: Timestamps and results of automatic background sync operations</li>
-        <li><strong>User Preferences</strong>: Sync frequency settings, notification preferences, and auto-sync enable/disable status</li>
-    </ul>
-
-    <h3>What We DON'T Collect</h3>
-    <ul>
-        <li><strong>Personal Information</strong>: We do not collect names, email addresses, or any personally identifiable information</li>
-        <li><strong>Browsing History</strong>: We only access Gradescope.com pages when yous visit them</li>
-        <li><strong>Assignment Content</strong>: We do not read or store assignment descriptions, submissions, or grades</li>
-        <li><strong>Analytics</strong>: We do not track usage, collect statistics, or send any data to external servers</li>
-    </ul>
-
-    <h2>Data Storage and Processing</h2>
-
-    <h3>Local Processing Only</h3>
-    <ul>
-        <li>All data processing occurs locally in your browser</li>
-        <li>No servers are used to process, store, or transmit your data</li>
-        <li>Assignment data is stored only in your browser's local storage</li>
-        <li>Authentication tokens are stored securely using browser extension APIs</li>
-        <li><strong>Automatic Background Sync</strong>: Every 24 hours, the extension checks locally stored assignment data and syncs new items to your Google Calendar - no external data fetching occurs during this process</li>
-    </ul>
-
-    <h3>Data Retention</h3>
-    <ul>
-        <li>Assignment data is retained until you manually clear it or uninstall the extension</li>
-        <li>Google Calendar authentication tokens are retained until you disconnect or uninstall</li>
-        <li>Auto-sync logs and error data are retained for troubleshooting and automatically cleared periodically</li>
-        <li>No data persists after extension removal</li>
-    </ul>
-
-    <h2>Third-Party Services</h2>
-
-    <h3>Google Calendar API</h3>
-    <ul>
-        <li>We use Google's OAuth 2.0 for authentication (industry standard)</li>
-        <li>Calendar events are created directly between your browser and Google's servers</li>
-        <li>We do not intercept, store, or process your Google account information</li>
-        <li>Google's privacy policy applies to your Google Calendar data</li>
-    </ul>
-
-    <h3>Gradescope.com</h3>
-    <ul>
-        <li>We extract publicly visible assignment information from pages you visit</li>
-        <li>No login credentials or private data are accessed</li>
-        <li>We respect Gradescope's rate limits and terms of service</li>
-    </ul>
-
-    <h2>Data Sharing</h2>
-    <p><strong>We do not share any data with third parties</strong> because:</p>
-    <ul>
-        <li>We operate with zero servers</li>
-        <li>All processing happens locally in your browser</li>
-        <li>We have no analytics, advertising, or tracking mechanisms</li>
-        <li>No data ever leaves your local environment except for direct Google Calendar API calls</li>
-    </ul>
-
-    <h2>Security</h2>
-
-    <h3>Technical Safeguards</h3>
-    <ul>
-        <li>OAuth 2.0 with PKCE for secure Google authentication</li>
-        <li>HTTPS-only communication with Google APIs</li>
-        <li>Secure browser extension storage for sensitive tokens</li>
-        <li>Content Security Policy to prevent code injection</li>
-    </ul>
-
-    <h3>Privacy by Design</h3>
-    <ul>
-        <li>Minimal permission requests (only Gradescope and Google Calendar access)</li>
-        <li>No external dependencies beyond Google Calendar API</li>
-        <li>Open source codebase available for security review</li>
-        <li>Regular security updates through browser extension stores</li>
-    </ul>
-
-    <h2>User Rights and Control</h2>
-
-    <h3>Your Control</h3>
-    <ul>
-        <li><strong>Enable/Disable</strong>: Turn automatic sync on/off at any time</li>
-        <li><strong>Data Deletion</strong>: Clear all stored assignment data and authentication</li>
-        <li><strong>Selective Sync</strong>: Choose which assignments to sync</li>
-        <li><strong>Revoke Access</strong>: Disconnect Google Calendar access instantly</li>
-    </ul>
-
-    <h3>Data Portability</h3>
-    <ul>
-        <li>All assignment data is stored in standard formats</li>
-        <li>You can export your data through the extension interface</li>
-        <li>No vendor lock-in or proprietary data formats</li>
-    </ul>
-
-    <h2>Technical Details for Transparency</h2>
-
-    <h3>Permissions Explained</h3>
-    <ul>
-        <li><code>storage</code>: Store your preferences and assignment data locally</li>
-        <li><code>identity</code>: Handle Google OAuth authentication</li>
-        <li><code>scripting</code>: Inject content scripts to extract assignment data from Gradescope pages</li>
-        <li><code>activeTab</code>: Access the currently active Gradescope tab for assignment extraction</li>
-        <li><code>alarms</code>: Schedule automatic background sync every 24 hours</li>
-        <li><code>*://*.gradescope.com/*</code>: Access Gradescope pages to extract assignment data</li>
-        <li><code>https://www.googleapis.com/*</code>: Communicate with Google Calendar API</li>
-    </ul>
-
-    <h3>Data Flow</h3>
-    <ol>
-        <li>You visit Gradescope → Extension extracts assignment data → Stored locally</li>
-        <li>Authentication → Direct connection to Google → Tokens stored locally</li>
-        <li>Sync → Direct API call to Google Calendar → Events created in your calendar</li>
-    </ol>
-    <p><strong>No intermediate servers or third-party data processing</strong></p>
-
-    <h2>Contact Information</h2>
-    <p><strong>Data Controller</strong>: Gradescope to Cal Development Team<br>
-    <strong>Support Email</strong>: <a href="mailto:gradescope.to.cal@gmail.com">gradescope.to.cal@gmail.com</a><br>
-    <strong>Response Time</strong>: We aim to respond to privacy inquiries within 7 days</p>
-
-    <p>For privacy-related questions or to exercise your rights under GDPR/CCPA, please contact our support email with "Privacy" in the subject line.</p>
-
-    <hr style="margin: 2rem 0;">
-    <p style="text-align: center; color: #666; font-size: 0.9rem;">
-        <a href="index.html">Homepage</a> • 
-        <a href="terms.html">Terms of Service</a> • 
-        <a href="mailto:gradescope.to.cal@gmail.com">Support</a>
-    </p>
 </body>
 </html>

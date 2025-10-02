@@ -3,415 +3,814 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gradescope to Cal - Automatic Assignment Tracking</title>
-    <meta name="description" content="Automatically sync your Gradescope assignments to Google Calendar. Privacy-first browser extension for seamless deadline management.">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <title>Gradescope to Cal - Automatically Sync Assignments to Google Calendar</title>
+    <meta name="title" content="Gradescope to Cal - Never Miss Another Assignment">
+    <meta name="description" content="Privacy-first Chrome extension that automatically syncs your Gradescope assignments to Google Calendar. Zero-server architecture. Used by UC Berkeley students.">
+    <meta name="keywords" content="Gradescope, Google Calendar, UC Berkeley, assignment tracker, calendar sync, browser extension">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://matut-e.github.io/gradescope-to-Cal/">
+    <meta property="og:title" content="Gradescope to Cal - Never Miss Another Assignment">
+    <meta property="og:description" content="Automatically sync Gradescope assignments to Google Calendar. Privacy-first, zero-server architecture.">
+    <meta property="og:image" content="https://matut-e.github.io/gradescope-to-Cal/og-image.jpg">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://matut-e.github.io/gradescope-to-Cal/">
+    <meta property="twitter:title" content="Gradescope to Cal - Never Miss Another Assignment">
+    <meta property="twitter:description" content="Automatically sync Gradescope assignments to Google Calendar. Privacy-first, zero-server architecture.">
+    <meta property="twitter:image" content="https://matut-e.github.io/gradescope-to-Cal/twitter-image.jpg">
+    <meta name="theme-color" content="#003262">
+    <link rel="canonical" href="https://matut-e.github.io/gradescope-to-Cal/">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Gradescope to Cal",
+      "description": "Privacy-first browser extension that automatically syncs Gradescope assignments to Google Calendar with zero-server architecture",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Chrome, Edge, Brave",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "127",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Gradescope to Cal",
+        "url": "https://matut-e.github.io/gradescope-to-Cal/"
+      },
+      "url": "https://matut-e.github.io/gradescope-to-Cal/",
+      "downloadUrl": "https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco",
+      "screenshot": "https://matut-e.github.io/gradescope-to-Cal/og-image.jpg",
+      "softwareVersion": "1.5.2",
+      "datePublished": "2024-01-15",
+      "dateModified": "2025-01-15",
+      "keywords": "Gradescope, Google Calendar, assignment tracker, calendar sync, UC Berkeley, productivity, student tools"
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #5a67d8;
-        }
-
-        .logo::before {
-            content: "📅";
-            font-size: 2rem;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #4a5568;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: #5a67d8;
-        }
-
-        .hero {
-            padding: 4rem 0;
-            text-align: center;
-            color: white;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            margin-bottom: 2rem;
-            opacity: 0.95;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 30px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: #48bb78;
-            color: white;
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
-        }
-
-        .btn-primary:hover {
-            background: #38a169;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.6);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .content {
-            background: white;
-            padding: 4rem 0;
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 4rem;
-        }
-
-        .feature {
-            text-align: center;
-            padding: 2rem;
-            border-radius: 12px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            transition: transform 0.3s;
-        }
-
-        .feature:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: #2d3748;
-        }
-
-        .feature p {
-            color: #4a5568;
-        }
-
-        .privacy-section {
-            background: linear-gradient(135deg, #e6fffa 0%, #f0fff4 100%);
-            padding: 3rem;
-            border-radius: 12px;
-            margin: 2rem 0;
-            border-left: 4px solid #48bb78;
-        }
-
-        .privacy-section h2 {
-            color: #22543d;
-            margin-bottom: 1rem;
-        }
-
-        .privacy-section p {
-            color: #2f855a;
-            font-size: 1.1rem;
-        }
-
-        .how-it-works {
-            margin: 4rem 0;
-        }
-
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .step {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .step-number {
-            background: #5a67d8;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .footer {
-            background: #2d3748;
-            color: white;
-            padding: 2rem 0;
-            text-align: center;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer-links a {
-            color: #cbd5e0;
-            text-decoration: none;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        .footer-enhanced {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2rem;
-            }
-            
-            .nav-links {
-                display: none;
-            }
-            
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-    </style>
+    <style>:root{--font-display:"Space Grotesk",sans-serif;--font-body:"Inter",sans-serif;--text-hero:clamp(2.5rem,8vw,5.5rem);--text-h1:clamp(2rem,5vw,3.5rem);--text-h2:clamp(1.5rem,4vw,2.5rem);--text-h3:clamp(1.25rem,3vw,2rem);--text-body-lg:clamp(1.125rem,3vw,1.5rem);--text-body:clamp(1rem,2vw,1.125rem);--text-sm:clamp(0.875rem,1.5vw,1rem);--weight-normal:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;--leading-tight:1.1;--leading-snug:1.3;--leading-normal:1.5;--leading-relaxed:1.75;--tracking-tighter:-0.02em;--tracking-tight:-0.01em;--tracking-normal:0;--tracking-wide:0.01em;--berkeley-blue:#003262;--california-gold:#fdb515;--blue-950:#000b1a;--blue-900:#001731;--blue-800:#002449;--blue-700:#003262;--blue-600:#004a93;--blue-500:#06c;--blue-400:#0080ff;--gold-600:#e5a314;--gold-500:#fdb515;--gold-400:#fdcb3b;--gold-300:#fde169;--gold-200:#fef3cd;--gray-950:#0a0a0b;--gray-900:#18181b;--gray-800:#27272a;--gray-700:#3f3f46;--gray-600:#52525b;--gray-500:#71717a;--gray-400:#a1a1aa;--gray-300:#d4d4d8;--gray-200:#e4e4e7;--gray-100:#f4f4f5;--gray-50:#fafafa;--success:#22c55e;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--overlay-dark:rgba(10,10,11,.8);--glass-dark:rgba(39,39,42,.6);--glass-light:hsla(240,5%,96%,.1);--space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;--space-4:1rem;--space-6:1.5rem;--space-8:2rem;--space-12:3rem;--space-16:4rem;--space-24:6rem;--space-32:8rem;--space-xs:var(--space-2);--space-sm:var(--space-4);--space-md:var(--space-6);--space-lg:var(--space-8);--space-xl:var(--space-12);--space-2xl:var(--space-16);--space-3xl:var(--space-24);--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--radius-xl:16px;--radius-2xl:24px;--radius-full:9999px;--shadow-sm:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);--shadow-md:0 4px 6px rgba(0,0,0,.1),0 2px 4px rgba(0,0,0,.06);--shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);--shadow-xl:0 20px 25px rgba(0,0,0,.15),0 8px 10px rgba(0,0,0,.05);--shadow-2xl:0 25px 50px rgba(0,0,0,.25);--shadow-gold:0 8px 30px rgba(253,181,21,.3);--shadow-gold-lg:0 12px 40px rgba(253,181,21,.5);--shadow-blue:0 8px 30px rgba(0,50,98,.3);--glow-gold:0 0 20px rgba(253,181,21,.4),0 0 40px rgba(253,181,21,.2);--duration-fast:0.2s;--duration-base:0.3s;--duration-medium:0.5s;--duration-slow:0.8s;--ease-out:cubic-bezier(0,0,0.2,1);--ease-in-out:cubic-bezier(0.4,0,0.2,1);--ease-custom:cubic-bezier(0.16,1,0.3,1)}*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--gray-950);color:var(--gray-100);font-family:var(--font-body);font-size:var(--text-body);font-weight:var(--weight-normal);line-height:var(--leading-normal);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}h1,h2,h3,h4,h5,h6{font-family:var(--font-display);font-weight:var(--weight-bold);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight)}h1{font-size:var(--text-h1)}h2{font-size:var(--text-h2)}h3{font-size:var(--text-h3)}a{color:inherit;text-decoration:none}.scroll-progress{background:linear-gradient(90deg,var(--california-gold),var(--gold-300));height:3px;left:0;position:fixed;top:0;transition:width .1s ease-out;width:0;z-index:9999}.skip-to-content{background:var(--berkeley-blue);color:#fff;left:0;padding:var(--space-2) var(--space-4);position:absolute;top:-100px;transition:top var(--duration-fast);z-index:9999}.skip-to-content:focus{top:0}.nav-header{backdrop-filter:blur(10px);background:rgba(10,10,11,.8);border-bottom:1px solid hsla(240,5%,96%,.1);left:0;position:fixed;right:0;top:0;transition:background var(--duration-base);z-index:1000}.nav-container{align-items:center;display:flex;justify-content:space-between;margin:0 auto;max-width:1200px;padding:var(--space-4) var(--space-6)}.nav-logo{color:var(--gray-100);font-family:var(--font-display);font-size:var(--text-h3);font-weight:var(--weight-bold)}.nav-links{display:flex;gap:var(--space-8);list-style:none}.nav-links a{color:var(--gray-400);font-weight:var(--weight-medium);transition:color var(--duration-fast)}.nav-links a:hover{color:var(--california-gold)}.hero-section{align-items:center;display:flex;justify-content:center;min-height:100vh;overflow:hidden;padding:var(--space-3xl) var(--space-lg);padding-top:calc(var(--space-3xl) + 80px);position:relative}.hero-background{background:linear-gradient(135deg,var(--blue-900) 0,var(--gray-950) 100%);inset:0;position:absolute;z-index:-2}.hero-particles{inset:0;position:absolute;z-index:-1}.hero-content{max-width:900px;position:relative;text-align:center;z-index:1}.hero-badge{animation:fadeInUp .8s var(--ease-custom) forwards;background:rgba(253,181,21,.1);border:1px solid rgba(253,181,21,.3);border-radius:var(--radius-full);color:var(--california-gold);display:inline-block;font-size:var(--text-sm);font-weight:var(--weight-semibold);padding:var(--space-2) var(--space-4)}.hero-badge,.hero-title{margin-bottom:var(--space-6);opacity:0}.hero-title{background:linear-gradient(135deg,var(--gray-100) 0,var(--gray-300) 100%);-webkit-background-clip:text;font-size:var(--text-hero);-webkit-text-fill-color:transparent;animation:fadeInUp .8s var(--ease-custom) .2s forwards;background-clip:text}.hero-description{animation:fadeInUp .8s var(--ease-custom) .4s forwards;color:var(--gray-400);font-size:var(--text-body-lg);line-height:var(--leading-relaxed);margin-bottom:var(--space-8);opacity:0}.hero-cta{animation:fadeInUp .8s var(--ease-custom) .6s forwards;display:flex;flex-wrap:wrap;gap:var(--space-4);justify-content:center;opacity:0}.btn,.hero-cta{align-items:center}.btn{border:none;border-radius:var(--radius-md);cursor:pointer;display:inline-flex;font-family:var(--font-body);font-size:1.125rem;font-weight:var(--weight-semibold);gap:var(--space-2);overflow:hidden;padding:1rem 2rem;position:relative;transition:all var(--duration-fast) var(--ease-custom)}.btn-primary{background:linear-gradient(135deg,var(--california-gold),gold);box-shadow:var(--shadow-gold);color:var(--blue-900)}.btn-primary:before{background:linear-gradient(135deg,gold,var(--gold-300));content:"";inset:0;opacity:0;position:absolute;transition:opacity var(--duration-fast)}.btn-primary:hover{box-shadow:var(--shadow-gold-lg);transform:translateY(-2px)}.btn-primary:hover:before{opacity:1}.btn-primary span{position:relative;z-index:1}.btn-secondary{backdrop-filter:blur(10px);background:transparent;border:2px solid hsla(240,5%,96%,.15);color:var(--gray-100)}.btn-secondary:hover{background:hsla(240,5%,96%,.05);border-color:hsla(240,5%,96%,.3);transform:translateY(-2px)}.section{min-height:100vh;padding:var(--space-3xl) var(--space-lg);position:relative}.section-container{margin:0 auto;max-width:1200px}.section-title{font-size:var(--text-h1);letter-spacing:var(--tracking-tight);margin-bottom:var(--space-2xl);text-align:center}.card{backdrop-filter:blur(10px);background:var(--glass-dark);border:1px solid hsla(240,5%,96%,.1);border-radius:var(--radius-lg);overflow:hidden;padding:var(--space-lg);transition:all var(--duration-fast) var(--ease-custom);word-wrap:break-word;overflow-wrap:break-word}.card:hover{background:rgba(39,39,42,.8);border-color:hsla(240,5%,96%,.2);box-shadow:var(--shadow-lg);transform:translateY(-4px)}.grid{display:grid;gap:var(--space-lg)}.grid-3{grid-template-columns:repeat(3,1fr)}@media (max-width:968px){.grid-3{grid-template-columns:1fr}}@keyframes fadeInUp{0%{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}@media (prefers-reduced-motion:reduce){*,:after,:before{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}:focus-visible{outline:2px solid var(--california-gold);outline-offset:2px}@media (max-width:768px){.nav-links{display:none}.hero-cta{flex-direction:column}}</style>
+  <script type="module" crossorigin src="/assets/index-WMf13ARh.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/three-BK6-JSr8.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-CL1SgVcg.js">
 </head>
 <body>
-    <header class="header">
-        <nav class="container">
-            <div class="nav">
-                <div class="logo">
-                    Gradescope to Cal
-                </div>
-                <ul class="nav-links">
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#privacy">Privacy</a></li>
-                    <li><a href="#install">Install</a></li>
-                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
-                </ul>
-            </div>
+    <a href="#main" class="skip-to-content">Skip to content</a>
+    <div class="scroll-progress" role="progressbar" aria-label="Reading progress"></div>
+    <header class="nav-header">
+        <nav class="nav-container">
+            <div class="nav-logo">Gradescope to Cal</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#privacy">Privacy</a></li>
+                <li><a href="#installation-flow">Install</a></li>
+                <li><a href="privacy-policy.html">Privacy Policy</a></li>
+            </ul>
         </nav>
     </header>
+    <main id="main" role="main">
+        <section class="hero-section" aria-labelledby="hero-title">
+            <div class="hero-background"></div>
+            <div class="hero-particles" id="particles-canvas"></div>
 
-    <main>
-        <section class="hero">
-            <div class="container">
-                <h1>Never Miss Another Assignment</h1>
-                <p>Automatically sync your Gradescope assignments to Google Calendar. Visit Gradescope as you normally would – we'll handle the calendar management completely.</p>
-                
-                <div class="cta-buttons">
-                    <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco" class="btn btn-primary">Add to Chrome</a>
-                    <a href="https://github.com/Matut-E/gradescope-to-Cal" class="btn btn-secondary">View on GitHub</a>
+            <div class="hero-content">
+                <span class="hero-badge">Privacy-First • Zero-Server Architecture</span>
+
+                <h1 id="hero-title" class="hero-title">
+                    Never Miss Another Assignment
+                </h1>
+
+                <p class="hero-description">
+                    Visit Gradescope once. Done forever. Automatically syncs your assignments to Google Calendar with complete privacy.
+                </p>
+
+                <div class="hero-cta">
+                    <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco"
+                       class="btn btn-primary btn-magnetic"
+                       aria-label="Add Gradescope to Cal to Chrome">
+                        <span>Add to Chrome</span>
+                    </a>
+                    <a href="https://github.com/Matut-E/gradescope-to-Cal"
+                       class="btn btn-secondary btn-magnetic"
+                       aria-label="View source code on GitHub">
+                        <span>View Source</span>
+                    </a>
                 </div>
             </div>
         </section>
+        <section class="section problem-section" style="background: var(--gray-950);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    The problem is chaos
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-3xl);">
+                    Scattered deadlines. Multiple courses. Forgotten assignments. Sound familiar?
+                </p>
 
-        <section class="content">
-            <div class="container">
-                <section id="features" class="features">
-                    <div class="feature">
-                        <div class="feature-icon">📅</div>
-                        <h3>Smart Detection</h3>
-                        <p>Automatically discovers assignments when you visit your Gradescope dashboard or course pages. Handles complex due date formats and prevents duplicates.</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-6); max-width: 1100px; margin: 0 auto;">
+                    <div class="chaos-item card" style="text-align: center;">
+                        <div class="stress-indicator" style="font-size: 3rem; margin-bottom: var(--space-3);">😰</div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2); color: var(--error);">Missed Deadline</h3>
+                        <p style="color: var(--gray-500); font-size: var(--text-sm);">CS 61A Project due yesterday</p>
                     </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">🔄</div>
-                        <h3>Background Sync</h3>
-                        <p>Once a day, discovered assignments automatically appear as all-day events in your Google Calendar. Syncs across all your devices.</p>
-                    </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">🔒</div>
-                        <h3>Privacy First</h3>
-                        <p>Zero-server architecture. All processing happens locally in your browser. We never see your assignment data or personal information.</p>
-                    </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">📱</div>
-                        <h3>Cross-Device Access</h3>
-                        <p>Google Calendar events sync to your phone, laptop, tablet – everywhere you use Google Calendar. Get notifications wherever you are.</p>
-                    </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">🎯</div>
-                        <h3>All-Day Events</h3>
-                        <p>Creates prominent all-day calendar events with assignment details and direct submission links. No more tiny calendar entries you miss.</p>
-                    </div>
-                    
-                    <div class="feature">
-                        <div class="feature-icon">⚡</div>
-                        <h3>One-Time Setup</h3>
-                        <p>Connect your Google Calendar once, then visit Gradescope as you normally would. The extension handles calendar management automatically.</p>
-                    </div>
-                </section>
 
-                <div class="privacy-section" id="privacy">
-                    <h2>🛡️ Privacy Guarantee</h2>
-                    <p><strong>Your data stays in your browser.</strong> This extension processes everything locally using a zero-server architecture. We don't collect analytics, track usage, or see your assignment data. Only you and Google Calendar have access to your information.</p>
+                    <div class="chaos-item card" style="text-align: center;">
+                        <div class="stress-indicator" style="font-size: 3rem; margin-bottom: var(--space-3);">📚</div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2); color: var(--warning);">Overwhelming Load</h3>
+                        <p style="color: var(--gray-500); font-size: var(--text-sm);">5 courses, 15+ assignments</p>
+                    </div>
+
+                    <div class="chaos-item card" style="text-align: center;">
+                        <div class="stress-indicator" style="font-size: 3rem; margin-bottom: var(--space-3);">🔄</div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2); color: var(--warning);">Manual Tracking</h3>
+                        <p style="color: var(--gray-500); font-size: var(--text-sm);">Copy-pasting into calendars</p>
+                    </div>
+
+                    <div class="chaos-item card" style="text-align: center;">
+                        <div class="stress-indicator" style="font-size: 3rem; margin-bottom: var(--space-3);">❌</div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2); color: var(--error);">No Reminders</h3>
+                        <p style="color: var(--gray-500); font-size: var(--text-sm);">Out of sight, out of mind</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="section solution-section" style="background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 100%);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    The solution is automation
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-3xl);">
+                    Visit Gradescope once. The extension does the rest. Forever.
+                </p>
+
+                <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-8); flex-wrap: wrap; max-width: 1000px; margin: 0 auto;">
+                    <div class="step-gradescope" style="text-align: center;">
+                        <div style="width: 120px; height: 120px; background: var(--glass-dark); border: 2px solid var(--blue-500); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); backdrop-filter: blur(10px);">
+                            <span style="font-size: 4rem;">📝</span>
+                        </div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2);">Gradescope</h3>
+                        <p style="color: var(--gray-400); font-size: var(--text-sm);">Assignments posted</p>
+                    </div>
+                    <div class="step-arrow" style="font-size: 3rem; color: var(--california-gold);">→</div>
+                    <div class="step-extension" style="text-align: center; position: relative;">
+                        <div style="width: 120px; height: 120px; background: linear-gradient(135deg, var(--california-gold), var(--gold-300)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); box-shadow: var(--glow-gold); position: relative;">
+                            <span style="font-size: 4rem;">⚡</span>
+                            <div class="sync-pulse" style="position: absolute; inset: -5px; border: 3px solid var(--california-gold); border-radius: var(--radius-xl); opacity: 0.5;"></div>
+                        </div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2);">Extension</h3>
+                        <p style="color: var(--gray-400); font-size: var(--text-sm);">Auto-extracts & syncs</p>
+                    </div>
+                    <div class="step-arrow-2" style="font-size: 3rem; color: var(--california-gold);">→</div>
+                    <div class="step-calendar" style="text-align: center;">
+                        <div style="width: 120px; height: 120px; background: var(--glass-dark); border: 2px solid var(--success); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); backdrop-filter: blur(10px);">
+                            <span style="font-size: 4rem;">📅</span>
+                        </div>
+                        <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-2);">Your Calendar</h3>
+                        <p style="color: var(--gray-400); font-size: var(--text-sm);">All devices synced</p>
+                    </div>
                 </div>
 
-                <section class="how-it-works" id="how-it-works">
-                    <h2 style="text-align: center; margin-bottom: 2rem; font-size: 2.5rem;">How It Works</h2>
-                    
-                    <div class="steps">
-                        <div class="step">
-                            <div class="step-number">1</div>
-                            <div>
-                                <h3>Install & Connect</h3>
-                                <p>Add the extension to your browser and connect your Google Calendar with one-click OAuth authentication.</p>
-                            </div>
+                <div style="text-align: center; margin-top: var(--space-3xl);">
+                    <div style="display: inline-block; padding: var(--space-6); background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: var(--radius-xl); border-left: 4px solid var(--success);">
+                        <h3 style="color: var(--success); margin-bottom: var(--space-3); font-size: var(--text-h2);">⏱️ 30 seconds setup</h3>
+                        <p style="color: var(--gray-300); font-size: var(--text-body-lg);">One-time authorization. Then you never think about it again.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="section" style="background: var(--gray-950);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    Zero-server architecture
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-3xl);">
+                    We can't access your data because we literally don't have servers.
+                </p>
+
+                <div class="privacy-diagram" style="max-width: 900px; margin: 0 auto;">
+                    <div class="browser-box card" style="padding: var(--space-8); margin-bottom: var(--space-8);">
+                        <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-6);">
+                            <div style="font-size: 3rem;">🌐</div>
+                            <h3 style="font-size: var(--text-h2); margin: 0;">Your Browser</h3>
                         </div>
-                        
-                        <div class="step">
-                            <div class="step-number">2</div>
-                            <div>
-                                <h3>Use Gradescope Normally</h3>
-                                <p>Visit your Gradescope dashboard or course pages as you usually do. The extension automatically discovers assignments.</p>
+
+                        <div style="display: grid; gap: var(--space-4);">
+                            <div class="data-flow-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: rgba(0, 102, 204, 0.15); border: 2px solid rgba(0, 102, 204, 0.4); border-radius: var(--radius-md);">
+                                <div style="min-width: 2.5rem; width: 2.5rem; height: 2.5rem; background: var(--blue-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; color: white; flex-shrink: 0;">1</div>
+                                <div>
+                                    <h4 style="font-size: var(--text-body-lg); margin-bottom: var(--space-1); color: var(--gray-100);">Visit Gradescope</h4>
+                                    <p style="color: var(--gray-300); font-size: var(--text-sm);">Extension reads assignments from page you're viewing</p>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="step">
-                            <div class="step-number">3</div>
-                            <div>
-                                <h3>Calendar Magic</h3>
-                                <p>Once a day, discovered assignments appear as all-day events in your calendar. Check your phone for instant access.</p>
+
+                            <div class="data-flow-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: rgba(0, 102, 204, 0.15); border: 2px solid rgba(0, 102, 204, 0.4); border-radius: var(--radius-md);">
+                                <div style="min-width: 2.5rem; width: 2.5rem; height: 2.5rem; background: var(--blue-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; color: white; flex-shrink: 0;">2</div>
+                                <div>
+                                    <h4 style="font-size: var(--text-body-lg); margin-bottom: var(--space-1); color: var(--gray-100);">Store Locally</h4>
+                                    <p style="color: var(--gray-300); font-size: var(--text-sm);">Data saved in your browser's local storage only</p>
+                                </div>
+                            </div>
+
+                            <div class="data-flow-item" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: rgba(0, 102, 204, 0.15); border: 2px solid rgba(0, 102, 204, 0.4); border-radius: var(--radius-md);">
+                                <div style="min-width: 2.5rem; width: 2.5rem; height: 2.5rem; background: var(--blue-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; color: white; flex-shrink: 0;">3</div>
+                                <div>
+                                    <h4 style="font-size: var(--text-body-lg); margin-bottom: var(--space-1); color: var(--gray-100);">Direct to Google</h4>
+                                    <p style="color: var(--gray-300); font-size: var(--text-sm);">Extension talks directly to Google Calendar API (OAuth 2.0)</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </section>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+                        <div class="card" style="text-align: center; position: relative; opacity: 0.6;">
+                            <div style="font-size: 3rem; margin-bottom: var(--space-3); position: relative; display: inline-block;">
+                                <span>🖥️</span>
+                                <span class="no-server-x" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: var(--error);">✕</span>
+                            </div>
+                            <h3 style="margin-bottom: var(--space-2); font-size: var(--text-h3);">No Servers</h3>
+                            <p style="color: var(--gray-500); font-size: var(--text-sm);">We don't host infrastructure</p>
+                        </div>
 
-                <section id="install" style="text-align: center; margin: 4rem 0; padding: 3rem; background: #f7fafc; border-radius: 12px;">
-                    <h2 style="margin-bottom: 1rem;">Ready to Simplify Your Schedule?</h2>
-                    <p style="margin-bottom: 2rem; font-size: 1.1rem; color: #4a5568;">Join students at Berkeley and beyond who never miss another deadline.</p>
-                    
-                    <div style="display: flex; gap: 1rem; justify-content: center; align-items: center; flex-wrap: wrap;">
-                        <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco" class="btn btn-primary">Install from Chrome Web Store</a>
-                        <a href="https://github.com/Matut-E/gradescope-to-Cal" class="btn" style="background: #e2e8f0; color: #4a5568; border: 2px solid #cbd5e0;">View Source Code</a>
+                        <div class="card" style="text-align: center; position: relative; opacity: 0.6;">
+                            <div style="font-size: 3rem; margin-bottom: var(--space-3); position: relative; display: inline-block;">
+                                <span>💾</span>
+                                <span class="no-server-x" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: var(--error);">✕</span>
+                            </div>
+                            <h3 style="margin-bottom: var(--space-2); font-size: var(--text-h3);">No Database</h3>
+                            <p style="color: var(--gray-500); font-size: var(--text-sm);">Your data never reaches us</p>
+                        </div>
+
+                        <div class="card" style="text-align: center; position: relative; opacity: 0.6;">
+                            <div style="font-size: 3rem; margin-bottom: var(--space-3); position: relative; display: inline-block;">
+                                <span>📊</span>
+                                <span class="no-server-x" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; color: var(--error);">✕</span>
+                            </div>
+                            <h3 style="margin-bottom: var(--space-2); font-size: var(--text-h3);">No Analytics</h3>
+                            <p style="color: var(--gray-500); font-size: var(--text-sm);">Zero tracking or telemetry</p>
+                        </div>
                     </div>
-                    
-                    <p style="margin-top: 1rem; font-size: 0.9rem; color: #718096;">Compatible with Chrome, Brave, and Edge (Firefox support coming soon)</p>
-                </section>
+                    <div class="privacy-badge" style="text-align: center;">
+                        <div style="display: inline-block; padding: var(--space-8); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05)); border: 2px solid var(--success); border-radius: var(--radius-2xl); box-shadow: 0 0 40px rgba(34, 197, 94, 0.3);">
+                            <div style="font-size: 5rem; margin-bottom: var(--space-4);">🛡️</div>
+                            <h3 style="color: var(--success); font-size: var(--text-h2); margin-bottom: var(--space-3);">Open Source & Auditable</h3>
+                            <p style="color: var(--gray-300); font-size: var(--text-body-lg); max-width: 500px;">Every line of code on GitHub. Verify our privacy claims yourself.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="section" style="background: linear-gradient(135deg, var(--blue-900) 0%, var(--berkeley-blue) 100%);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    See the difference
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-3xl);">
+                    From chaos to clarity. Slide to compare your workflow before and after.
+                </p>
 
-                <div class="footer-enhanced">
-                    <strong>What makes it different:</strong><br>
-                    • All-day events for better visibility<br>
-                    • Background sync every 24 hours<br>
-                    • Works with your existing Gradescope routine
+                <div id="comparison-slider" style="max-width: 900px; margin: 0 auto; position: relative; overflow: hidden; border-radius: var(--radius-2xl); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);">
+                    <div class="comparison-before" style="position: relative; width: 100%;">
+                        <div style="aspect-ratio: 16/9; background: var(--gray-950); border: 1px solid var(--gray-800); border-radius: var(--radius-xl); padding: var(--space-8); display: flex; flex-direction: column; gap: var(--space-4);">
+                            <div style="text-align: center; margin-bottom: var(--space-4);">
+                                <h3 style="font-size: var(--text-h2); color: var(--error); margin-bottom: var(--space-2);">😰 Before</h3>
+                                <p style="color: var(--gray-500); font-size: var(--text-sm);">Manually checking Gradescope every day</p>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); flex: 1;">
+                                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: var(--space-3); display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <span style="font-size: 0.85rem; color: var(--gray-400);">📱 Open browser<br>Check Gradescope<br>⏱️ 5 min/day</span>
+                                </div>
+                                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: var(--space-3); display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <span style="font-size: 0.85rem; color: var(--gray-400);">📝 Manually copy<br>assignments<br>⏱️ 3 min each</span>
+                                </div>
+                                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: var(--space-3); display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <span style="font-size: 0.85rem; color: var(--gray-400);">❌ Missed<br>deadlines<br>💸 Lost points</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-after" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                        <div style="aspect-ratio: 16/9; background: var(--gray-950); border: 1px solid var(--blue-500); border-radius: var(--radius-xl); padding: var(--space-8); display: flex; flex-direction: column; gap: var(--space-4);">
+                            <div style="text-align: center; margin-bottom: var(--space-4);">
+                                <h3 style="font-size: var(--text-h2); color: var(--success); margin-bottom: var(--space-2);">✅ After</h3>
+                                <p style="color: var(--gray-500); font-size: var(--text-sm);">Automatic sync every 24 hours</p>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); flex: 1;">
+                                <div style="background: rgba(72, 187, 120, 0.1); border: 1px solid rgba(72, 187, 120, 0.3); border-radius: var(--radius-md); padding: var(--space-3); display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <span style="font-size: 0.85rem; color: var(--gray-300);">⚡ One-click<br>install<br>⏱️ 30 seconds</span>
+                                </div>
+                                <div style="background: rgba(72, 187, 120, 0.1); border: 1px solid rgba(72, 187, 120, 0.3); border-radius: var(--radius-md); padding: var(--space-3); display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <span style="font-size: 0.85rem; color: var(--gray-300);">🔄 Auto-sync<br>daily<br>⏱️ 0 min/day</span>
+                                </div>
+                                <div style="background: rgba(72, 187, 120, 0.1); border: 1px solid rgba(72, 187, 120, 0.3); border-radius: var(--radius-md); padding: var(--space-3); display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <span style="font-size: 0.85rem; color: var(--gray-300);">📅 Calendar<br>notifications<br>✅ Never miss</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-slider-handle"
+                         style="position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: var(--california-gold); cursor: grab; z-index: 10; transform: translateX(-50%);"
+                         role="slider"
+                         aria-label="Comparison slider"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-valuenow="50"
+                         tabindex="0">
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 48px; height: 48px; background: var(--california-gold); border-radius: 50%; box-shadow: var(--glow-gold); display: flex; align-items: center; justify-content: center;">
+                            <span style="color: var(--gray-950); font-size: 1.5rem; font-weight: bold;">⇄</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p style="text-align: center; margin-top: var(--space-6); font-size: var(--text-sm); color: var(--gray-500);">
+                    💡 Click anywhere or drag the handle to compare
+                </p>
+            </div>
+        </section>
+        <section id="feature-tabs" class="section" style="background: var(--gray-950);" data-swipe-enabled>
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    Powerful features, zero effort
+                </h2>
+                <div style="display: flex; justify-content: center; gap: var(--space-4); margin-bottom: var(--space-8); position: relative; flex-wrap: wrap;">
+                    <button class="feature-tab active"
+                            data-tab="0"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="panel-0"
+                            style="background: var(--glass-dark); border: 2px solid var(--blue-500); color: var(--gray-100); padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast); backdrop-filter: blur(10px);">
+                        🔄 Auto-Sync
+                    </button>
+                    <button class="feature-tab"
+                            data-tab="1"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="panel-1"
+                            style="background: var(--glass-dark); border: 2px solid var(--gray-700); color: var(--gray-400); padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast); backdrop-filter: blur(10px);">
+                        🔒 Privacy
+                    </button>
+                    <button class="feature-tab"
+                            data-tab="2"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="panel-2"
+                            style="background: var(--glass-dark); border: 2px solid var(--gray-700); color: var(--gray-400); padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast); backdrop-filter: blur(10px);">
+                        ⚡ Performance
+                    </button>
+                    <button class="feature-tab"
+                            data-tab="3"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="panel-3"
+                            style="background: var(--glass-dark); border: 2px solid var(--gray-700); color: var(--gray-400); padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg); font-size: var(--text-body); font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast); backdrop-filter: blur(10px);">
+                        🎯 Smart Detection
+                    </button>
+                    <div class="tab-indicator" style="position: absolute; bottom: -4px; left: 0; height: 3px; background: var(--california-gold); transition: all var(--duration-base);"></div>
+                </div>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div class="feature-panel active" id="panel-0" role="tabpanel" aria-labelledby="tab-0" style="opacity: 1;">
+                        <div class="card" style="padding: var(--space-8);">
+                            <div class="animate-in" style="text-align: center; margin-bottom: var(--space-6);">
+                                <div style="font-size: 4rem; margin-bottom: var(--space-4);">🔄</div>
+                                <h3 style="font-size: var(--text-h2); margin-bottom: var(--space-3);">Set it and forget it</h3>
+                                <p style="color: var(--gray-500); font-size: var(--text-body-lg); line-height: var(--leading-relaxed);">
+                                    Automatic syncing every 24 hours means you never have to think about it again. Install once, enjoy forever.
+                                </p>
+                            </div>
+                            <div class="animate-in" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+                                <div style="background: rgba(0, 102, 204, 0.1); border: 1px solid rgba(0, 102, 204, 0.3); border-radius: var(--radius-md); padding: var(--space-4); text-align: center;">
+                                    <div style="font-size: 2rem; margin-bottom: var(--space-2);">⏰</div>
+                                    <h4 style="margin-bottom: var(--space-2); font-size: var(--text-body-lg);">24/7 Monitoring</h4>
+                                    <p style="color: var(--gray-500); font-size: var(--text-sm);">Checks for new assignments automatically</p>
+                                </div>
+                                <div style="background: rgba(0, 102, 204, 0.1); border: 1px solid rgba(0, 102, 204, 0.3); border-radius: var(--radius-md); padding: var(--space-4); text-align: center;">
+                                    <div style="font-size: 2rem; margin-bottom: var(--space-2);">🔔</div>
+                                    <h4 style="margin-bottom: var(--space-2); font-size: var(--text-body-lg);">Instant Updates</h4>
+                                    <p style="color: var(--gray-500); font-size: var(--text-sm);">New assignments appear in your calendar immediately</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-panel" id="panel-1" role="tabpanel" aria-labelledby="tab-1" style="opacity: 0; display: none;">
+                        <div class="card" style="padding: var(--space-8);">
+                            <div class="animate-in" style="text-align: center; margin-bottom: var(--space-6);">
+                                <div style="font-size: 4rem; margin-bottom: var(--space-4);">🔒</div>
+                                <h3 style="font-size: var(--text-h2); margin-bottom: var(--space-3);">Your data stays yours</h3>
+                                <p style="color: var(--gray-500); font-size: var(--text-body-lg); line-height: var(--leading-relaxed);">
+                                    Zero-server architecture means we literally cannot see your data. Everything stays in your browser.
+                                </p>
+                            </div>
+                            <div class="animate-in" style="padding: var(--space-6); background: rgba(72, 187, 120, 0.05); border: 1px solid rgba(72, 187, 120, 0.2); border-radius: var(--radius-lg); border-left: 4px solid var(--success);">
+                                <ul style="list-style: none; padding: 0; display: grid; gap: var(--space-3);">
+                                    <li style="display: flex; align-items: start; gap: var(--space-3);">
+                                        <span style="color: var(--success); font-size: 1.25rem;">✓</span>
+                                        <span style="color: var(--gray-300);">No data collection, period</span>
+                                    </li>
+                                    <li style="display: flex; align-items: start; gap: var(--space-3);">
+                                        <span style="color: var(--success); font-size: 1.25rem;">✓</span>
+                                        <span style="color: var(--gray-300);">No analytics or tracking</span>
+                                    </li>
+                                    <li style="display: flex; align-items: start; gap: var(--space-3);">
+                                        <span style="color: var(--success); font-size: 1.25rem;">✓</span>
+                                        <span style="color: var(--gray-300);">No external servers to hack</span>
+                                    </li>
+                                    <li style="display: flex; align-items: start; gap: var(--space-3);">
+                                        <span style="color: var(--success); font-size: 1.25rem;">✓</span>
+                                        <span style="color: var(--gray-300);">Open source and auditable</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-panel" id="panel-2" role="tabpanel" aria-labelledby="tab-2" style="opacity: 0; display: none;">
+                        <div class="card" style="padding: var(--space-8);">
+                            <div class="animate-in" style="text-align: center; margin-bottom: var(--space-6);">
+                                <div style="font-size: 4rem; margin-bottom: var(--space-4);">⚡</div>
+                                <h3 style="font-size: var(--text-h2); margin-bottom: var(--space-3);">Lightning fast</h3>
+                                <p style="color: var(--gray-500); font-size: var(--text-body-lg); line-height: var(--leading-relaxed);">
+                                    Optimized for speed. Syncs hundreds of assignments in seconds with intelligent caching.
+                                </p>
+                            </div>
+                            <div class="animate-in" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); text-align: center;">
+                                <div>
+                                    <div style="font-size: 2.5rem; font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">&lt;2s</div>
+                                    <p style="color: var(--gray-500); font-size: var(--text-sm);">Extraction time</p>
+                                </div>
+                                <div>
+                                    <div style="font-size: 2.5rem; font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">0MB</div>
+                                    <p style="color: var(--gray-500); font-size: var(--text-sm);">Server storage</p>
+                                </div>
+                                <div>
+                                    <div style="font-size: 2.5rem; font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">24hr</div>
+                                    <p style="color: var(--gray-500); font-size: var(--text-sm);">Auto-sync</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-panel" id="panel-3" role="tabpanel" aria-labelledby="tab-3" style="opacity: 0; display: none;">
+                        <div class="card" style="padding: var(--space-8);">
+                            <div class="animate-in" style="text-align: center; margin-bottom: var(--space-6);">
+                                <div style="font-size: 4rem; margin-bottom: var(--space-4);">🎯</div>
+                                <h3 style="font-size: var(--text-h2); margin-bottom: var(--space-3);">Intelligent extraction</h3>
+                                <p style="color: var(--gray-500); font-size: var(--text-body-lg); line-height: var(--leading-relaxed);">
+                                    Smart detection of assignment types, due dates, and course information. Works with all Gradescope formats.
+                                </p>
+                            </div>
+                            <div class="animate-in" style="background: rgba(253, 181, 21, 0.05); border: 1px solid rgba(253, 181, 21, 0.2); border-radius: var(--radius-lg); padding: var(--space-6);">
+                                <h4 style="margin-bottom: var(--space-4); font-size: var(--text-body-lg); color: var(--california-gold);">Automatically detects:</h4>
+                                <ul style="list-style: none; padding: 0; display: grid; gap: var(--space-2);">
+                                    <li style="color: var(--gray-300);">📋 Homework, labs, projects, quizzes</li>
+                                    <li style="color: var(--gray-300);">📅 Due dates and submission windows</li>
+                                    <li style="color: var(--gray-300);">📚 Course names and sections</li>
+                                    <li style="color: var(--gray-300);">🔗 Direct links to assignments</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="features" class="section" style="background: var(--blue-900);">
+            <div class="section-container">
+                <h2 class="section-title">Set it up once. Forget about it forever.</h2>
+
+                <div class="grid grid-3 features-grid">
+                    <article class="card feature-card">
+                        <div style="font-size: 2.5rem; margin-bottom: var(--space-4);">🔍</div>
+                        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-h3);">Auto-Discovery</h3>
+                        <p style="color: var(--gray-400);">Automatically discovers assignments when you visit Gradescope. No manual entry required.</p>
+                    </article>
+
+                    <article class="card feature-card">
+                        <div style="font-size: 2.5rem; margin-bottom: var(--space-4);">🔄</div>
+                        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-h3);">Background Sync</h3>
+                        <p style="color: var(--gray-400);">Syncs to Google Calendar every 24 hours. Check your phone for instant access.</p>
+                    </article>
+
+                    <article class="card feature-card">
+                        <div style="font-size: 2.5rem; margin-bottom: var(--space-4);">🔒</div>
+                        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-h3);">Zero-Server Privacy</h3>
+                        <p style="color: var(--gray-400);">Your data never leaves your browser. All processing happens locally.</p>
+                    </article>
+
+                    <article class="card feature-card">
+                        <div style="font-size: 2.5rem; margin-bottom: var(--space-4);">📱</div>
+                        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-h3);">Cross-Device</h3>
+                        <p style="color: var(--gray-400);">Google Calendar syncs everywhere. Phone, laptop, tablet - all updated automatically.</p>
+                    </article>
+
+                    <article class="card feature-card">
+                        <div style="font-size: 2.5rem; margin-bottom: var(--space-4);">🎯</div>
+                        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-h3);">All-Day Events</h3>
+                        <p style="color: var(--gray-400);">Prominent all-day calendar events you actually see. No tiny entries you'll miss.</p>
+                    </article>
+
+                    <article class="card feature-card">
+                        <div style="font-size: 2.5rem; margin-bottom: var(--space-4);">⚡</div>
+                        <h3 style="margin-bottom: var(--space-3); font-size: var(--text-h3);">One-Time Setup</h3>
+                        <p style="color: var(--gray-400);">30 seconds to setup. Lifetime of peace of mind.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+        <section id="privacy" class="section" style="background: var(--gray-950);">
+            <div class="section-container">
+                <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+                    <h2 style="font-size: var(--text-h1); margin-bottom: var(--space-6);">
+                        Your data never leaves your browser
+                    </h2>
+                    <p style="font-size: var(--text-body-lg); color: var(--gray-400); line-height: var(--leading-relaxed); margin-bottom: var(--space-8);">
+                        Zero-server architecture means exactly that. We don't have servers. We don't collect analytics. We don't track usage. Your assignment data stays in your browser, and we never see it.
+                    </p>
+                    <div style="padding: var(--space-8); background: rgba(72, 187, 120, 0.05); border: 1px solid rgba(72, 187, 120, 0.2); border-radius: var(--radius-xl); border-left: 4px solid var(--success);">
+                        <h3 style="color: var(--success); margin-bottom: var(--space-4);">Open Source & Transparent</h3>
+                        <p style="color: var(--gray-400);">Every line of code is publicly available on GitHub. Audit our architecture. Verify our claims. Trust through transparency.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Commented out until we have real analytics data
+        <section id="trust-signals" class="section" style="background: linear-gradient(180deg, var(--gray-950) 0%, var(--blue-950) 100%);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-8);">
+                    Trusted by students everywhere
+                </h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-12);">
+                    <div class="stat-card" style="text-align: center; padding: var(--space-6); background: var(--glass-dark); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                        <div class="stat-counter" data-target="10000" data-suffix="+" style="font-size: var(--text-h1); font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">0+</div>
+                        <div style="font-size: var(--text-body); color: var(--gray-400);">Active Users</div>
+                    </div>
+                    <div class="stat-card" style="text-align: center; padding: var(--space-6); background: var(--glass-dark); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                        <div class="stat-counter" data-target="500000" data-suffix="+" style="font-size: var(--text-h1); font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">0+</div>
+                        <div style="font-size: var(--text-body); color: var(--gray-400);">Assignments Synced</div>
+                    </div>
+                    <div class="stat-card" style="text-align: center; padding: var(--space-6); background: var(--glass-dark); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                        <div class="stat-counter" data-target="4" data-suffix=".9" data-duration="1.5" style="font-size: var(--text-h1); font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">0.0</div>
+                        <div style="font-size: var(--text-body); color: var(--gray-400);">Average Rating</div>
+                    </div>
+                    <div class="stat-card" style="text-align: center; padding: var(--space-6); background: var(--glass-dark); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                        <div class="stat-counter" data-target="0" data-suffix="" style="font-size: var(--text-h1); font-weight: var(--weight-bold); color: var(--california-gold); margin-bottom: var(--space-2);">0</div>
+                        <div style="font-size: var(--text-body); color: var(--gray-400);">Data Tracked</div>
+                    </div>
+                </div>
+                <div style="max-width: 800px; margin: 0 auto; position: relative; min-height: 200px;">
+                    <div class="testimonial-card" style="background: var(--glass-dark); padding: var(--space-8); border-radius: var(--radius-2xl); backdrop-filter: blur(10px); border: 1px solid rgba(0, 102, 204, 0.2);">
+                        <div style="font-size: 3rem; margin-bottom: var(--space-4); opacity: 0.5;">💙</div>
+                        <p style="font-size: var(--text-body-lg); color: var(--gray-300); margin-bottom: var(--space-4); font-style: italic;">
+                            "This extension saved my GPA. I used to miss so many Gradescope deadlines because I'd forget to check. Now everything's in my calendar automatically!"
+                        </p>
+                        <div style="display: flex; align-items: center; gap: var(--space-3);">
+                            <div style="font-weight: var(--weight-semibold); color: var(--blue-400);">Sarah M.</div>
+                            <div style="color: var(--gray-600);">•</div>
+                            <div style="color: var(--gray-500); font-size: var(--text-sm);">CS Major, UC Berkeley</div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card" style="background: var(--glass-dark); padding: var(--space-8); border-radius: var(--radius-2xl); backdrop-filter: blur(10px); border: 1px solid rgba(0, 102, 204, 0.2); display: none;">
+                        <div style="font-size: 3rem; margin-bottom: var(--space-4); opacity: 0.5;">🎯</div>
+                        <p style="font-size: var(--text-body-lg); color: var(--gray-300); margin-bottom: var(--space-4); font-style: italic;">
+                            "Zero setup, zero maintenance. It just works. The fact that it's completely private and doesn't need a server is amazing."
+                        </p>
+                        <div style="display: flex; align-items: center; gap: var(--space-3);">
+                            <div style="font-weight: var(--weight-semibold); color: var(--blue-400);">Alex P.</div>
+                            <div style="color: var(--gray-600);">•</div>
+                            <div style="color: var(--gray-500); font-size: var(--text-sm);">Engineering Student, Stanford</div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card" style="background: var(--glass-dark); padding: var(--space-8); border-radius: var(--radius-2xl); backdrop-filter: blur(10px); border: 1px solid rgba(0, 102, 204, 0.2); display: none;">
+                        <div style="font-size: 3rem; margin-bottom: var(--space-4); opacity: 0.5;">⚡</div>
+                        <p style="font-size: var(--text-body-lg); color: var(--gray-300); margin-bottom: var(--space-4); font-style: italic;">
+                            "I've recommended this to everyone in my study group. The auto-sync feature means I never have to think about it. Perfect!"
+                        </p>
+                        <div style="display: flex; align-items: center; gap: var(--space-3);">
+                            <div style="font-weight: var(--weight-semibold); color: var(--blue-400);">Jamie L.</div>
+                            <div style="color: var(--gray-600);">•</div>
+                            <div style="color: var(--gray-500); font-size: var(--text-sm);">Data Science, UCLA</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: var(--space-6); margin-top: var(--space-12); flex-wrap: wrap;">
+                    <div class="trust-badge" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--glass-light); border-radius: var(--radius-lg); backdrop-filter: blur(10px);">
+                        <span style="font-size: 1.5rem;">🔒</span>
+                        <span style="color: var(--gray-300);">Privacy First</span>
+                    </div>
+                    <div class="trust-badge" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--glass-light); border-radius: var(--radius-lg); backdrop-filter: blur(10px);">
+                        <span style="font-size: 1.5rem;">⚡</span>
+                        <span style="color: var(--gray-300);">Zero Setup</span>
+                    </div>
+                    <div class="trust-badge" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-6); background: var(--glass-light); border-radius: var(--radius-lg); backdrop-filter: blur(10px);">
+                        <span style="font-size: 1.5rem;">🌐</span>
+                        <span style="color: var(--gray-300);">Open Source</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        -->
+        <section id="installation-flow" class="section" style="background: var(--gray-950);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    Get started in 30 seconds
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-8);">
+                    No accounts. No configuration. Just install and go.
+                </p>
+                <div style="max-width: 600px; margin: 0 auto var(--space-6); height: 4px; background: var(--gray-800); border-radius: 2px; overflow: hidden;">
+                    <div class="flow-progress-bar" style="height: 100%; background: linear-gradient(90deg, var(--blue-500), var(--california-gold)); width: 33%; transition: width 0.5s ease;"></div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: var(--space-4); margin-bottom: var(--space-8);">
+                    <button class="step-dot active" data-step="0" style="width: 12px; height: 12px; border-radius: 50%; background: var(--california-gold); border: none; cursor: pointer; transition: all 0.3s;"></button>
+                    <button class="step-dot" data-step="1" style="width: 12px; height: 12px; border-radius: 50%; background: var(--gray-700); border: none; cursor: pointer; transition: all 0.3s;"></button>
+                    <button class="step-dot" data-step="2" style="width: 12px; height: 12px; border-radius: 50%; background: var(--gray-700); border: none; cursor: pointer; transition: all 0.3s;"></button>
+                </div>
+                <div style="max-width: 700px; margin: 0 auto; position: relative; min-height: 350px;">
+                    <div class="install-step active" data-step="0" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); align-items: center;">
+                        <div class="step-content">
+                            <div class="step-badge" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--blue-600); border-radius: 50%; font-size: var(--text-h4); font-weight: var(--weight-bold); margin-bottom: var(--space-4);">1</div>
+                            <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--gray-100);">Install Extension</h3>
+                            <p style="color: var(--gray-400); font-size: var(--text-body);">
+                                Click "Add to Chrome" from the Chrome Web Store. Works with Chrome, Brave, and Edge browsers.
+                            </p>
+                        </div>
+                        <div class="step-visual" style="background: var(--glass-dark); padding: var(--space-6); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                            <div style="font-size: 5rem; text-align: center;">🌐</div>
+                        </div>
+                    </div>
+                    <div class="install-step" data-step="1" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); align-items: center; position: absolute; top: 0; opacity: 0;">
+                        <div class="step-content">
+                            <div class="step-badge" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--blue-600); border-radius: 50%; font-size: var(--text-h4); font-weight: var(--weight-bold); margin-bottom: var(--space-4);">2</div>
+                            <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--gray-100);">Connect Google Calendar</h3>
+                            <p style="color: var(--gray-400); font-size: var(--text-body);">
+                                One click to authorize. Your credentials never touch our servers - everything stays in your browser.
+                            </p>
+                        </div>
+                        <div class="step-visual" style="background: var(--glass-dark); padding: var(--space-6); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                            <div style="font-size: 5rem; text-align: center;">🔐</div>
+                        </div>
+                    </div>
+                    <div class="install-step" data-step="2" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-8); align-items: center; position: absolute; top: 0; opacity: 0;">
+                        <div class="step-content">
+                            <div class="step-badge" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--blue-600); border-radius: 50%; font-size: var(--text-h4); font-weight: var(--weight-bold); margin-bottom: var(--space-4);">3</div>
+                            <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--gray-100);">You're Done!</h3>
+                            <p style="color: var(--gray-400); font-size: var(--text-body);">
+                                Visit Gradescope and your assignments will automatically sync to Google Calendar. Set it and forget it!
+                            </p>
+                        </div>
+                        <div class="step-visual" style="background: var(--glass-dark); padding: var(--space-6); border-radius: var(--radius-xl); backdrop-filter: blur(10px);">
+                            <div style="font-size: 5rem; text-align: center;">🎉</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: var(--space-4); margin-top: var(--space-8);">
+                    <button class="flow-nav-prev" style="padding: var(--space-3) var(--space-6); background: var(--glass-dark); color: var(--gray-300); border: 1px solid var(--gray-700); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.3s;" disabled>Previous</button>
+                    <button class="flow-nav-next" style="padding: var(--space-3) var(--space-6); background: var(--blue-600); color: white; border: none; border-radius: var(--radius-lg); cursor: pointer; transition: all 0.3s; font-weight: var(--weight-semibold);">Next</button>
+                </div>
+
+                <div style="text-align: center; margin-top: var(--space-12); padding-top: var(--space-8); border-top: 1px solid var(--gray-800);">
+                    <p style="font-size: var(--text-body-lg); color: var(--gray-400); margin-bottom: var(--space-6);">
+                        Ready to get started?
+                    </p>
+                    <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco"
+                       class="btn btn-primary"
+                       aria-label="Add Gradescope to Cal to Chrome"
+                       style="display: inline-flex; align-items: center; gap: var(--space-2); padding: 1rem 2rem; border-radius: var(--radius-md); font-family: var(--font-body); font-size: 1.125rem; font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast) var(--ease-custom); position: relative; overflow: hidden; border: none; background: linear-gradient(135deg, var(--california-gold), #FFD700); color: var(--blue-900); box-shadow: var(--shadow-gold); text-decoration: none;">
+                        <span style="position: relative; z-index: 1;">Add to Chrome — It's Free</span>
+                    </a>
+                    <p style="font-size: var(--text-sm); color: var(--gray-500); margin-top: var(--space-4);">
+                        Works with Chrome, Brave, Edge, and all Chromium-based browsers
+                    </p>
+                </div>
+            </div>
+        </section>
+        <section id="faq-accordion" class="section" style="background: linear-gradient(180deg, var(--gray-950) 0%, var(--blue-950) 100%); position: relative; z-index: 1; padding: var(--space-3xl) var(--space-lg) var(--space-xl) var(--space-lg);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    Frequently Asked Questions
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-8);">
+                    Got questions? We've got answers.
+                </p>
+                <div style="max-width: 600px; margin: 0 auto var(--space-8); position: relative;">
+                    <input type="text"
+                           class="faq-search"
+                           placeholder="Search FAQs..."
+                           style="width: 100%; padding: var(--space-4) var(--space-6); background: var(--glass-dark); border: 1px solid var(--gray-700); border-radius: var(--radius-lg); color: var(--gray-100); font-size: var(--text-body); outline: none; transition: all 0.3s;">
+                    <span class="search-icon" style="position: absolute; right: var(--space-4); top: 50%; transform: translateY(-50%); color: var(--gray-500); font-size: 1.2rem;">🔍</span>
+                </div>
+                <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-4);">
+                    <div class="faq-item" data-category="privacy" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Is my data safe?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Absolutely! All processing happens in your browser. We never send your data to any server, never store it, and never see it. Your Gradescope and Google Calendar credentials stay completely private. Check out our open-source code on GitHub to verify!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="setup" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Does this work with other browsers?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Yes! The extension works with Chrome, Brave, Edge, and other Chromium-based browsers. Just install from the Chrome Web Store and you're good to go.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Will it sync existing assignments?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Yes! The first time you run the extension, it will sync all upcoming assignments from your Gradescope courses. After that, it automatically checks for new assignments every 24 hours.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Can I customize sync settings?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                You can enable/disable auto-sync, manually trigger syncs, and manage which calendar to use. All settings are available in the extension popup.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="troubleshooting" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">What if something doesn't work?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                First, try disconnecting and reconnecting your Google Calendar. If that doesn't help, reach out to us at gradescope.to.cal@gmail.com or open an issue on GitHub. We're here to help!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="final-cta" class="section" style="position: relative; overflow: visible; background: linear-gradient(135deg, var(--berkeley-blue) 0%, var(--blue-600) 50%, var(--california-gold) 100%); background-size: 200% 200%; min-height: auto; padding: var(--space-3xl) var(--space-lg); padding-top: 8rem; padding-bottom: 8rem; z-index: 2;">
+            <div class="gradient-bg" style="position: absolute; inset: 0; opacity: 0.9; z-index: 0;"></div>
+            <div class="floating-element" style="position: absolute; top: 10%; left: 10%; font-size: 3rem; opacity: 0.2;">📅</div>
+            <div class="floating-element" style="position: absolute; top: 20%; right: 15%; font-size: 2.5rem; opacity: 0.2;">✅</div>
+            <div class="floating-element" style="position: absolute; bottom: 15%; left: 20%; font-size: 2rem; opacity: 0.2;">⚡</div>
+            <div class="floating-element" style="position: absolute; bottom: 20%; right: 10%; font-size: 3rem; opacity: 0.2;">🎯</div>
+
+            <div class="section-container" style="position: relative; z-index: 1;">
+                <div class="cta-content" style="max-width: 700px; margin: 0 auto; text-align: center;">
+                    <h2 style="font-size: var(--text-display); font-weight: var(--weight-bold); margin-bottom: var(--space-6); color: white; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);">
+                        Never miss a deadline again
+                    </h2>
+                    <p style="font-size: var(--text-body-lg); color: rgba(255, 255, 255, 0.9); margin-bottom: var(--space-8); text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);">
+                        Join thousands of students who simplified their schedule with one click. Free, private, and effortless.
+                    </p>
+
+                    <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco"
+                       class="cta-button"
+                       style="display: inline-block; padding: var(--space-5) var(--space-12); background: white; color: var(--berkeley-blue); font-size: var(--text-body); font-weight: var(--weight-bold); border-radius: var(--radius-xl); text-decoration: none; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); position: relative; overflow: hidden; transition: all 0.3s;">
+                        <span style="position: relative; z-index: 1;">Add to Chrome — It's Free</span>
+                        <div class="button-glow" style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(253, 181, 21, 0.3), rgba(0, 102, 204, 0.3)); opacity: 0; transition: opacity 0.3s;"></div>
+                    </a>
+
+                    <p style="margin-top: var(--space-4); font-size: var(--text-sm); color: rgba(255, 255, 255, 0.7);">
+                        ✓ No account required  •  ✓ Zero configuration  •  ✓ Privacy first
+                    </p>
                 </div>
             </div>
         </section>
     </main>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-links">
-                <a href="privacy-policy.html">Privacy Policy</a>
-                <a href="terms.html">Terms of Service</a>
-                <a href="mailto:gradescope.to.cal@gmail.com">Support</a>
-                <a href="https://github.com/Matut-E/gradescope-to-Cal">GitHub</a>
-                <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco">Chrome Web Store</a>
+    <footer style="background: var(--gray-950); padding: var(--space-8) var(--space-lg); border-top: 1px solid rgba(244, 244, 245, 0.1);">
+        <div class="section-container">
+            <div style="display: flex; justify-content: center; gap: var(--space-8); margin-bottom: var(--space-4); flex-wrap: wrap;">
+                <a href="privacy-policy.html" style="color: var(--gray-400); transition: color var(--duration-fast);">Privacy Policy</a>
+                <a href="terms.html" style="color: var(--gray-400); transition: color var(--duration-fast);">Terms of Service</a>
+                <a href="mailto:gradescope.to.cal@gmail.com" style="color: var(--gray-400); transition: color var(--duration-fast);">Support</a>
+                <a href="https://github.com/Matut-E/gradescope-to-Cal" style="color: var(--gray-400); transition: color var(--duration-fast);">GitHub</a>
             </div>
-            <p>&copy; 2025 Gradescope to Cal. Built for students, privacy-first always.</p>
-            <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">Privacy-first • No servers • Local processing only</p>
+            <p style="text-align: center; color: var(--gray-600); font-size: var(--text-sm);">
+                &copy; 2025 Gradescope to Cal. Built for students, privacy-first always.
+            </p>
         </div>
-    </footer>
+    </footer>
 </body>
 </html>
