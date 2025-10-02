@@ -1,0 +1,6 @@
+# Gradescope to Cal - robots.txt
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://matut-e.github.io/gradescope-to-Cal/sitemap.xml

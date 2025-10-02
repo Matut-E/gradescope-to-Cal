@@ -4,95 +4,335 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms of Service - Gradescope to Cal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            color: #333;
+        :root {
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+            --blue-950: #000B1A;
+            --blue-900: #001731;
+            --blue-600: #004A93;
+            --gray-950: #0A0A0B;
+            --gray-900: #18181B;
+            --gray-800: #27272A;
+            --gray-700: #3F3F46;
+            --gray-600: #52525B;
+            --gray-500: #71717A;
+            --gray-400: #A1A1AA;
+            --gray-300: #D4D4D8;
+            --gray-200: #E4E4E7;
+            --gray-100: #F4F4F5;
+            --warning: #F59E0B;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-12: 3rem;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
         }
-        h1 { color: #2d3748; }
-        h2 { color: #4a5568; margin-top: 2rem; }
-        .header { text-align: center; margin-bottom: 2rem; }
-        .back-link { display: inline-block; margin-bottom: 2rem; color: #3182ce; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            font-size: 1.125rem;
+            line-height: 1.75;
+            color: var(--gray-100);
+            background: linear-gradient(135deg, var(--blue-900) 0%, var(--gray-950) 100%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+        }
+
+        .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 11, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(244, 244, 245, 0.1);
+            z-index: 1000;
+            padding: var(--space-4) var(--space-6);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gray-100);
+            text-decoration: none;
+        }
+
+        .back-link {
+            color: var(--california-gold);
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: calc(80px + var(--space-8)) var(--space-6) var(--space-12);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: var(--space-12);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: var(--space-4);
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-300) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--gray-400);
+            margin-bottom: var(--space-2);
+        }
+
+        .header p:last-child {
+            font-style: italic;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            color: var(--california-gold);
+            margin-top: var(--space-12);
+            margin-bottom: var(--space-6);
+            line-height: 1.2;
+        }
+
+        h2::before {
+            content: attr(data-number);
+            display: inline-block;
+            margin-right: var(--space-3);
+            color: var(--blue-600);
+        }
+
+        p {
+            color: var(--gray-300);
+            margin-bottom: var(--space-6);
+        }
+
+        ul {
+            margin-bottom: var(--space-6);
+            padding-left: var(--space-8);
+        }
+
+        li {
+            color: var(--gray-300);
+            margin-bottom: var(--space-3);
+        }
+
+        strong {
+            color: var(--gray-100);
+            font-weight: 600;
+        }
+
+        a {
+            color: var(--california-gold);
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        a:hover {
+            opacity: 0.8;
+        }
+
+        .card {
+            background: rgba(39, 39, 42, 0.6);
+            border: 1px solid rgba(244, 244, 245, 0.1);
+            border-radius: var(--radius-lg);
+            padding: var(--space-8);
+            backdrop-filter: blur(10px);
+            margin-bottom: var(--space-6);
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-left: 4px solid var(--warning);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin: var(--space-6) 0;
+        }
+
+        .warning-box p {
+            margin-bottom: 0;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: rgba(244, 244, 245, 0.1);
+            margin: var(--space-12) 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: var(--space-8) var(--space-6);
+            color: var(--gray-500);
+            font-size: 0.95rem;
+        }
+
+        footer a {
+            color: var(--gray-400);
+            margin: 0 var(--space-3);
+        }
+
+        .section-number {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            background: var(--blue-600);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 2rem;
+            font-weight: 600;
+            margin-right: var(--space-3);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-logo {
+                font-size: 1.25rem;
+            }
+
+            .container {
+                padding-top: calc(60px + var(--space-6));
+            }
+
+            ul {
+                padding-left: var(--space-6);
+            }
+        }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-link">← Back to Homepage</a>
-    
-    <div class="header">
-        <h1>Terms of Service</h1>
-        <p><strong>Gradescope to Cal Browser Extension</strong></p>
-        <p><em>Last Updated: September 2025</em></p>
+    <header class="nav-header">
+        <nav class="nav-container">
+            <a href="index.html" class="nav-logo">Gradescope to Cal</a>
+            <a href="index.html" class="back-link">← Back to Homepage</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <h1>Terms of Service</h1>
+            <p><strong>Gradescope to Cal Browser Extension</strong></p>
+            <p><em>Last Updated: September 2025</em></p>
+        </div>
+
+        <h2 data-number="1.">Acceptance of Terms</h2>
+        <p>By installing and using the Gradescope to Cal browser extension, you agree to these Terms of Service and our Privacy Policy.</p>
+
+        <h2 data-number="2.">Description of Service</h2>
+        <p>Gradescope to Cal is a browser extension that automatically extracts assignment information from Gradescope.com and creates corresponding events in your Google Calendar. The service operates entirely within your browser using a zero-server architecture.</p>
+
+        <h2 data-number="3.">User Responsibilities</h2>
+        <p>You are responsible for:</p>
+        <ul>
+            <li>Maintaining the security of your Google account credentials</li>
+            <li>Using the extension in compliance with your institution's policies</li>
+            <li>Ensuring you have proper access to Gradescope and Google Calendar</li>
+            <li>Verifying assignment due dates and details independently</li>
+        </ul>
+
+        <h2 data-number="4.">Privacy and Data</h2>
+        <p>Our privacy practices are detailed in our <a href="privacy-policy.html">Privacy Policy</a>. Key points:</p>
+        <ul>
+            <li>All data processing occurs locally in your browser</li>
+            <li>No personal data is collected or transmitted to external servers</li>
+            <li>Assignment data is stored only in your browser's local storage</li>
+        </ul>
+
+        <h2 data-number="5.">Limitations and Disclaimers</h2>
+        <div class="warning-box">
+            <p><strong>No Warranty:</strong> This extension is provided "as is" without warranties of any kind. We do not guarantee:</p>
+            <ul style="margin-bottom: 0; margin-top: var(--space-4);">
+                <li>Accuracy of extracted assignment information</li>
+                <li>Continuous availability of the service</li>
+                <li>Compatibility with all Gradescope course formats</li>
+                <li>That the extension will meet your specific requirements</li>
+            </ul>
+        </div>
+
+        <p><strong>Educational Tool:</strong> This extension is an educational productivity tool. Users remain responsible for tracking their assignments through official channels.</p>
+
+        <h2 data-number="6.">Intellectual Property</h2>
+        <p>The extension is open source software released under the MIT License. You may view, modify, and distribute the source code according to the license terms.</p>
+
+        <h2 data-number="7.">Third-Party Services</h2>
+        <div class="card">
+            <p>This extension integrates with:</p>
+            <ul style="margin-bottom: 0;">
+                <li><strong>Gradescope:</strong> Subject to Gradescope's terms of service</li>
+                <li><strong>Google Calendar:</strong> Subject to Google's terms of service and privacy policy</li>
+            </ul>
+        </div>
+
+        <h2 data-number="8.">Limitation of Liability</h2>
+        <p>To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of this extension, including but not limited to missed assignments or scheduling conflicts.</p>
+
+        <h2 data-number="9.">Termination</h2>
+        <p>You may stop using the extension at any time by uninstalling it from your browser. All locally stored data will be automatically removed upon uninstallation.</p>
+
+        <h2 data-number="10.">Changes to Terms</h2>
+        <p>We may update these terms periodically. Continued use of the extension after changes constitutes acceptance of the updated terms.</p>
+
+        <h2 data-number="11.">Contact Information</h2>
+        <div class="card">
+            <p style="margin-bottom: 0;">Questions about these terms? Contact us at: <a href="mailto:gradescope.to.cal@gmail.com">gradescope.to.cal@gmail.com</a></p>
+        </div>
+
+        <h2 data-number="12.">Governing Law</h2>
+        <p>These terms are governed by the laws of the State of California, United States.</p>
+
+        <hr>
+        <footer>
+            <a href="index.html">Homepage</a> •
+            <a href="privacy-policy.html">Privacy Policy</a> •
+            <a href="mailto:gradescope.to.cal@gmail.com">Support</a>
+        </footer>
     </div>
-
-    <h2>1. Acceptance of Terms</h2>
-    <p>By installing and using the Gradescope to Cal browser extension, you agree to these Terms of Service and our Privacy Policy.</p>
-
-    <h2>2. Description of Service</h2>
-    <p>Gradescope to Cal is a browser extension that automatically extracts assignment information from Gradescope.com and creates corresponding events in your Google Calendar. The service operates entirely within your browser using a zero-server architecture.</p>
-
-    <h2>3. User Responsibilities</h2>
-    <p>You are responsible for:</p>
-    <ul>
-        <li>Maintaining the security of your Google account credentials</li>
-        <li>Using the extension in compliance with your institution's policies</li>
-        <li>Ensuring you have proper access to Gradescope and Google Calendar</li>
-        <li>Verifying assignment due dates and details independently</li>
-    </ul>
-
-    <h2>4. Privacy and Data</h2>
-    <p>Our privacy practices are detailed in our <a href="privacy-policy.html">Privacy Policy</a>. Key points:</p>
-    <ul>
-        <li>All data processing occurs locally in your browser</li>
-        <li>No personal data is collected or transmitted to external servers</li>
-        <li>Assignment data is stored only in your browser's local storage</li>
-    </ul>
-
-    <h2>5. Limitations and Disclaimers</h2>
-    <p><strong>No Warranty:</strong> This extension is provided "as is" without warranties of any kind. We do not guarantee:</p>
-    <ul>
-        <li>Accuracy of extracted assignment information</li>
-        <li>Continuous availability of the service</li>
-        <li>Compatibility with all Gradescope course formats</li>
-        <li>That the extension will meet your specific requirements</li>
-    </ul>
-
-    <p><strong>Educational Tool:</strong> This extension is an educational productivity tool. Users remain responsible for tracking their assignments through official channels.</p>
-
-    <h2>6. Intellectual Property</h2>
-    <p>The extension is open source software released under the MIT License. You may view, modify, and distribute the source code according to the license terms.</p>
-
-    <h2>7. Third-Party Services</h2>
-    <p>This extension integrates with:</p>
-    <ul>
-        <li><strong>Gradescope:</strong> Subject to Gradescope's terms of service</li>
-        <li><strong>Google Calendar:</strong> Subject to Google's terms of service and privacy policy</li>
-    </ul>
-
-    <h2>8. Limitation of Liability</h2>
-    <p>To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of this extension, including but not limited to missed assignments or scheduling conflicts.</p>
-
-    <h2>9. Termination</h2>
-    <p>You may stop using the extension at any time by uninstalling it from your browser. All locally stored data will be automatically removed upon uninstallation.</p>
-
-    <h2>10. Changes to Terms</h2>
-    <p>We may update these terms periodically. Continued use of the extension after changes constitutes acceptance of the updated terms.</p>
-
-    <h2>11. Contact Information</h2>
-    <p>Questions about these terms? Contact us at: <a href="mailto:gradescope.to.cal@gmail.com">gradescope.to.cal@gmail.com</a></p>
-
-    <h2>12. Governing Law</h2>
-    <p>These terms are governed by the laws of the State of California, United States.</p>
-
-    <hr style="margin: 2rem 0;">
-    <p style="text-align: center; color: #666; font-size: 0.9rem;">
-        <a href="index.html">Homepage</a> • 
-        <a href="privacy-policy.html">Privacy Policy</a> • 
-        <a href="mailto:gradescope.to.cal@gmail.com">Support</a>
-    </p>
 </body>
 </html>
