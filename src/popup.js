@@ -62,7 +62,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateThemeIcon(theme) {
-        themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        const moonIcon = themeToggle.querySelector('.theme-icon-moon');
+        const sunIcon = themeToggle.querySelector('.theme-icon-sun');
+
+        if (theme === 'light') {
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+        } else {
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        }
     }
 
     // Initialize theme toggle
@@ -244,21 +253,13 @@ document.addEventListener('DOMContentLoaded', async () => {
      */
     function showFirstTimeHelp() {
         const helpDiv = document.createElement('div');
-        helpDiv.style.cssText = `
-            background: #f0f8ff;
-            border: 1px solid #bee5eb;
-            border-radius: 4px;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 12px;
-            line-height: 1.4;
-        `;
-        
+        helpDiv.className = 'quick-setup-banner';
+
         helpDiv.innerHTML = `
             <strong>🚀 Quick Setup:</strong><br>
             Click the blue button below to visit Gradescope, then reopen this popup!
-            
-            <div style="margin-top: 8px; font-size: 11px; color: #666;">
+
+            <div class="quick-setup-tip">
                 💡 <em>Works best from the main dashboard page</em>
             </div>
         `;

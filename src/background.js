@@ -818,17 +818,34 @@ class GoogleCalendarClient {
             timeZone: 'America/Los_Angeles'
         });
 
+        // Load user settings for reminders and color
+        let eventColorId = '9'; // Default Blueberry
+        let createReminders = true; // Default true
+
+        try {
+            const localSettings = await chrome.storage.local.get(['settings_create_reminders']);
+            const syncSettings = await chrome.storage.sync.get(['eventColorId']);
+
+            eventColorId = syncSettings.eventColorId || '9';
+            createReminders = localSettings.settings_create_reminders !== false;
+
+            console.log('🎨 Using event color ID:', eventColorId);
+            console.log('🔔 Create reminders:', createReminders);
+        } catch (error) {
+            console.warn('⚠️ Failed to load settings, using defaults:', error);
+        }
+
         const event = {
             summary: `${assignment.course}: ${assignment.title}`,
-            description: `Gradescope Assignment: ${assignment.title}\n\nCourse: ${assignment.course}\n\nDue: ${dueDate.toLocaleString('en-US', { 
+            description: `Gradescope Assignment: ${assignment.title}\n\nCourse: ${assignment.course}\n\nDue: ${dueDate.toLocaleString('en-US', {
                 timeZone: 'America/Los_Angeles',
                 dateStyle: 'full',
                 timeStyle: 'short'
             })}\n\nSubmit at: ${assignment.url}\n\nExtracted from: ${assignment.pageUrl}`,
-            
+
             start: { date: dueDateOnly },
             end: { date: dueDateOnly },
-            
+
             location: 'Gradescope',
             source: {
                 title: 'Gradescope',
@@ -842,8 +859,19 @@ class GoogleCalendarClient {
                     gradescope_due_time: assignment.dueDate
                 }
             },
-            colorId: '9'
+            colorId: eventColorId
         };
+
+        // Add reminders if enabled
+        if (createReminders) {
+            event.reminders = {
+                useDefault: false,
+                overrides: [
+                    { method: 'popup', minutes: 1440 },  // 1 day before
+                    { method: 'popup', minutes: 60 }      // 1 hour before
+                ]
+            };
+        }
 
         const response = await this.makeAPIRequest('/calendars/primary/events', {
             method: 'POST',
