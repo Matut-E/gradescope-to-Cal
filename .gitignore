@@ -91,6 +91,11 @@ TODO.md
 /docs/personal/
 /dev-notes/
 
+# Ignore all markdown files except CLAUDE.md and README.md
+*.md
+!CLAUDE.md
+!README.md
+
 # Test data or screenshots with personal info
 /test-data/
 /screenshots/personal/

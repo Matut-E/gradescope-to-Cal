@@ -153,6 +153,173 @@ testGradeExtraction() // Test basic extraction
 testEnhancedStorage() // Inspect stored data
 ```
 
+## UI Design System: Light & Dark Mode
+
+**⚠️ CRITICAL**: All UI changes MUST support both light and dark modes. The extension includes a comprehensive dark mode theme that users can toggle.
+
+### How Dark Mode Works
+
+The extension uses a **CSS variable-based theming system**:
+
+1. **Theme Toggle**: Users can switch themes via the 🌙 button (top-right of popup/options pages)
+2. **Theme State**: Stored in `localStorage` as `theme: 'light' | 'dark'`
+3. **Theme Application**: JavaScript sets `data-theme="dark"` attribute on `<html>` element
+4. **CSS Variables**: All colors reference CSS variables that change based on theme
+
+### CSS Variable System
+
+**Location**: Defined in `<style>` section of `popup.html` and `options.html`
+
+**Light Mode (Default)**:
+```css
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --button-bg: #007bff;
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    /* ... */
+}
+```
+
+**Dark Mode**:
+```css
+[data-theme="dark"] {
+    --bg-primary: #0A0A0B;
+    --bg-secondary: #18181B;
+    --bg-tertiary: #27272A;
+    --text-primary: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --border-color: rgba(244, 244, 245, 0.1);
+    --berkeley-blue: #003262;
+    --california-gold: #FDB515;
+    /* ... */
+}
+```
+
+### Rules for Adding/Modifying UI Elements
+
+**✅ DO:**
+1. **Use CSS variables for all colors**:
+   ```css
+   .my-element {
+       background: var(--bg-secondary);
+       color: var(--text-primary);
+       border: 1px solid var(--border-color);
+   }
+   ```
+
+2. **Add dark mode overrides for hardcoded colors**:
+   ```css
+   .special-box {
+       background: #f8f9fa;  /* Light mode */
+   }
+
+   [data-theme="dark"] .special-box {
+       background: var(--bg-tertiary);
+       border: 1px solid var(--border-color);
+   }
+   ```
+
+3. **Use semantic CSS classes instead of inline styles**:
+   ```js
+   // ✅ Good
+   div.className = 'empty-state-message';
+
+   // ❌ Bad
+   div.style.cssText = 'background: #f8f9fa; color: #666;';
+   ```
+
+4. **Test both themes** after any UI change:
+   - Toggle dark mode (🌙 button)
+   - Verify all elements have proper backgrounds/text colors
+   - Check for "white boxes" in dark mode
+
+**❌ DON'T:**
+1. **Hardcode light colors without dark mode overrides**:
+   ```css
+   /* ❌ Bad - will be white in dark mode */
+   .box { background: #ffffff; }
+
+   /* ✅ Good */
+   .box { background: var(--bg-primary); }
+   ```
+
+2. **Use inline styles for colors in JavaScript**:
+   ```js
+   // ❌ Bad
+   element.style.background = '#f8f9fa';
+
+   // ✅ Good - use CSS class
+   element.classList.add('light-background');
+   ```
+
+3. **Assume a single color scheme** - always consider both themes
+
+### Common Dark Mode Patterns
+
+**Empty State Messages**:
+```css
+.empty-state-message {
+    background: #f8f9fa;
+    color: #666;
+}
+
+[data-theme="dark"] .empty-state-message {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+```
+
+**Input Fields**:
+```css
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] select {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+```
+
+**Colored Accent Boxes** (warnings, info, success):
+```css
+.warning-box {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+[data-theme="dark"] .warning-box {
+    background: rgba(255, 193, 7, 0.15);
+    border-left-color: var(--warning);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+```
+
+### Testing Dark Mode
+
+**Console Helpers**:
+- `localStorage.setItem('theme', 'dark')` + refresh
+- Toggle button in UI (🌙 icon, top-right)
+
+**What to Check**:
+1. No white boxes on dark backgrounds
+2. Text is readable (sufficient contrast)
+3. Borders are visible but subtle
+4. Buttons maintain visual hierarchy
+5. Form inputs don't look broken
+6. Icons/emojis remain visible
+
+**Files to Update** when adding new UI:
+- `src/popup.html` - Popup dark mode styles
+- `src/options.html` - Options page dark mode styles
+- CSS variables section (`[data-theme="dark"]`)
+
 ## Privacy & Security
 
 - **No external servers**: All processing in browser
