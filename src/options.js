@@ -39,7 +39,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateOptionsThemeIcon(theme) {
-        optionsThemeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        const moonIcon = optionsThemeToggle.querySelector('.theme-icon-moon');
+        const sunIcon = optionsThemeToggle.querySelector('.theme-icon-sun');
+
+        if (theme === 'light') {
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+        } else {
+            moonIcon.style.display = 'none';
+            sunIcon.style.display = 'block';
+        }
     }
 
     // Initialize theme on load
@@ -61,10 +70,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Get references to all settings controls
     const autoSyncCheckbox = document.getElementById('autoSync');
     const createRemindersCheckbox = document.getElementById('createReminders');
-    
-    // Advanced settings (read-only, for display purposes)
-    const allDayEventsCheckbox = document.getElementById('allDayEvents');
-    const autoDiscoveryCheckbox = document.getElementById('autoDiscovery');
+
+    // Color picker variables
+    let selectedEventColorId = '9'; // Default Blueberry
+    const selectedColorName = document.getElementById('selectedColorName');
 
     /**
      * 🕒 Smart interval formatting for options page (same as popup.js)
@@ -76,6 +85,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             return `${minutes} minutes`;
         }
+    }
+
+    /**
+     * Update color picker UI to show selected color
+     */
+    function updateColorPickerUI(colorId) {
+        const colorBoxes = document.querySelectorAll('.color-box');
+
+        colorBoxes.forEach(box => {
+            box.classList.remove('selected');
+        });
+
+        const selectedBox = document.querySelector(`.color-box[data-color-id="${colorId}"]`);
+        if (selectedBox) {
+            selectedBox.classList.add('selected');
+            const colorName = selectedBox.getAttribute('data-color-name');
+            if (selectedColorName) {
+                selectedColorName.textContent = colorName;
+            }
+            console.log('🎨 Color picker UI updated to:', colorName, `(ID: ${colorId})`);
+        }
+    }
+
+    /**
+     * Select a color locally (updates state and UI)
+     */
+    function selectColorLocally(colorId, colorName) {
+        console.log('🎨 Selecting color (local state):', colorName, `(ID: ${colorId})`);
+
+        // Update local state (no saving yet)
+        selectedEventColorId = colorId;
+
+        // Update UI immediately
+        updateColorPickerUI(colorId);
+    }
+
+    /**
+     * Initialize color picker event listeners
+     */
+    function initializeColorPicker() {
+        const colorBoxes = document.querySelectorAll('.color-box');
+
+        colorBoxes.forEach(box => {
+            box.addEventListener('click', () => {
+                const colorId = box.getAttribute('data-color-id');
+                const colorName = box.getAttribute('data-color-name');
+                selectColorLocally(colorId, colorName);
+            });
+        });
+
+        console.log('🎨 Color picker initialized with', colorBoxes.length, 'colors');
     }
 
     /**
@@ -127,13 +187,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function updateAutoSyncStatus() {
         try {
             const response = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
-            
+
             if (response.success) {
                 const status = response.status;
-                
+
                 // Update checkbox state
                 autoSyncCheckbox.checked = status.enabled;
-                
+
+                // Remove any existing auto-sync status to prevent duplicates
+                if (authStatus.innerHTML) {
+                    // Remove lines containing auto-sync emojis (🔄 or ⏸️)
+                    const lines = authStatus.innerHTML.split('<br>');
+                    const filteredLines = lines.filter(line =>
+                        !line.includes('🔄') && !line.includes('⏸️')
+                    );
+                    authStatus.innerHTML = filteredLines.join('<br>');
+                }
+
                 // Show detailed status in the authentication section
                 let autoSyncInfo = '';
                 if (status.enabled) {
@@ -144,18 +214,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (status.lastSync) {
                         const lastSync = new Date(status.lastSync);
                         autoSyncInfo += `<br><small>Last sync: ${lastSync.toLocaleString()}</small>`;
-                        
+
                         if (status.lastResults) {
                             const r = status.lastResults;
                             autoSyncInfo += `<br><small>(${r.created} created, ${r.skipped} skipped, ${r.errors} errors)</small>`;
                         }
                     }
-                    
+
                     if (status.nextSync) {
                         const nextSync = new Date(status.nextSync);
                         const hoursUntilNext = Math.round((nextSync - new Date()) / (1000 * 60 * 60));
                         const minutesUntilNext = Math.round((nextSync - new Date()) / (1000 * 60));
-                        
+
                         if (hoursUntilNext >= 1) {
                             autoSyncInfo += `<br><small>Next sync: in ${hoursUntilNext} hour${hoursUntilNext !== 1 ? 's' : ''} (${nextSync.toLocaleTimeString()})</small>`;
                         } else {
@@ -165,9 +235,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     autoSyncInfo += '<br><small>⏸️ Auto-sync disabled</small>';
                 }
-                
+
                 // Add to auth status display
-                if (authStatus.innerHTML && !authStatus.innerHTML.includes('🔄')) {
+                if (authStatus.innerHTML) {
                     authStatus.innerHTML += autoSyncInfo;
                 }
             }
@@ -188,17 +258,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'settings_auto_discovery'
             ]);
 
+            // Load color preference from sync storage
+            const syncSettings = await chrome.storage.sync.get(['eventColorId']);
+            const eventColorId = syncSettings.eventColorId || '9'; // Default to Blueberry
+            console.log('🎨 Loaded event color ID:', eventColorId);
+
+            // Set local state
+            selectedEventColorId = eventColorId;
+
             // Set default values and load saved settings
             autoSyncCheckbox.checked = settings.settings_auto_sync !== false; // Default true
             createRemindersCheckbox.checked = settings.settings_create_reminders !== false; // Default true
-            
-            // Advanced settings are always enabled but shown for transparency
-            if (allDayEventsCheckbox) {
-                allDayEventsCheckbox.checked = settings.settings_all_day_events !== false; // Default true
-            }
-            if (autoDiscoveryCheckbox) {
-                autoDiscoveryCheckbox.checked = settings.settings_auto_discovery !== false; // Default true
-            }
+
+            // Initialize previous settings for change detection
+            previousSettings.createReminders = createRemindersCheckbox.checked;
+            previousSettings.eventColorId = eventColorId;
+
+            // Update color picker UI
+            updateColorPickerUI(eventColorId);
 
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -206,21 +283,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
+     * Track previous settings to detect what changed
+     */
+    let previousSettings = {
+        createReminders: true,
+        eventColorId: '9'
+    };
+
+    /**
      * 🌟 Save Settings to Storage - Updated for new structure
      */
-    async function saveSettings() {
+    async function saveSettings(triggerSource = 'manual') {
         try {
+            // Check authentication status
+            const authResponse = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
+            const isAuthenticated = authResponse.success && authResponse.authenticated && authResponse.tokenValid;
+
             const settings = {
                 settings_auto_sync: autoSyncCheckbox.checked,
                 settings_create_reminders: createRemindersCheckbox.checked,
-                // Advanced settings are always enabled but stored for consistency
-                settings_all_day_events: allDayEventsCheckbox ? allDayEventsCheckbox.checked : true,
-                settings_auto_discovery: autoDiscoveryCheckbox ? autoDiscoveryCheckbox.checked : true,
+                // Advanced settings are always enabled (hardcoded)
+                settings_all_day_events: true,
+                settings_auto_discovery: true,
                 // Store the last save timestamp
                 settings_last_updated: new Date().toISOString()
             };
 
             await chrome.storage.local.set(settings);
+
+            // Save event color to sync storage
+            await chrome.storage.sync.set({ eventColorId: selectedEventColorId });
+            console.log('🎨 Saved event color ID:', selectedEventColorId);
 
             // If auto-sync setting changed, update the background service
             if (autoSyncCheckbox.checked) {
@@ -229,27 +322,53 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await chrome.runtime.sendMessage({ action: 'disableAutoSync' });
             }
 
-            // Show success message
+            // Determine if calendar-specific settings (reminders/color) changed
+            const reminderChanged = previousSettings.createReminders !== createRemindersCheckbox.checked;
+            const colorChanged = previousSettings.eventColorId !== selectedEventColorId;
+            const calendarSettingChanged = reminderChanged || colorChanged;
+
+            // Update previous settings
+            previousSettings.createReminders = createRemindersCheckbox.checked;
+            previousSettings.eventColorId = selectedEventColorId;
+
+            // Remove any existing warning first
+            if (authStatus && authStatus.innerHTML.includes('calendar-settings-warning')) {
+                const lines = authStatus.innerHTML.split('<br>');
+                const filteredLines = lines.filter(line => !line.includes('calendar-settings-warning'));
+                authStatus.innerHTML = filteredLines.join('<br>');
+            }
+
+            // Show appropriate success message based on auth status and what changed
             const originalText = saveSettingsBtn.textContent;
-            saveSettingsBtn.textContent = '✅ Saved!';
-            saveSettingsBtn.className = 'button success';
-            
+            if (!isAuthenticated && calendarSettingChanged && triggerSource === 'manual') {
+                saveSettingsBtn.textContent = '✅ Saved (Connect calendar to activate)';
+                saveSettingsBtn.className = 'button';
+
+                // Show info message in auth status only for calendar-specific settings
+                if (authStatus && !authStatus.innerHTML.includes('calendar-settings-warning')) {
+                    authStatus.innerHTML += `<br><small class="calendar-settings-warning" style="color: var(--warning);">ℹ️ Connect your Google Calendar to activate reminders and color preferences.</small>`;
+                }
+            } else {
+                saveSettingsBtn.textContent = '✅ Saved!';
+                saveSettingsBtn.className = 'button success';
+            }
+
             setTimeout(() => {
                 saveSettingsBtn.textContent = originalText;
                 saveSettingsBtn.className = 'button';
-            }, 2000);
+            }, 3000);
 
-            // Update auto-sync status to reflect changes
-            setTimeout(updateAutoSyncStatus, 1000);
+            // Update auto-sync status to reflect changes (with delay to prevent race condition)
+            setTimeout(updateAutoSyncStatus, 500);
 
         } catch (error) {
             console.error('Error saving settings:', error);
-            
+
             // Show error message
             const originalText = saveSettingsBtn.textContent;
             saveSettingsBtn.textContent = '❌ Error';
             saveSettingsBtn.className = 'button danger';
-            
+
             setTimeout(() => {
                 saveSettingsBtn.textContent = originalText;
                 saveSettingsBtn.className = 'button';
@@ -475,40 +594,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     clearAllBtn.addEventListener('click', clearAllData);
     saveSettingsBtn.addEventListener('click', saveSettings);
 
-    // 🌟 Enhanced event listeners - Updated for new structure
-    autoSyncCheckbox.addEventListener('change', saveSettings);
-    createRemindersCheckbox.addEventListener('change', saveSettings);
+    // Note: Checkboxes no longer auto-save - user must click "Save Settings" button
+    // This prevents confusing UI behavior and gives users explicit control
 
     // Statistics button functionality
     if (showStatsBtn) {
         showStatsBtn.addEventListener('click', showDataStatistics);
     }
 
-    // Advanced settings are disabled but show current state
-    if (allDayEventsCheckbox) {
-        allDayEventsCheckbox.addEventListener('change', (e) => {
-            // Prevent changes to optimized settings
-            e.preventDefault();
-            allDayEventsCheckbox.checked = true;
-        });
-    }
-    
-    if (autoDiscoveryCheckbox) {
-        autoDiscoveryCheckbox.addEventListener('change', (e) => {
-            // Prevent changes to optimized settings
-            e.preventDefault();
-            autoDiscoveryCheckbox.checked = true;
-        });
-    }
-
     // Initial load
     await loadSettings();
     await checkAuthStatus();
     await updateAutoSyncStatus();
-    
+
+    // Initialize color picker
+    initializeColorPicker();
+
     // Periodic updates (less frequent for options page)
     setInterval(checkAuthStatus, 60000); // Every minute
     setInterval(updateAutoSyncStatus, 30000); // Every 30 seconds
-    
-    console.log('✅ Enhanced Options page initialized with 24-hour auto-sync support');
+
+    console.log('✅ Enhanced Options page initialized with 24-hour auto-sync support and color picker');
 });
