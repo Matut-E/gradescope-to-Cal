@@ -286,6 +286,109 @@ function parseAssignmentsFromDocument(doc, course) {
 }
 
 /**
+ * TIMEZONE DETECTION UTILITIES (for robust calendar reminders)
+ */
+
+/**
+ * Extract timezone from Gradescope datetime attribute
+ * Returns IANA timezone name (e.g., "America/Los_Angeles", "America/New_York")
+ */
+function extractTimezoneFromRow(cells) {
+    if (cells.length >= 3) {
+        const timeElements = cells[2].querySelectorAll('time[datetime]');
+
+        for (const timeEl of timeElements) {
+            const label = timeEl.getAttribute('aria-label') || '';
+            const datetime = timeEl.getAttribute('datetime');
+
+            if (label.includes('Released') || label.includes('Late Due Date')) {
+                continue;
+            }
+
+            if (label.includes('Due at') && datetime) {
+                const timezone = extractTimezoneFromDatetimeString(datetime);
+                if (timezone) {
+                    console.log(`🌍 Detected timezone from Gradescope: ${timezone}`);
+                    return timezone;
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Parse ISO 8601 datetime string to extract timezone
+ */
+function extractTimezoneFromDatetimeString(datetimeStr) {
+    if (!datetimeStr) return null;
+
+    if (datetimeStr.endsWith('Z')) {
+        return 'UTC';
+    }
+
+    const offsetMatch = datetimeStr.match(/([+-]\d{2}):(\d{2})$/);
+    if (!offsetMatch) return null;
+
+    const offsetHours = parseInt(offsetMatch[1]);
+    const offsetMinutes = parseInt(offsetMatch[2]);
+
+    return mapOffsetToTimezone(offsetHours, offsetMinutes);
+}
+
+/**
+ * Map timezone offset to IANA timezone name
+ */
+function mapOffsetToTimezone(hours, minutes = 0) {
+    const totalMinutes = hours * 60 + (hours < 0 ? -minutes : minutes);
+
+    const timezoneMap = {
+        '-480': 'America/Los_Angeles',  // PST
+        '-420': 'America/Denver',        // MST or PDT
+        '-360': 'America/Chicago',       // CST or MDT
+        '-300': 'America/New_York',      // EST or CDT
+        '-240': 'America/New_York',      // EDT
+        '-600': 'Pacific/Honolulu',      // HST
+        '-540': 'America/Anchorage',     // AKST
+        '0': 'UTC',
+        '60': 'Europe/London',
+        '330': 'Asia/Kolkata',
+        '480': 'Asia/Shanghai',
+        '540': 'Asia/Tokyo'
+    };
+
+    return timezoneMap[totalMinutes.toString()] || null;
+}
+
+/**
+ * Get browser's timezone as fallback
+ */
+function getBrowserTimezone() {
+    try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log(`🌐 Using browser timezone: ${timezone}`);
+        return timezone;
+    } catch (e) {
+        console.warn('⚠️ Could not detect browser timezone, defaulting to UTC');
+        return 'UTC';
+    }
+}
+
+/**
+ * Detect timezone with two-tier fallback system
+ */
+function detectTimezone(cells) {
+    const gradescopeTimezone = extractTimezoneFromRow(cells);
+    if (gradescopeTimezone) {
+        return gradescopeTimezone;
+    }
+
+    console.log('⚠️ Could not detect timezone from Gradescope, using browser timezone');
+    return getBrowserTimezone();
+}
+
+/**
  * Parse individual assignment from table row
  * Enhanced version of the original parseAssignmentElement
  */
@@ -359,13 +462,17 @@ function parseAssignmentFromRow(row, course) {
             dueDate = parseDueDateFromText(dueDateText);
         }
     }
-    
+
+    // Detect timezone (Tier 1: Gradescope, Tier 2: Browser)
+    const timezone = detectTimezone(cells);
+
     // Construct assignment URL
     const assignmentUrl = `https://www.gradescope.com/courses/${course.id}/assignments/${assignmentId}`;
-    
+
     return {
         title: title,
         dueDate: dueDate ? dueDate.toISOString() : null,
+        timezone: timezone,
         course: course.shortName || course.fullName || 'Unknown Course',
         courseId: course.id,
         url: assignmentUrl,

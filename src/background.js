@@ -814,9 +814,10 @@ class GoogleCalendarClient {
 
     async createEventFromAssignment(assignment) {
         const dueDate = new Date(assignment.dueDate);
-        const dueDateOnly = dueDate.toLocaleDateString('en-CA', {
-            timeZone: 'America/Los_Angeles'
-        });
+
+        // Use detected timezone (Tier 1/2) or fallback to Pacific Time
+        const timezone = assignment.timezone || 'America/Los_Angeles';
+        console.log(`🌍 Using timezone: ${timezone} ${assignment.timezone ? '(detected)' : '(fallback)'}`);
 
         // Load user settings for reminders and color
         let eventColorId = '9'; // Default Blueberry
@@ -838,13 +839,20 @@ class GoogleCalendarClient {
         const event = {
             summary: `${assignment.course}: ${assignment.title}`,
             description: `Gradescope Assignment: ${assignment.title}\n\nCourse: ${assignment.course}\n\nDue: ${dueDate.toLocaleString('en-US', {
-                timeZone: 'America/Los_Angeles',
+                timeZone: timezone,
                 dateStyle: 'full',
                 timeStyle: 'short'
             })}\n\nSubmit at: ${assignment.url}\n\nExtracted from: ${assignment.pageUrl}`,
 
-            start: { date: dueDateOnly },
-            end: { date: dueDateOnly },
+            // Use timed event with actual due time for accurate reminders
+            start: {
+                dateTime: dueDate.toISOString(),
+                timeZone: timezone
+            },
+            end: {
+                dateTime: dueDate.toISOString(),
+                timeZone: timezone
+            },
 
             location: 'Gradescope',
             source: {
@@ -862,13 +870,13 @@ class GoogleCalendarClient {
             colorId: eventColorId
         };
 
-        // Add reminders if enabled
+        // Add reminders if enabled (now accurate to actual due time)
         if (createReminders) {
             event.reminders = {
                 useDefault: false,
                 overrides: [
-                    { method: 'popup', minutes: 1440 },  // 1 day before
-                    { method: 'popup', minutes: 60 }      // 1 hour before
+                    { method: 'popup', minutes: 1440 },  // 24 hours before actual due time
+                    { method: 'popup', minutes: 60 }      // 1 hour before actual due time
                 ]
             };
         }
