@@ -103,6 +103,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const colorName = selectedBox.getAttribute('data-color-name');
             if (selectedColorName) {
                 selectedColorName.textContent = colorName;
+                // Apply the actual color to the text for better visual feedback
+                const boxColor = selectedBox.style.backgroundColor;
+                selectedColorName.style.color = boxColor;
             }
             console.log('🎨 Color picker UI updated to:', colorName, `(ID: ${colorId})`);
         }
