@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Gradescope to Cal</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+            --border-color: #dee2e6;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --success: #28a745;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0A0A0B;
+            --bg-secondary: #18181B;
+            --bg-tertiary: #27272A;
+            --text-primary: #F4F4F5;
+            --text-secondary: #A1A1AA;
+            --border-color: rgba(244, 244, 245, 0.1);
+            --shadow: rgba(0, 0, 0, 0.3);
+            --success: #4ade80;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 60px 40px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--berkeley-blue);
+            margin-bottom: 12px;
+        }
+
+        [data-theme="dark"] h1 {
+            color: var(--california-gold);
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-list {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 40px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: start;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            flex: 1;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .pin-section {
+            background: linear-gradient(135deg, var(--california-gold) 0%, #ffc639 100%);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            color: #000;
+        }
+
+        [data-theme="dark"] .pin-section {
+            background: linear-gradient(135deg, rgba(253, 181, 21, 0.2) 0%, rgba(255, 198, 57, 0.2) 100%);
+            border: 2px solid var(--california-gold);
+            color: var(--text-primary);
+        }
+
+        .pin-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pin-subtitle {
+            font-size: 16px;
+            margin-bottom: 24px;
+            opacity: 0.9;
+        }
+
+        [data-theme="dark"] .pin-subtitle {
+            opacity: 0.8;
+        }
+
+        .pin-steps {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pin-step {
+            flex: 1;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        .step-number {
+            background: rgba(0, 0, 0, 0.15);
+            color: #000;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        [data-theme="dark"] .step-number {
+            background: rgba(253, 181, 21, 0.3);
+            color: var(--california-gold);
+        }
+
+        .step-visual {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        [data-theme="dark"] .step-visual {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .step-text {
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--berkeley-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #004a8f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 50, 98, 0.3);
+        }
+
+        [data-theme="dark"] .btn-primary {
+            background: var(--california-gold);
+            color: #000;
+        }
+
+        [data-theme="dark"] .btn-primary:hover {
+            background: #ffc639;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-primary);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: underline;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .pin-steps {
+                flex-direction: column;
+            }
+
+            .pin-step {
+                min-width: 100%;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎓📅</div>
+            <h1>Welcome to Gradescope to Cal!</h1>
+            <p class="subtitle">
+                Automatically sync your Gradescope assignments to Google Calendar<br>
+                with automatic 24-hour background sync.
+            </p>
+        </div>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">📅</div>
+                <div class="feature-text">
+                    <div class="feature-title">Auto-Sync to Calendar</div>
+                    <div class="feature-desc">Every assignment automatically appears in Google Calendar with due dates</div>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">⏰</div>
+                <div class="feature-text">
+                    <div class="feature-title">Background Sync</div>
+                    <div class="feature-desc">Automatic 24-hour sync keeps your calendar up-to-date without manual intervention</div>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-text">
+                    <div class="feature-title">100% Private</div>
+                    <div class="feature-desc">All processing happens in your browser. No servers, no tracking.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pin-section">
+            <div class="pin-title">
+                <span>📌</span>
+                <span>First Step: Pin This Extension</span>
+            </div>
+            <p class="pin-subtitle">
+                Pin the extension to your toolbar for instant access. It only takes 5 seconds!
+            </p>
+
+            <div class="pin-steps">
+                <div class="pin-step">
+                    <div class="step-number">1</div>
+                    <div class="step-visual">🧩</div>
+                    <div class="step-text">Click the puzzle icon<br>in your toolbar</div>
+                </div>
+                <div class="pin-step">
+                    <div class="step-number">2</div>
+                    <div class="step-visual">📍</div>
+                    <div class="step-text">Find "Gradescope to Cal"<br>and click the pin</div>
+                </div>
+                <div class="pin-step">
+                    <div class="step-number">3</div>
+                    <div class="step-visual">✅</div>
+                    <div class="step-text">Extension icon appears<br>in your toolbar!</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="pinnedBtn">
+                <span>✅</span>
+                <span>I've Pinned It! Take Me to Gradescope</span>
+            </button>
+            <button class="btn btn-secondary" id="skipBtn">
+                <span>Skip for Now</span>
+            </button>
+        </div>
+
+        <div class="footer-note">
+            Once on Gradescope, visit your dashboard or any course page.<br>
+            Your assignments will be automatically extracted!
+        </div>
+
+        <div class="footer-links">
+            <a href="https://matut-e.github.io/gradescope-to-Cal/privacy-policy.html" target="_blank">Privacy Policy</a>
+        </div>
+    </div>
+
+    <script src="welcome.js"></script>
+</body>
+</html>

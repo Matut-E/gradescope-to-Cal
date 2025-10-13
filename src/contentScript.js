@@ -572,6 +572,55 @@ function extractFromCoursePage() {
     return filterUpcomingAssignments(assignments);
 }
 
+// ============================================================================
+// ONBOARDING: PIN BANNER HELPER
+// ============================================================================
+
+/**
+ * Show pin banner if needed after extraction
+ * @param {Array} assignments - All extracted assignments
+ */
+async function showPinBannerIfNeeded(assignments) {
+    try {
+        // Mark that we have assignments
+        await chrome.storage.local.set({ hasAssignments: assignments.length > 0 });
+
+        // Check if first-time extraction (or no dismissal yet)
+        const data = await chrome.storage.local.get([
+            'dismissedExtractionBanner',
+            'sawExtractionBanner'
+        ]);
+
+        // Only show banner on first few extractions
+        if (data.dismissedExtractionBanner || data.sawExtractionBanner) {
+            return;
+        }
+
+        // Calculate counts for banner
+        const courseTitles = assignments.map(a => a.course);
+        console.log('🔍 Course titles in assignments:', courseTitles.slice(0, 5)); // Show first 5
+
+        const uniqueCourseTitles = [...new Set(courseTitles.filter(title => title && title.trim()))];
+        const courseCount = uniqueCourseTitles.length;
+        const assignmentCount = assignments.length;
+
+        console.log(`📊 Banner counts: ${assignmentCount} assignments across ${courseCount} courses`);
+        console.log('📚 Unique courses:', uniqueCourseTitles);
+
+        // Check pin status from background
+        chrome.runtime.sendMessage({ action: 'checkPinStatus' }, (response) => {
+            if (response && response.success && !response.isPinned) {
+                // Show the banner
+                const bannerInjector = new PinBannerInjector();
+                bannerInjector.showBanner(assignmentCount, courseCount);
+                console.log('📌 Pin banner shown to user');
+            }
+        });
+    } catch (error) {
+        console.error('Error showing pin banner:', error);
+    }
+}
+
 /**
  * Main execution function
  */
@@ -581,23 +630,23 @@ async function main() {
         console.log('⏸️ Extraction already in progress, skipping...');
         return;
     }
-    
+
     const currentUrl = window.location.href;
     if (lastExtractionUrl === currentUrl && extractionInProgress === false) {
         console.log('⏸️ Same URL recently processed, skipping...');
         return;
     }
-    
+
     extractionInProgress = true;
     lastExtractionUrl = currentUrl;
-    
+
     try {
         const pageType = detectPageType();
         console.log(`📄 Page type: ${pageType}`);
-        
+
         let assignments = [];
         let method = '';
-        
+
         if (pageType === 'dashboard') {
             assignments = await discoverFromDashboard();
             method = 'dashboard_auto_discovery_fixed';
@@ -608,11 +657,11 @@ async function main() {
             console.log('ℹ️ Not a relevant Gradescope page, skipping extraction');
             return;
         }
-        
+
         if (assignments.length > 0) {
             // Check for duplicates before storing
             const uniqueAssignments = await checkExistingAssignments(assignments);
-            
+
             if (uniqueAssignments.length > 0) {
                 // Store assignments
                 const storageKey = `assignments_${method}_${Date.now()}`;
@@ -630,15 +679,20 @@ async function main() {
                         }
                     }
                 });
-                
+
                 console.log(`💾 Stored ${uniqueAssignments.length} unique assignments from current semester only (${assignments.length - uniqueAssignments.length} duplicates filtered)`);
+
+                // =================================================================
+                // ONBOARDING: Show pin banner after successful extraction
+                // =================================================================
+                await showPinBannerIfNeeded(assignments);
             } else {
                 console.log('ℹ️ All assignments were duplicates, nothing new to store');
             }
         } else {
             console.log('📭 No assignments found or all assignments filtered out');
         }
-        
+
     } catch (error) {
         console.error('❌ Error during extraction:', error);
     } finally {

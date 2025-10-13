@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Gradescope to Cal",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Automatically sync Gradescope assignments to Google Calendar (Chrome, Brave, Edge compatible)",
 
   "permissions": [
@@ -27,7 +27,7 @@
       "matches": [
         "*://*.gradescope.com/*"
       ],
-      "js": ["contentScript.js"],
+      "js": ["pinBannerInjector.js", "contentScript.js"],
       "run_at": "document_idle"
     }
   ],
@@ -52,7 +52,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["options.html"],
+      "resources": ["options.html", "welcome.html"],
       "matches": ["<all_urls>"]
     }
   ],

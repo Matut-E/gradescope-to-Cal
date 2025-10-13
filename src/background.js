@@ -1151,6 +1151,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 await calendarClient.eventCache.forceRefresh();
                 return { success: true, message: 'Cache refresh complete' };
 
+            case 'checkPinStatus':
+                const isPinned = await checkIfPinned();
+                return { success: true, isPinned };
+
+            case 'openPopup':
+                // Try to open popup (not always possible from content script)
+                try {
+                    chrome.action.openPopup();
+                    return { success: true };
+                } catch (error) {
+                    return { success: false, error: 'Cannot open popup programmatically' };
+                }
+
             default:
                 return { success: false, error: 'Unknown action' };
         }
@@ -1199,13 +1212,40 @@ async function handleCalendarSync(assignments) {
 // Startup handler
 chrome.runtime.onStartup.addListener(async () => {
     console.log('🌟 Extension startup - checking auto-sync...');
-    
+
     const authStatus = await calendarClient.getAuthStatus();
     if (authStatus.authenticated) {
         await AutoSyncManager.setupAutoSync();
         console.log('✅ Auto-sync enabled on startup');
     }
 });
+
+// ============================================================================
+// ONBOARDING: WELCOME PAGE & PIN REMINDERS
+// ============================================================================
+
+// Extension installation handler - show welcome page
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+        console.log('🎉 Extension installed! Opening welcome page...');
+        chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
+    } else if (details.reason === 'update') {
+        console.log('🔄 Extension updated to version', chrome.runtime.getManifest().version);
+    }
+});
+
+/**
+ * Check if extension is pinned to toolbar
+ */
+async function checkIfPinned() {
+    try {
+        // This is a heuristic - we check if user has set storage flags indicating they pinned
+        const data = await chrome.storage.local.get(['userClaimedPin', 'clickedOpenFromBanner']);
+        return !!(data.userClaimedPin || data.clickedOpenFromBanner);
+    } catch (error) {
+        return false;
+    }
+}
 
 // Initialize on service worker start
 (async () => {
