@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            updateStatus(`🔄 Creating ${assignments.length} ALL-DAY calendar events...`, 'info');
+            updateStatus(`🔄 Creating ${assignments.length} calendar events...`, 'info');
 
             const response = await chrome.runtime.sendMessage({ 
                 action: 'syncToCalendar',
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (response.success) {
                 const { results } = response;
-                const message = `✅ Sync complete! ${results.created} all-day events created, ${results.skipped} skipped, ${results.errors} errors`;
+                const message = `✅ Sync complete! ${results.created} events created, ${results.skipped} skipped, ${results.errors} errors`;
                 updateStatus(message, 'success');
                 
                 setTimeout(updateAutoSyncStatus, 600);
@@ -755,7 +755,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            let output = '📅 EXTRACTED ASSIGNMENT DATA (All-Day Events):\n\n';
+            let output = '📅 EXTRACTED ASSIGNMENT DATA:\n\n';
 
             assignments.forEach((assignment, index) => {
                 output += `${index + 1}. ${assignment.title}\n`;
@@ -766,7 +766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     try {
                         const dateObj = new Date(assignment.dueDate);
                         if (!isNaN(dateObj.getTime())) {
-                            dueDateDisplay = dateObj.toLocaleDateString() + ' (All-day event)';
+                            dueDateDisplay = dateObj.toLocaleDateString() + ' (Calendar event)';
                         }
                     } catch (e) {
                         dueDateDisplay = 'Date parsing error';
@@ -784,7 +784,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 output += `\n`;
             });
 
-            output += '\n🔍 Note: Assignments appear as prominent all-day events in your calendar for better visibility.';
+            output += '\n🔍 Note: Assignments appear as events in your calendar for easy tracking.';
 
             const newWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
             newWindow.document.write(`
