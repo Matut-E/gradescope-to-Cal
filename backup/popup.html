@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        /* Theme Variables */
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-tertiary: #adb5bd;
+            --border-color: #dee2e6;
+            --border-light: #eee;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --overlay: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Dark Mode - Enhanced with Website Aesthetic */
+        [data-theme="dark"] {
+            /* Berkeley Colors */
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+
+            /* Backgrounds */
+            --bg-primary: #0A0A0B;
+            --bg-secondary: #18181B;
+            --bg-tertiary: #27272A;
+            --bg-card: rgba(39, 39, 42, 0.6);
+
+            /* Text */
+            --text-primary: #F4F4F5;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+
+            /* Borders */
+            --border-color: rgba(244, 244, 245, 0.1);
+            --border-light: rgba(244, 244, 245, 0.05);
+
+            /* Buttons */
+            --button-bg: #003262;
+            --button-hover: #004A93;
+            --button-secondary-bg: rgba(113, 113, 122, 0.2);
+            --button-secondary-hover: rgba(113, 113, 122, 0.3);
+
+            /* Status Colors */
+            --success: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --success-border: rgba(34, 197, 94, 0.3);
+
+            --warning: #F59E0B;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --warning-border: rgba(245, 158, 11, 0.3);
+
+            --danger: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --danger-border: rgba(239, 68, 68, 0.3);
+
+            --info: #3B82F6;
+            --info-bg: rgba(59, 130, 246, 0.1);
+            --info-border: rgba(59, 130, 246, 0.3);
+
+            /* Shadows & Effects */
+            --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+            --shadow-gold: 0 4px 15px rgba(253, 181, 21, 0.3);
+            --overlay: rgba(10, 10, 11, 0.8);
+        }
+
+        body {
+            width: 320px;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+        }
+
+        .header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            padding: 0;
+            margin: 0;
+            flex-shrink: 0;
+            overflow: hidden;
+            color: var(--text-primary);
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle:active,
+        .theme-toggle:focus {
+            outline: none;
+            transform: none;
+        }
+
+        .theme-toggle:focus-visible {
+            outline: 2px solid var(--border-color);
+            outline-offset: 2px;
+        }
+
+        .theme-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s ease;
+        }
+
+        /* Enhanced Header in Dark Mode */
+        [data-theme="dark"] .header {
+            background: linear-gradient(135deg, rgba(0, 50, 98, 0.1) 0%, rgba(39, 39, 42, 0.1) 100%);
+            border-radius: 8px;
+            padding: 15px;
+            margin: -10px -10px 20px -10px;
+        }
+
+        /* Enhanced Status Messages */
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .status.success {
+            background-color: var(--success-bg, rgba(40, 167, 69, 0.1));
+            color: var(--success);
+            border: 1px solid var(--success-border, rgba(40, 167, 69, 0.3));
+        }
+
+        .status.info {
+            background-color: var(--info-bg, rgba(23, 162, 184, 0.1));
+            color: var(--info);
+            border: 1px solid var(--info-border, rgba(23, 162, 184, 0.3));
+        }
+
+        .status.warning {
+            background-color: var(--warning-bg, rgba(255, 193, 7, 0.1));
+            color: var(--warning);
+            border: 1px solid var(--warning-border, rgba(255, 193, 7, 0.3));
+        }
+
+        [data-theme="dark"] .status {
+            backdrop-filter: blur(10px);
+        }
+
+        /* Enhanced Buttons */
+        .button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-1px);
+        }
+
+        .button:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .button.primary {
+            background-color: var(--success);
+        }
+
+        .button.primary:hover {
+            background-color: #218838;
+        }
+
+        .button.secondary {
+            background-color: var(--text-secondary);
+        }
+
+        .button.secondary:hover {
+            background-color: #545b62;
+        }
+
+        [data-theme="dark"] .button {
+            background: linear-gradient(135deg, var(--berkeley-blue), #004A93);
+            box-shadow: 0 2px 8px rgba(0, 50, 98, 0.3);
+        }
+
+        [data-theme="dark"] .button:hover {
+            box-shadow: 0 4px 12px rgba(0, 50, 98, 0.5);
+            transform: translateY(-2px);
+        }
+
+        [data-theme="dark"] .button.secondary {
+            background: var(--button-secondary-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .button.secondary:hover {
+            background: var(--button-secondary-hover);
+        }
+
+        .assignment-count {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        /* Enhanced Sections */
+        .section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 15px;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        [data-theme="dark"] .section {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        [data-theme="dark"] .section:last-child {
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .feature-badge {
+            background: linear-gradient(45deg, var(--berkeley-blue), var(--california-gold));
+            box-shadow: var(--shadow-gold);
+        }
+
+        /* 🌟 Auto-Sync Specific Styles */
+        .auto-sync-details {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: var(--bg-secondary);
+            border-radius: 4px;
+            border-left: 3px solid var(--button-bg);
+        }
+
+        .auto-sync-info {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .auto-sync-info small {
+            display: inline-block;
+            margin-bottom: 2px;
+        }
+
+        /* Enhanced status indicators */
+        .status.auto-sync-enabled {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: var(--info);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .footer-enhanced {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-light);
+            margin: 15px 0;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Highlight for new features */
+        .feature-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #007bff, #28a745);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        /* Quick Setup Banner */
+        .quick-setup-banner {
+            background: #f0f8ff;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        [data-theme="dark"] .quick-setup-banner {
+            background: rgba(33, 150, 243, 0.15);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .quick-setup-tip {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        [data-theme="dark"] .quick-setup-tip {
+            color: var(--text-secondary);
+        }
+
+        /* Options link button */
+        .options-link {
+            display: block;
+            text-align: center;
+            margin-top: 8px;
+            padding: 8px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .options-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+    </button>
+
+    <div class="header">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0;">Gradescope to Cal</h3>
+        <span class="feature-badge">Auto-Sync Ready</span>
+    </div>
+
+
+    <div id="status" class="status info">
+        <div>🔍 Checking for assignments...</div>
+    </div>
+
+    <!-- Assignment Extraction Section -->
+    <div class="section">
+        <div class="section-title">Assignment Extraction</div>
+        
+        <button id="manualSync" class="button">
+            🔄 Extract Assignments Now
+        </button>
+
+        <button id="viewStorage" class="button secondary">
+            📊 View Extracted Data
+        </button>
+
+        <div id="assignmentCount" class="assignment-count">
+            No assignment data found yet
+        </div>
+    </div>
+
+    <!-- 🌟 REORDERED: Google Calendar Integration Section (now comes BEFORE Auto-Sync) -->
+    <div class="section">
+        <div class="section-title">Google Calendar Sync</div>
+        
+        <div id="authStatus" class="status info">
+            <div>🔍 Checking authentication...</div>
+        </div>
+
+        <button id="authenticate" class="button" style="display: none;">
+            🔐 Connect Google Calendar
+        </button>
+
+        <button id="calendarSync" class="button primary" disabled>
+            📅 Sync to Calendar
+        </button>
+    </div>
+
+    <div class="footer">
+        Privacy-first • No servers • Local processing only
+    </div>
+
+    <a href="options.html" class="options-link" target="_blank">
+        ⚙️ Options
+    </a>
+
+    <script src="popup.js"></script>
+</body>
+</html>

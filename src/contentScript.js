@@ -1,12 +1,31 @@
 /**
- * Enhanced Gradescope Calendar Sync - Content Script (FIXED VERSION)
- * Features: Smart dashboard auto-discovery + individual course fallback + deduplication
- * FIXED: Proper semester boundary detection using courseList structure
+ * Gradescope Calendar Sync - Content Script
+ * Features: Assignment extraction + calendar sync (no grade calculator)
+ *
+ * This is the main coordinator that uses the extracted utility modules
  */
 
-console.log('🎯 Enhanced Gradescope Calendar Sync: Content script loaded');
+console.log('🎯 Gradescope Calendar Sync: Content script loaded');
 
-// Global state to prevent double processing
+// =============================================================================
+// DEPENDENCIES
+// =============================================================================
+
+/**
+ * Required modules (loaded via manifest.json):
+ * - DateParser (utils/dateParser.js) - Date parsing utilities
+ * - AssignmentParser (utils/assignmentParser.js) - Assignment parsing utilities
+ * - PageDetector (utils/pageDetector.js) - Page detection and DOM observation
+ * - TestFunctions (utils/testFunctions.js) - Testing and debug functions
+ * - PinBannerInjector (utils/pinBannerInjector.js) - Pin reminder banner
+ *
+ * All modules are available via window.ModuleName
+ */
+
+// =============================================================================
+// GLOBAL STATE AND LISTENERS
+// =============================================================================
+
 let extractionInProgress = false;
 let lastExtractionUrl = null;
 
@@ -19,678 +38,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-/**
- * UTILITY FUNCTIONS
- */
-
-/**
- * Detect what type of Gradescope page we're on
- */
-function detectPageType() {
-    const url = window.location.href;
-    
-    // Main dashboard - has courseList structure
-    if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account')) && 
-        document.querySelector('.courseList')) {
-        return 'dashboard';
-    }
-    
-    // Individual course page - has assignment table
-    if (url.includes('/courses/') && document.querySelector('table')) {
-        if (url.includes('/assignments')) {
-            return 'course_assignments';
-        }
-        return 'course_main';
-    }
-
-    return 'other';
-}
-
-/**
- * Get current semester name from dashboard
- * Uses the first courseList--term element (always current semester)
- */
-function getCurrentSemester() {
-    console.log('📅 Detecting current semester from courseList structure...');
-    
-    // Find the first semester term element
-    const firstTermElement = document.querySelector('.courseList--term');
-    
-    if (firstTermElement) {
-        const semesterText = firstTermElement.textContent?.trim();
-        if (semesterText && /^(Fall|Spring|Summer|Winter)\s+\d{4}$/.test(semesterText)) {
-            console.log(`✅ Found current semester from courseList: ${semesterText}`);
-            return semesterText;
-        }
-    }
-    
-    // Fallback: date-based detection
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth(); // 0-11
-    
-    let semester;
-    if (month >= 7 && month <= 11) { // Aug-Dec
-        semester = `Fall ${year}`;
-    } else if (month >= 0 && month <= 4) { // Jan-May
-        semester = `Spring ${year}`;
-    } else { // Jun-Jul
-        semester = `Summer ${year}`;
-    }
-    
-    console.log(`🔄 Date-based semester fallback: ${semester}`);
-    return semester;
-}
-
-/**
- * Extract course information from dashboard - FIXED VERSION
- * Only processes current semester courses using proper DOM structure
- */
-function extractCoursesFromDashboard() {
-    console.log('🏠 Extracting courses from dashboard (FIXED VERSION)...');
-    
-    const currentSemester = getCurrentSemester();
-    const courses = [];
-    
-    // Find the first courseList--term element (current semester)
-    const firstTermElement = document.querySelector('.courseList--term');
-    
-    if (!firstTermElement) {
-        console.log('❌ No courseList--term elements found');
-        return courses;
-    }
-    
-    // Get the coursesForTerm container that immediately follows the first term
-    const currentSemesterContainer = firstTermElement.nextElementSibling;
-    
-    if (!currentSemesterContainer || !currentSemesterContainer.classList.contains('courseList--coursesForTerm')) {
-        console.log('❌ Could not find courseList--coursesForTerm container after first term');
-        return courses;
-    }
-    
-    // Extract course cards ONLY from the current semester container
-    const courseCards = currentSemesterContainer.querySelectorAll('.courseBox');
-    console.log(`📚 Found ${courseCards.length} course cards in current semester (${currentSemester})`);
-    
-    // Filter out the "Add a course" button
-    const actualCourseCards = Array.from(courseCards).filter(card => 
-        !card.classList.contains('courseBox-new') && 
-        !card.textContent.includes('Add a course')
-    );
-    
-    console.log(`📖 Processing ${actualCourseCards.length} actual course cards (filtered out Add Course button)`);
-    
-    actualCourseCards.forEach((card, index) => {
-        const courseData = extractCourseFromCard(card, currentSemester);
-        if (courseData) {
-            courses.push(courseData);
-            console.log(`✅ Extracted course ${index + 1}: ${courseData.shortName}`);
-        } else {
-            console.log(`⚠️ Failed to extract data from course card ${index + 1}`);
-        }
-    });
-    
-    console.log(`📊 Dashboard extraction complete: ${courses.length} current semester courses for ${currentSemester}`);
-    return courses;
-}
-
-/**
- * Extract course information from a single course card
- */
-function extractCourseFromCard(card, semester) {
-    try {
-        // Get course link (the card itself is a link)
-        const courseLink = card.href;
-        if (!courseLink) {
-            console.log('⚠️ Course card missing href attribute');
-            return null;
-        }
-        
-        // Extract course ID from URL
-        const courseIdMatch = courseLink.match(/\/courses\/(\d+)/);
-        if (!courseIdMatch) {
-            console.log('⚠️ Could not extract course ID from:', courseLink);
-            return null;
-        }
-        const courseId = courseIdMatch[1];
-        
-        // Get course name (short name) - from h3 with class courseBox--shortname
-        const shortNameEl = card.querySelector('.courseBox--shortname');
-        const shortName = shortNameEl?.textContent?.trim() || `Course ${courseId}`;
-        
-        // Get full course name - from div with class courseBox--name
-        const fullNameEl = card.querySelector('.courseBox--name');
-        const fullName = fullNameEl?.textContent?.trim() || shortName;
-        
-        // Get assignment count - from div with class courseBox--assignments
-        const assignmentEl = card.querySelector('.courseBox--assignments');
-        const assignmentText = assignmentEl?.textContent?.trim() || '0 assignments';
-        const assignmentCount = parseInt(assignmentText.match(/\d+/)?.[0] || '0');
-        
-        console.log(`📖 Parsed course: ${shortName} -> ${fullName} (${assignmentCount} assignments)`);
-        
-        return {
-            id: courseId,
-            shortName: shortName,
-            fullName: fullName,
-            url: new URL(courseLink, window.location.origin).href,
-            assignmentCount: assignmentCount,
-            semester: semester,
-            extractedAt: new Date().toISOString()
-        };
-        
-    } catch (error) {
-        console.log('⚠️ Error parsing course card:', error);
-        return null;
-    }
-}
-
-/**
- * Fetch and parse assignments from a course URL
- */
-async function fetchCourseAssignments(course) {
-    console.log(`📡 Fetching assignments from ${course.shortName}...`);
-    
-    try {
-        // If we're already on this course page, parse directly
-        if (window.location.href.includes(`/courses/${course.id}`)) {
-            console.log('📍 Already on course page, parsing directly');
-            return parseCurrentPageAssignments(course);
-        }
-        
-        // Otherwise, fetch the course page
-        const response = await fetch(course.url, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Cache-Control': 'no-cache'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        return parseAssignmentsFromDocument(doc, course);
-        
-    } catch (error) {
-        console.log(`❌ Error fetching ${course.shortName}:`, error.message);
-        return [];
-    }
-}
-
-/**
- * Parse assignments from current page (when already on course page)
- */
-function parseCurrentPageAssignments(course) {
-    console.log(`📋 Parsing assignments from current page for ${course.shortName || 'current course'}`);
-    
-    const assignments = [];
-    const table = document.querySelector('table');
-    
-    if (!table) {
-        console.log('❌ No assignment table found on current page');
-        return assignments;
-    }
-    
-    const rows = table.querySelectorAll('tbody tr');
-    console.log(`🔍 Found ${rows.length} rows to examine`);
-    
-    rows.forEach((row, index) => {
-        try {
-            const assignment = parseAssignmentFromRow(row, course);
-            if (assignment) {
-                assignments.push(assignment);
-            }
-        } catch (error) {
-            console.log(`⚠️ Error parsing row ${index + 1}:`, error);
-        }
-    });
-    
-    return assignments;
-}
-
-/**
- * Parse assignments from fetched HTML document
- */
-function parseAssignmentsFromDocument(doc, course) {
-    console.log(`📋 Parsing assignments from fetched document for ${course.shortName}`);
-    
-    const assignments = [];
-    const table = doc.querySelector('table');
-    
-    if (!table) {
-        console.log(`❌ No assignment table found for ${course.shortName}`);
-        return assignments;
-    }
-    
-    const rows = table.querySelectorAll('tbody tr');
-    console.log(`🔍 Found ${rows.length} rows in ${course.shortName}`);
-    
-    rows.forEach((row, index) => {
-        try {
-            const assignment = parseAssignmentFromRow(row, course);
-            if (assignment) {
-                assignments.push(assignment);
-            }
-        } catch (error) {
-            console.log(`⚠️ Error parsing row ${index + 1} in ${course.shortName}:`, error);
-        }
-    });
-    
-    return assignments;
-}
-
-/**
- * TIMEZONE DETECTION UTILITIES (for robust calendar reminders)
- */
-
-/**
- * Extract timezone from Gradescope datetime attribute
- * Returns IANA timezone name (e.g., "America/Los_Angeles", "America/New_York")
- */
-function extractTimezoneFromRow(cells) {
-    if (cells.length >= 3) {
-        const timeElements = cells[2].querySelectorAll('time[datetime]');
-
-        for (const timeEl of timeElements) {
-            const label = timeEl.getAttribute('aria-label') || '';
-            const datetime = timeEl.getAttribute('datetime');
-
-            if (label.includes('Released') || label.includes('Late Due Date')) {
-                continue;
-            }
-
-            if (label.includes('Due at') && datetime) {
-                const timezone = extractTimezoneFromDatetimeString(datetime);
-                if (timezone) {
-                    console.log(`🌍 Detected timezone from Gradescope: ${timezone}`);
-                    return timezone;
-                }
-            }
-        }
-    }
-
-    return null;
-}
-
-/**
- * Parse ISO 8601 datetime string to extract timezone
- */
-function extractTimezoneFromDatetimeString(datetimeStr) {
-    if (!datetimeStr) return null;
-
-    if (datetimeStr.endsWith('Z')) {
-        return 'UTC';
-    }
-
-    const offsetMatch = datetimeStr.match(/([+-]\d{2}):(\d{2})$/);
-    if (!offsetMatch) return null;
-
-    const offsetHours = parseInt(offsetMatch[1]);
-    const offsetMinutes = parseInt(offsetMatch[2]);
-
-    return mapOffsetToTimezone(offsetHours, offsetMinutes);
-}
-
-/**
- * Map timezone offset to IANA timezone name
- */
-function mapOffsetToTimezone(hours, minutes = 0) {
-    const totalMinutes = hours * 60 + (hours < 0 ? -minutes : minutes);
-
-    const timezoneMap = {
-        '-480': 'America/Los_Angeles',  // PST
-        '-420': 'America/Denver',        // MST or PDT
-        '-360': 'America/Chicago',       // CST or MDT
-        '-300': 'America/New_York',      // EST or CDT
-        '-240': 'America/New_York',      // EDT
-        '-600': 'Pacific/Honolulu',      // HST
-        '-540': 'America/Anchorage',     // AKST
-        '0': 'UTC',
-        '60': 'Europe/London',
-        '330': 'Asia/Kolkata',
-        '480': 'Asia/Shanghai',
-        '540': 'Asia/Tokyo'
-    };
-
-    return timezoneMap[totalMinutes.toString()] || null;
-}
-
-/**
- * Get browser's timezone as fallback
- */
-function getBrowserTimezone() {
-    try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        console.log(`🌐 Using browser timezone: ${timezone}`);
-        return timezone;
-    } catch (e) {
-        console.warn('⚠️ Could not detect browser timezone, defaulting to UTC');
-        return 'UTC';
-    }
-}
-
-/**
- * Detect timezone with two-tier fallback system
- */
-function detectTimezone(cells) {
-    const gradescopeTimezone = extractTimezoneFromRow(cells);
-    if (gradescopeTimezone) {
-        return gradescopeTimezone;
-    }
-
-    console.log('⚠️ Could not detect timezone from Gradescope, using browser timezone');
-    return getBrowserTimezone();
-}
-
-/**
- * Parse individual assignment from table row
- * Enhanced version of the original parseAssignmentElement
- */
-function parseAssignmentFromRow(row, course) {
-    // Skip header rows
-    const thElements = row.querySelectorAll('th');
-    const tdElements = row.querySelectorAll('td');
-    
-    if (thElements.length > 0 && tdElements.length === 0) {
-        return null; // Header row
-    }
-    
-    // Look for assignment button
-    const titleButton = row.querySelector('button.js-submitAssignment, button[data-assignment-id]');
-    
-    if (!titleButton) {
-        return null; // Not an assignment row
-    }
-    
-    const title = titleButton.textContent?.trim();
-    const assignmentId = titleButton.getAttribute('data-assignment-id');
-    
-    if (!title || !assignmentId) {
-        return null;
-    }
-    
-    // Parse due date from row - look in the third column
-    const cells = row.querySelectorAll('td, th');
-    let dueDate = null;
-    
-    if (cells.length >= 3) {
-        // Try to find time elements with datetime attributes first (most reliable)
-        const timeElements = cells[2].querySelectorAll('time[datetime]');
-        
-        if (timeElements.length > 0) {
-            // Look for the main due date (not late due date)
-            let mainDueTime = null;
-            
-            for (const timeEl of timeElements) {
-                const label = timeEl.getAttribute('aria-label') || '';
-                const datetime = timeEl.getAttribute('datetime');
-                
-                // Skip release dates and late due dates
-                if (label.includes('Released') || label.includes('Late Due Date')) {
-                    continue;
-                }
-                
-                if (label.includes('Due at') && datetime) {
-                    mainDueTime = datetime;
-                    break;
-                }
-            }
-            
-            if (mainDueTime) {
-                try {
-                    dueDate = new Date(mainDueTime);
-                    if (!isNaN(dueDate.getTime())) {
-                        console.log(`📅 Parsed due date from datetime: ${dueDate.toISOString()}`);
-                    } else {
-                        dueDate = null;
-                    }
-                } catch (e) {
-                    dueDate = null;
-                }
-            }
-        }
-        
-        // Fallback to text parsing if datetime approach failed
-        if (!dueDate) {
-            const dueDateText = cells[2].textContent?.trim();
-            dueDate = parseDueDateFromText(dueDateText);
-        }
-    }
-
-    // Detect timezone (Tier 1: Gradescope, Tier 2: Browser)
-    const timezone = detectTimezone(cells);
-
-    // Construct assignment URL
-    const assignmentUrl = `https://www.gradescope.com/courses/${course.id}/assignments/${assignmentId}`;
-
-    return {
-        title: title,
-        dueDate: dueDate ? dueDate.toISOString() : null,
-        timezone: timezone,
-        course: course.shortName || course.fullName || 'Unknown Course',
-        courseId: course.id,
-        url: assignmentUrl,
-        assignmentId: assignmentId,
-        extractedAt: new Date().toISOString(),
-        pageUrl: course.url || window.location.href,
-        autoDiscovered: true,
-        semester: course.semester
-    };
-}
-
-/**
- * Parse due date from text (fallback method, reused from original script)
- */
-function parseDueDateFromText(dueDateText) {
-    if (!dueDateText) return null;
-    
-    const dateRegex = /(\w{3}\s+\d{1,2}\s+at\s+\d{1,2}:\d{2}[AP]M)/g;
-    const dateMatches = dueDateText.match(dateRegex);
-    
-    if (!dateMatches || dateMatches.length === 0) return null;
-    
-    let targetDateStr = null;
-    
-    // Smart date selection logic from original script
-    if (dueDateText.includes('Late Due Date:')) {
-        const beforeLateDue = dueDateText.split('Late Due Date:')[0];
-        const beforeLateDueMatches = beforeLateDue.match(dateRegex);
-        if (beforeLateDueMatches && beforeLateDueMatches.length > 0) {
-            targetDateStr = beforeLateDueMatches[beforeLateDueMatches.length - 1];
-        }
-    } else if (dateMatches.length >= 2) {
-        targetDateStr = dateMatches[1];
-    } else {
-        targetDateStr = dateMatches[0];
-    }
-    
-    if (targetDateStr) {
-        try {
-            const currentYear = new Date().getFullYear();
-            const normalizedDate = targetDateStr
-                .replace(/\s+/g, ' ')
-                .replace(' at ', `, ${currentYear} `)
-                .replace(/(\d)([AP]M)/, '$1 $2');
-            
-            const dueDate = new Date(normalizedDate);
-            return !isNaN(dueDate.getTime()) ? dueDate : null;
-        } catch (e) {
-            return null;
-        }
-    }
-    
-    return null;
-}
-
-/**
- * Filter assignments to only include upcoming ones
- */
-function filterUpcomingAssignments(assignments) {
-    const now = new Date();
-    const upcomingAssignments = [];
-    
-    assignments.forEach(assignment => {
-        if (!assignment.dueDate) {
-            console.log(`⚠️ Skipping ${assignment.title} (no due date)`);
-            return;
-        }
-        
-        const dueDate = new Date(assignment.dueDate);
-        const daysDifference = (dueDate - now) / (1000 * 60 * 60 * 24);
-        
-        // Include assignments due in the future or within last 3 days (for late submissions)
-        if (daysDifference >= -3) {
-            upcomingAssignments.push(assignment);
-            
-            if (daysDifference > 0) {
-                console.log(`📅 Including upcoming: ${assignment.title} (due in ${Math.ceil(daysDifference)} days)`);
-            } else {
-                console.log(`⏰ Including recent: ${assignment.title} (${Math.abs(Math.floor(daysDifference))} days overdue)`);
-            }
-        } else {
-            console.log(`🗂️ Filtering out old: ${assignment.title} (${Math.abs(Math.floor(daysDifference))} days overdue)`);
-        }
-    });
-    
-    return upcomingAssignments;
-}
-
-/**
- * Check if assignment was already extracted (deduplication)
- */
-async function checkExistingAssignments(newAssignments) {
-    try {
-        const storage = await chrome.storage.local.get();
-        const existingIds = new Set();
-        
-        // Collect all existing assignment IDs
-        Object.keys(storage).forEach(key => {
-            if (key.startsWith('assignments_') && storage[key].assignments) {
-                storage[key].assignments.forEach(assignment => {
-                    if (assignment.assignmentId) {
-                        existingIds.add(assignment.assignmentId);
-                    }
-                });
-            }
-        });
-        
-        // Filter out assignments that already exist
-        const uniqueAssignments = newAssignments.filter(assignment => {
-            const isUnique = !existingIds.has(assignment.assignmentId);
-            if (!isUnique) {
-                console.log(`🔄 Skipping duplicate: ${assignment.title} (ID: ${assignment.assignmentId})`);
-            }
-            return isUnique;
-        });
-        
-        console.log(`🔍 Deduplication: ${newAssignments.length} total → ${uniqueAssignments.length} unique`);
-        return uniqueAssignments;
-        
-    } catch (error) {
-        console.log('⚠️ Error checking existing assignments, proceeding with all:', error);
-        return newAssignments;
-    }
-}
-
-/**
- * MAIN EXECUTION FUNCTIONS
- */
-
-/**
- * Auto-discover assignments from dashboard - FIXED VERSION
- */
-async function discoverFromDashboard() {
-    console.log('🏠 Starting dashboard auto-discovery (FIXED VERSION)...');
-    
-    const courses = extractCoursesFromDashboard();
-    
-    if (courses.length === 0) {
-        console.log('❌ No courses found in current semester');
-        return [];
-    }
-    
-    console.log(`📚 Found ${courses.length} courses in current semester:`, courses.map(c => c.shortName));
-    
-    const allAssignments = [];
-    const results = {
-        totalCourses: courses.length,
-        processed: 0,
-        totalAssignments: 0
-    };
-    
-    // Process courses with respectful delays
-    for (const course of courses) {
-        try {
-            console.log(`🔍 Processing ${course.shortName}...`);
-            
-            const assignments = await fetchCourseAssignments(course);
-            const upcomingAssignments = filterUpcomingAssignments(assignments);
-            
-            if (upcomingAssignments.length > 0) {
-                allAssignments.push(...upcomingAssignments);
-                results.totalAssignments += upcomingAssignments.length;
-                console.log(`✅ Found ${upcomingAssignments.length} upcoming assignments in ${course.shortName}`);
-            } else {
-                console.log(`📭 No upcoming assignments in ${course.shortName}`);
-            }
-            
-            results.processed++;
-            
-            // Respectful delay between requests (1 second)
-            if (results.processed < courses.length) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            
-        } catch (error) {
-            console.log(`❌ Failed to process ${course.shortName}:`, error.message);
-        }
-    }
-    
-    console.log('🎉 Dashboard auto-discovery complete:', results);
-    return allAssignments;
-}
-
-/**
- * Extract from individual course page (fallback)
- */
-function extractFromCoursePage() {
-    console.log('📄 Extracting from individual course page...');
-    
-    // Create course object from current page
-    const courseId = window.location.pathname.match(/\/courses\/(\d+)/)?.[1];
-    const courseNameEl = document.querySelector('h1, .course-title, .course-name');
-    const courseName = courseNameEl?.textContent?.trim() || `Course ${courseId}`;
-    
-    const course = {
-        id: courseId,
-        shortName: courseName,
-        fullName: courseName,
-        url: window.location.href,
-        semester: getCurrentSemester()
-    };
-    
-    const assignments = parseCurrentPageAssignments(course);
-    return filterUpcomingAssignments(assignments);
-}
-
-// ============================================================================
+// =============================================================================
 // ONBOARDING: PIN BANNER HELPER
-// ============================================================================
+// =============================================================================
 
 /**
  * Show pin banner if needed after extraction
- * @param {Array} assignments - All extracted assignments
+ * @param {Array} calendarAssignments - Calendar-ready assignments (upcoming only)
  */
-async function showPinBannerIfNeeded(assignments) {
+async function showPinBannerIfNeeded(calendarAssignments) {
     try {
         // Mark that we have assignments
-        await chrome.storage.local.set({ hasAssignments: assignments.length > 0 });
+        await chrome.storage.local.set({ hasAssignments: calendarAssignments.length > 0 });
 
         // Check if first-time extraction (or no dismissal yet)
         const data = await chrome.storage.local.get([
@@ -703,16 +62,13 @@ async function showPinBannerIfNeeded(assignments) {
             return;
         }
 
-        // Calculate counts for banner
-        const courseTitles = assignments.map(a => a.course);
-        console.log('🔍 Course titles in assignments:', courseTitles.slice(0, 5)); // Show first 5
-
+        // Calculate counts for banner (using calendar assignments to match popup)
+        const courseTitles = calendarAssignments.map(a => a.course);
         const uniqueCourseTitles = [...new Set(courseTitles.filter(title => title && title.trim()))];
         const courseCount = uniqueCourseTitles.length;
-        const assignmentCount = assignments.length;
+        const assignmentCount = calendarAssignments.length;
 
         console.log(`📊 Banner counts: ${assignmentCount} assignments across ${courseCount} courses`);
-        console.log('📚 Unique courses:', uniqueCourseTitles);
 
         // Check pin status from background
         chrome.runtime.sendMessage({ action: 'checkPinStatus' }, (response) => {
@@ -728,11 +84,42 @@ async function showPinBannerIfNeeded(assignments) {
     }
 }
 
+// =============================================================================
+// ASSIGNMENT DEDUPLICATION
+// =============================================================================
+
 /**
- * Main execution function
+ * Check for existing assignments to avoid duplicates
+ */
+async function checkExistingAssignments(assignments) {
+    try {
+        const storage = await chrome.storage.local.get(null);
+        const existingIds = new Set();
+
+        for (const [key, value] of Object.entries(storage)) {
+            if (key.startsWith('assignments_') && value.assignments) {
+                value.assignments.forEach(a => {
+                    if (a.id) existingIds.add(a.id);
+                });
+            }
+        }
+
+        const newAssignments = assignments.filter(a => !existingIds.has(a.id));
+        return newAssignments;
+    } catch (error) {
+        console.error('Error checking existing assignments:', error);
+        return assignments;
+    }
+}
+
+// =============================================================================
+// MAIN EXECUTION FUNCTION
+// =============================================================================
+
+/**
+ * Main execution coordinating all extraction and storage logic
  */
 async function main() {
-    // Prevent concurrent extractions
     if (extractionInProgress) {
         console.log('⏸️ Extraction already in progress, skipping...');
         return;
@@ -748,56 +135,72 @@ async function main() {
     lastExtractionUrl = currentUrl;
 
     try {
-        const pageType = detectPageType();
+        const pageType = PageDetector.detectPageType();
         console.log(`📄 Page type: ${pageType}`);
 
-        let assignments = [];
+        let result;
         let method = '';
 
         if (pageType === 'dashboard') {
-            assignments = await discoverFromDashboard();
-            method = 'dashboard_auto_discovery_fixed';
+            result = await AssignmentParser.fastComprehensiveExtraction();
+            method = 'fast_comprehensive_extraction';
         } else if (pageType === 'course_main' || pageType === 'course_assignments') {
-            assignments = extractFromCoursePage();
+            result = AssignmentParser.extractFromCoursePage();
             method = 'individual_course_page';
         } else {
             console.log('ℹ️ Not a relevant Gradescope page, skipping extraction');
             return;
         }
 
-        if (assignments.length > 0) {
-            // Check for duplicates before storing
-            const uniqueAssignments = await checkExistingAssignments(assignments);
+        const { allAssignments, calendarAssignments } = result;
 
-            if (uniqueAssignments.length > 0) {
-                // Store assignments
+        if (allAssignments.length > 0) {
+            // Check for duplicates only on calendar assignments
+            const uniqueCalendarAssignments = await checkExistingAssignments(calendarAssignments);
+
+            if (uniqueCalendarAssignments.length > 0 || allAssignments.length > 0) {
                 const storageKey = `assignments_${method}_${Date.now()}`;
+
                 await chrome.storage.local.set({
                     [storageKey]: {
-                        assignments: uniqueAssignments,
+                        // Store calendar assignments (for calendar sync functionality)
+                        assignments: uniqueCalendarAssignments,
+
+                        // Store ALL assignments
+                        allAssignments: allAssignments,
+
                         extractedAt: new Date().toISOString(),
                         pageUrl: window.location.href,
                         method: method,
-                        semester: getCurrentSemester(),
+                        semester: DateParser.getCurrentSemester(),
+
                         stats: {
-                            total: assignments.length,
-                            unique: uniqueAssignments.length,
-                            duplicates: assignments.length - uniqueAssignments.length
+                            totalExtracted: allAssignments.length,
+                            calendarTotal: calendarAssignments.length,
+                            calendarUnique: uniqueCalendarAssignments.length,
+                            calendarDuplicates: calendarAssignments.length - uniqueCalendarAssignments.length,
+                            submitted: allAssignments.filter(a => a.isSubmitted).length,
+                            pending: allAssignments.filter(a => !a.isSubmitted).length
                         }
                     }
                 });
 
-                console.log(`💾 Stored ${uniqueAssignments.length} unique assignments from current semester only (${assignments.length - uniqueAssignments.length} duplicates filtered)`);
+                const submitted = allAssignments.filter(a => a.isSubmitted).length;
+                const pending = allAssignments.filter(a => !a.isSubmitted).length;
 
-                // =================================================================
-                // ONBOARDING: Show pin banner after successful extraction
-                // =================================================================
-                await showPinBannerIfNeeded(assignments);
+                console.log(`💾 Stored assignment data:`);
+                console.log(`   📊 ${allAssignments.length} total assignments extracted`);
+                console.log(`   🗓️ ${uniqueCalendarAssignments.length} calendar assignments (${calendarAssignments.length - uniqueCalendarAssignments.length} duplicates)`);
+                console.log(`   📈 Status: ${submitted} submitted, ${pending} pending`);
+
+                // Show pin banner after successful extraction (use calendar assignments to match popup counts)
+                await showPinBannerIfNeeded(calendarAssignments);
+
             } else {
-                console.log('ℹ️ All assignments were duplicates, nothing new to store');
+                console.log('ℹ️ All calendar assignments were duplicates');
             }
         } else {
-            console.log('📭 No assignments found or all assignments filtered out');
+            console.log('📭 No assignments found');
         }
 
     } catch (error) {
@@ -807,186 +210,36 @@ async function main() {
     }
 }
 
-/**
- * OPTIMIZATION 1: Targeted DOM Observation
- * Replaces the broad document.body observation with specific container targeting
- * Reduces CPU usage by ~80% while maintaining full functionality
- */
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
 
-/**
- * Debounce utility to prevent excessive extraction calls
- */
-function debounce(func, delay) {
-    let timeoutId;
-    return (...args) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => func.apply(this, args), delay);
-    };
-}
+console.log('✅ Calendar sync extraction ready!');
+console.log('🧪 Available test functions:');
+console.log('   • testGradeExtraction() - Basic extraction test');
+console.log('   • testEnhancedStorage() - Check stored data');
 
-/**
- * Set up optimized DOM observers targeting specific containers
- * Much more efficient than watching entire document.body
- */
-function setupOptimizedDOMObserver() {
-    console.log('🎯 Setting up optimized DOM observation...');
-    
-    // Debounced extraction function - prevents rapid-fire calls
-    const debouncedMain = debounce(main, 1000);
-    
-    // Target specific containers instead of entire body
-    const targetSelectors = [
-        '.courseList',              // Dashboard course list container
-        '.courseList--coursesForTerm', // Semester-specific course containers
-        'table tbody',              // Assignment table bodies
-        '.assignment-row',          // Individual assignment rows (if they exist)
-        '.table-responsive'         // Gradescope's responsive table wrapper
-    ];
-    
-    let observersCreated = 0;
-    
-    targetSelectors.forEach(selector => {
-        const containers = document.querySelectorAll(selector);
-        
-        containers.forEach(container => {
-            if (container && !container.dataset.gradescopeObserved) {
-                // Mark to avoid double-observation
-                container.dataset.gradescopeObserved = 'true';
-                
-                const observer = new MutationObserver((mutations) => {
-                    // Filter out trivial mutations (like style changes)
-                    const significantMutations = mutations.filter(mutation => {
-                        // Only care about added/removed nodes, not attribute changes
-                        return mutation.type === 'childList' && 
-                               (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0);
-                    });
-                    
-                    if (significantMutations.length > 0) {
-                        console.log(`📡 Significant DOM change detected in ${selector}`);
-                        debouncedMain();
-                    }
-                });
-                
-                observer.observe(container, {
-                    childList: true,
-                    subtree: true
-                });
-                
-                observersCreated++;
-                console.log(`✅ Observer ${observersCreated} created for: ${selector}`);
-            }
-        });
-    });
-    
-    console.log(`🎯 Optimized DOM observation setup complete: ${observersCreated} targeted observers`);
-    
-    // Fallback: If no specific containers found, use minimal body observation
-    if (observersCreated === 0) {
-        console.log('⚠️ No specific containers found, using fallback observation');
-        setupFallbackObserver(debouncedMain);
-    }
-    
-    return observersCreated;
-}
-
-/**
- * Fallback observer with minimal scope if specific containers aren't found
- */
-function setupFallbackObserver(debouncedMain) {
-    const observer = new MutationObserver((mutations) => {
-        // Only trigger on substantial changes, not every little DOM update
-        const substantialChanges = mutations.filter(mutation => {
-            if (mutation.type !== 'childList') return false;
-            
-            // Look for changes that might indicate new assignment content
-            const hasRelevantChanges = Array.from(mutation.addedNodes).some(node => {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    const element = node;
-                    return element.tagName === 'TR' || 
-                           element.classList?.contains('courseBox') ||
-                           element.classList?.contains('assignment') ||
-                           element.querySelector('table') ||
-                           element.querySelector('.courseList');
-                }
-                return false;
-            });
-            
-            return hasRelevantChanges;
-        });
-        
-        if (substantialChanges.length > 0) {
-            console.log('📡 Substantial DOM change detected (fallback observer)');
-            debouncedMain();
-        }
-    });
-    
-    // Still observe body, but with more restrictive filtering
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-    
-    console.log('✅ Fallback observer active');
-}
-
-/**
- * Enhanced URL change detection with debouncing
- */
-function setupOptimizedURLObserver() {
-    let lastUrl = window.location.href;
-    
-    // Check for URL changes every 2 seconds instead of on every mutation
-    const urlCheckInterval = setInterval(() => {
-        if (window.location.href !== lastUrl) {
-            const oldUrl = lastUrl;
-            lastUrl = window.location.href;
-            
-            console.log(`🔄 Page navigation: ${oldUrl} → ${lastUrl}`);
-            
-            // Give the page time to load before extraction
-            setTimeout(() => {
-                // Re-setup observers for new page content
-                setupOptimizedDOMObserver();
-                main();
-            }, 1500);
-        }
-    }, 2000);
-    
-    // Clean up interval when page unloads
-    window.addEventListener('beforeunload', () => {
-        clearInterval(urlCheckInterval);
-    });
-}
-
-/**
- * INITIALIZATION - OPTIMIZED VERSION
- */
-
-// Prevent multiple script injections
-if (window.gradescopeCalendarSyncLoaded) {
-    console.log('🔄 Manual sync triggered - re-running extraction...');
+// Initialize extension
+if (window.gradescopeCalendarSyncLoadedV4) {
+    console.log('🔄 Manual sync triggered');
     main();
 } else {
-    window.gradescopeCalendarSyncLoaded = true;
+    window.gradescopeCalendarSyncLoadedV4 = true;
 
-    // OPTIMIZED INITIALIZATION
-    console.log('🎯 Starting optimized content script initialization...');
-    
+    console.log('🎯 Starting calendar sync content script...');
+
+    const initializeExtension = () => {
+        PageDetector.setupOptimizedDOMObserver(main);
+        main();
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                setupOptimizedDOMObserver();
-                setupOptimizedURLObserver();
-                main();
-            }, 2000); // Wait for dynamic content
+            setTimeout(initializeExtension, 1000);
         });
     } else {
-        setTimeout(() => {
-            setupOptimizedDOMObserver();
-            setupOptimizedURLObserver();
-            main();
-        }, 2000);
+        setTimeout(initializeExtension, 1000);
     }
 }
 
-console.log('✅ Optimized Gradescope Calendar Sync content script initialized (V1.2 - Targeted DOM Observation)');
+console.log('✅ Gradescope Calendar Sync initialized (V1.8.0)');

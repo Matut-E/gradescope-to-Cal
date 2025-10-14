@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Gradescope Calendar Sync - Settings</title>
+    <style>
+        /* Theme Variables */
+        :root {
+            /* Light Mode (Default) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-tertiary: #adb5bd;
+            --border-color: #dee2e6;
+            --border-light: #eee;
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            /* Berkeley Colors */
+            --berkeley-blue: #003262;
+            --california-gold: #FDB515;
+
+            /* Backgrounds */
+            --bg-primary: #0A0A0B;
+            --bg-secondary: #18181B;
+            --bg-tertiary: #27272A;
+            --bg-card: rgba(39, 39, 42, 0.6);
+
+            /* Text */
+            --text-primary: #F4F4F5;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+
+            /* Borders */
+            --border-color: rgba(244, 244, 245, 0.1);
+            --border-light: rgba(244, 244, 245, 0.05);
+
+            /* Buttons */
+            --button-bg: #003262;
+            --button-hover: #004A93;
+
+            /* Status Colors */
+            --success: #22C55E;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+
+            /* Shadows & Effects */
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        @media (min-width: 2560px) {
+            body {
+                max-width: 2400px;
+            }
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            padding: 0;
+            margin: 0;
+            flex-shrink: 0;
+            overflow: hidden;
+            color: var(--text-primary);
+            z-index: 1000;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle:active,
+        .theme-toggle:focus {
+            outline: none;
+            transform: none;
+        }
+
+        .theme-toggle:focus-visible {
+            outline: 2px solid var(--border-color);
+            outline-offset: 2px;
+        }
+
+        .theme-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s ease;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            margin: 10px 0 0 0;
+        }
+
+        .section {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        [data-theme="dark"] .section {
+            border: 1px solid var(--border-color);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: var(--text-primary);
+            font-size: 18px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        [data-theme="dark"] .status.success {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        [data-theme="dark"] .status.info {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .status.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        [data-theme="dark"] .status.warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .button {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .button:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .button.danger {
+            background-color: var(--danger);
+        }
+
+        .button.danger:hover {
+            background-color: #c82333;
+        }
+
+        .button.success {
+            background-color: var(--success);
+        }
+
+        .button.success:hover {
+            background-color: #218838;
+        }
+
+        [data-theme="dark"] .button {
+            background: linear-gradient(135deg, var(--berkeley-blue), #004A93);
+            box-shadow: 0 2px 8px rgba(0, 50, 98, 0.3);
+        }
+
+        [data-theme="dark"] .button:hover {
+            box-shadow: 0 4px 12px rgba(0, 50, 98, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--button-bg);
+            padding: 15px;
+            margin: 15px 0;
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .info-box {
+            background: rgba(39, 39, 42, 0.6);
+            border-left-color: var(--berkeley-blue);
+        }
+
+        .optimization-box {
+            background: #f0f8ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        [data-theme="dark"] .optimization-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--info);
+        }
+
+        .optimization-box h4 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+
+        [data-theme="dark"] .optimization-box h4 {
+            color: var(--info);
+        }
+
+        .privacy-section {
+            background: var(--bg-tertiary);
+            border-left: 4px solid #34a853;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        [data-theme="dark"] .privacy-section {
+            background: rgba(39, 39, 42, 0.6);
+            border-left-color: var(--success);
+        }
+
+        .privacy-section h3 {
+            color: #1a73e8;
+            margin-top: 0;
+        }
+
+        [data-theme="dark"] .privacy-section h3 {
+            color: var(--info);
+        }
+
+        .setting-item {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .setting-item label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .setting-item input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+
+        /* Dark mode for form inputs */
+        [data-theme="dark"] input[type="text"],
+        [data-theme="dark"] input[type="number"],
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] input[type="text"]:focus,
+        [data-theme="dark"] input[type="number"]:focus,
+        [data-theme="dark"] select:focus,
+        [data-theme="dark"] textarea:focus {
+            outline: 2px solid var(--berkeley-blue);
+            border-color: var(--berkeley-blue);
+        }
+
+        .setting-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .enhanced-feature {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .enhanced-feature h4 {
+            margin-top: 0;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        [data-theme="dark"] .enhanced-feature {
+            background: linear-gradient(45deg, var(--bg-secondary), var(--bg-tertiary));
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .enhanced-feature h4 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .enhanced-feature p {
+            color: var(--text-secondary);
+        }
+
+        .feature-badge {
+            background: linear-gradient(45deg, #007bff, #28a745);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Event Appearance Collapsible Section */
+        .event-appearance-section {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            background: var(--bg-tertiary);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .event-appearance-section {
+            background: var(--bg-secondary);
+        }
+
+        .event-appearance-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            list-style: none;
+        }
+
+        .event-appearance-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .event-appearance-summary .summary-content h4 {
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .event-appearance-summary .summary-icon {
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: transform 0.3s ease;
+        }
+
+        details[open] .event-appearance-summary .summary-icon {
+            transform: rotate(180deg);
+        }
+
+        .event-appearance-content {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Color Picker Grid */
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            max-width: 340px;
+            margin: 0 auto;
+        }
+
+        [data-theme="dark"] .color-picker-grid {
+            background: var(--bg-tertiary);
+        }
+
+        .color-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-box:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-box.selected {
+            border-color: #003262;
+            box-shadow: 0 0 0 2px #003262;
+        }
+
+        [data-theme="dark"] .color-box.selected {
+            border-color: var(--california-gold);
+            box-shadow: 0 0 0 2px var(--california-gold);
+        }
+
+        .color-checkmark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .color-box.selected .color-checkmark {
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            .color-picker-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-width: 280px;
+            }
+
+            .color-box {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="optionsThemeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="theme-icon theme-icon-moon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="theme-icon theme-icon-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+    </button>
+
+    <div class="header">
+        <h1>Gradescope to Cal - Settings</h1>
+        <p>Automatically sync your Gradescope assignments to Google Calendar</p>
+    </div>
+
+    <!-- Authentication Section -->
+    <div class="section">
+        <h2>🔑 Google Calendar Authentication</h2>
+        
+        <div id="authStatus" class="status info">
+            <div>Checking authentication status...</div>
+        </div>
+
+        <div id="authControls" style="text-align: center;">
+            <button id="authenticate" class="button success">
+                Connect Google Calendar
+            </button>
+            
+            <button id="disconnect" class="button danger" style="display: none;">
+                Disconnect
+            </button>
+        </div>
+
+        <div class="info-box">
+            <strong>Privacy Note:</strong> Your Google account authentication is stored locally in your browser. 
+            No data is sent to external servers - all processing happens locally in your browser extension.
+        </div>
+    </div>
+
+    <!-- Enhanced Auto-Sync Settings Section -->
+    <div class="section">
+        <h2>🔄 Smart Auto-Sync Settings</h2>
+        
+        <div class="enhanced-feature">
+            <h4>🎯 Optimized Daily Sync <span class="feature-badge">Enhanced</span></h4>
+            <p>Automatically syncs new assignments to your calendar once every 24 hours. This timing is optimized based on typical assignment posting patterns.</p>
+        </div>
+        
+        <div class="setting-item">
+            <div>
+                <label for="autoSync">Enable automatic background sync</label>
+                <div class="setting-description">
+                    Runs daily sync in the background - no manual intervention needed
+                </div>
+            </div>
+            <input type="checkbox" id="autoSync" checked>
+        </div>
+
+        <div class="setting-item">
+            <div>
+                <label for="createReminders">Create calendar reminders</label>
+                <div class="setting-description">
+                    Add notification reminders to assignment events (1 day and 1 hour before due date)
+                </div>
+            </div>
+            <input type="checkbox" id="createReminders" checked>
+        </div>
+
+        <!-- Event Color Picker (Collapsible) -->
+        <details class="event-appearance-section">
+            <summary class="event-appearance-summary">
+                <div class="summary-content">
+                    <h4 style="margin: 0;">🎨 Event Appearance</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
+                        Customize calendar event colors
+                    </p>
+                </div>
+                <div class="summary-icon">▼</div>
+            </summary>
+
+            <div class="event-appearance-content">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                    Choose the color for assignment events in your Google Calendar
+                </p>
+
+                <div class="color-picker-grid" id="colorPickerGrid">
+                    <!-- Color 1: Lavender -->
+                    <div class="color-box" data-color-id="1" data-color-name="Lavender" style="background-color: #a4bdfc;" title="Lavender">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 2: Sage -->
+                    <div class="color-box" data-color-id="2" data-color-name="Sage" style="background-color: #7ae7bf;" title="Sage">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 3: Grape -->
+                    <div class="color-box" data-color-id="3" data-color-name="Grape" style="background-color: #dbadff;" title="Grape">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 4: Flamingo -->
+                    <div class="color-box" data-color-id="4" data-color-name="Flamingo" style="background-color: #ff887c;" title="Flamingo">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 5: Banana -->
+                    <div class="color-box" data-color-id="5" data-color-name="Banana" style="background-color: #fbd75b;" title="Banana">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 6: Tangerine -->
+                    <div class="color-box" data-color-id="6" data-color-name="Tangerine" style="background-color: #ffb878;" title="Tangerine">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 7: Peacock -->
+                    <div class="color-box" data-color-id="7" data-color-name="Peacock" style="background-color: #46d6db;" title="Peacock">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 8: Graphite -->
+                    <div class="color-box" data-color-id="8" data-color-name="Graphite" style="background-color: #e1e1e1;" title="Graphite">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 9: Blueberry (Default) -->
+                    <div class="color-box selected" data-color-id="9" data-color-name="Blueberry" style="background-color: #5484ed;" title="Blueberry (Default)">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 10: Basil -->
+                    <div class="color-box" data-color-id="10" data-color-name="Basil" style="background-color: #51b749;" title="Basil">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 11: Tomato -->
+                    <div class="color-box" data-color-id="11" data-color-name="Tomato" style="background-color: #dc2127;" title="Tomato">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                </div>
+
+                <div id="colorSelectionStatus" class="setting-description" style="text-align: center; margin-top: 10px; font-weight: 500;">
+                    Selected: <span id="selectedColorName">Blueberry</span>
+                </div>
+            </div>
+        </details>
+
+        <button id="saveSettings" class="button">Save Settings</button>
+    </div>
+
+    <!-- Data Management Section -->
+    <div class="section">
+        <h2>📊 Data Management</h2>
+        
+        <p>Manage your locally stored assignment data and extension settings.</p>
+
+        <button id="clearAssignments" class="button">Clear Assignment Data</button>
+        <button id="clearAuth" class="button danger">Clear Authentication</button>
+        <button id="clearAll" class="button danger">Clear All Data</button>
+        <button id="showStats" class="button secondary">View Data Statistics</button>
+
+        <div class="info-box">
+            <strong>Data Storage:</strong> All your data is stored locally in your browser. 
+            Assignment data includes: titles, due dates, course names, and Gradescope URLs.
+        </div>
+    </div>
+
+    <!-- Privacy Information -->
+    <div class="privacy-section">
+        <h3>🔒 Privacy & Security</h3>
+        <p><strong>Zero-server architecture:</strong> This extension processes everything locally in your browser. 
+        No assignment data, personal information, or authentication tokens are ever sent to external servers.</p>
+        
+        <p><strong>Data collection:</strong> We collect zero user data. The extension only stores:</p>
+        <ul>
+            <li>Assignment information you choose to extract from Gradescope</li>
+            <li>Your Google Calendar authentication tokens (stored securely in browser)</li>
+            <li>Your sync preferences and settings</li>
+        </ul>
+        
+        <p><strong>Permissions explained:</strong> This extension only requests the minimum permissions needed:</p>
+        <ul>
+            <li><code>storage</code> - Store your settings and extracted assignments locally</li>
+            <li><code>identity</code> - Handle Google OAuth authentication securely</li>
+            <li><code>alarms</code> - Schedule daily background sync operations</li>
+            <li><code>scripting</code> - Extract assignment data from Gradescope pages you visit</li>
+            <li><code>*.gradescope.com</code> - Access Gradescope pages for assignment extraction</li>
+            <li><code>*.googleapis.com</code> - Direct communication with Google Calendar API</li>
+        </ul>
+
+        <div style="margin-top: 20px; padding: 15px; background: rgba(72, 187, 120, 0.1); border-radius: 6px;">
+            <strong>🛡️ Enhanced Security Features:</strong>
+            <ul style="margin: 10px 0;">
+                <li>Dual OAuth client support for optimal browser compatibility</li>
+                <li>Automatic token refresh and secure credential management</li>
+                <li>Rate-limited API calls to respect service quotas</li>
+                <li>Smart caching to minimize unnecessary network requests</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>
