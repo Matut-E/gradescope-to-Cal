@@ -5,7 +5,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 ## Features
 
 - **Automatic dashboard discovery**: Extracts all assignments from all enrolled courses
-- **Background sync**: Checks for new assignments daily
+- **Intelligent sync**: First-time instant sync, daily background updates, and manual sync on-demand
 - **Calendar events**: Creates events with assignment details and direct links
 - **Smart deduplication**: Prevents duplicate events for the same assignments
 - **Zero-server architecture**: All processing happens locally in your browser
@@ -22,28 +22,22 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 ## Installation
 
 ### From Chrome Web Store (Recommended)
-[Add from Chrome Store](https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco)
-
-### Manual Installation (Current)
-1. Download the latest release from [Releases](../../releases)
-2. Extract the ZIP file
-3. Open Chrome → Extensions → Enable Developer Mode
-4. Click "Load Unpacked" and select the `src` folder
-5. Navigate to Gradescope and authenticate with Google Calendar when prompted
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco)
 
 ## How It Works
 
-1. **One-time setup**: Connect your Google Calendar via OAuth authentication
-2. **Visit Gradescope**: Go to your dashboard or course pages as you normally would
-3. **Automatic sync**: Every 30 minutes, newly discovered assignments appear in your calendar
-4. **Cross-device access**: Calendar events sync to all your devices via Google Calendar
+1. **One-time setup**: Install the extension and connect your Google Calendar via secure OAuth authentication
+2. **Automatic extraction**: Visit any Gradescope page - assignments are automatically discovered and extracted
+3. **Instant first sync**: On first authentication, all extracted assignments immediately sync to your calendar
+4. **Stay updated**: Daily automatic background sync keeps your calendar current with new assignments
+5. **Cross-device access**: Calendar events sync to all your devices via Google Calendar
 
 ## Development Status
 
 - [x] Competitive analysis and architecture planning
 - [x] Gradescope assignment data extraction (dashboard + individual courses)
 - [x] Google Calendar API integration with OAuth 2.0
-- [x] Background sync automation (daily intervals intervals)
+- [x] Background sync automation (daily intervals + smart detection)
 - [x] Rich calendar event creation with assignment metadata
 - [x] Smart deduplication and error handling
 - [x] Cross-browser compatibility (Chrome/Chromium-based)
@@ -60,7 +54,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 
 ## Current Limitations
 
-- **Assignment discovery**: Requires visiting Gradescope pages to detect new assignments
+- **Assignment discovery**: Requires visiting Gradescope pages to detect new assignments (auto-extracts on page load)
 - **Course coverage**: Works with standard Gradescope course layouts
 - **Authentication**: Requires Google account with Calendar access
 
@@ -72,7 +66,7 @@ Full privacy policy available at: [Privacy Policy](https://matut-e.github.io/gra
 
 - **Issues**: Report bugs via [GitHub Issues](../../issues)
 - **Email**: gradescope.to.cal@gmail.com
-- **Target users**: UC Berkeley students using Gradescope
+- **Primary audience**: UC Berkeley students, usable by all Gradescope users worldwide
 
 ## Development
 
