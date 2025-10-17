@@ -196,6 +196,26 @@ async function main() {
                 // Show pin banner after successful extraction (use calendar assignments to match popup counts)
                 await showPinBannerIfNeeded(calendarAssignments);
 
+                // =================================================================
+                // SMART SYNC: Check if new assignments should trigger immediate sync
+                // =================================================================
+                if (uniqueCalendarAssignments.length > 0) {
+                    console.log('🧠 Checking for new assignments to trigger smart sync...');
+                    chrome.runtime.sendMessage({
+                        action: 'checkForNewAssignments',
+                        assignments: uniqueCalendarAssignments,
+                        allAssignments: allAssignments
+                    }, (response) => {
+                        if (response && response.success) {
+                            if (response.synced) {
+                                console.log(`✅ Smart sync triggered: ${response.results.created} events created`);
+                            } else {
+                                console.log(`ℹ️ Smart sync not triggered: ${response.reason}`);
+                            }
+                        }
+                    });
+                }
+
             } else {
                 console.log('ℹ️ All calendar assignments were duplicates');
             }

@@ -58,7 +58,8 @@ importScripts(
     'auth/tokenManager.js',
     'auth/authenticationManager.js',
     'auth/calendarAPIClient.js',
-    'auth/autoSyncManager.js'
+    'auth/autoSyncManager.js',
+    'auth/smartSyncManager.js'
 );
 
 console.log('✅ All authentication modules loaded');
@@ -72,6 +73,7 @@ const tokenManager = new TokenManager(CONFIG);
 const authManager = new AuthenticationManager(CONFIG, tokenManager);
 const calendarClient = new CalendarAPIClient(CONFIG, tokenManager, authManager);
 const autoSyncManager = new AutoSyncManager(CONFIG);
+const smartSyncManager = new SmartSyncManager(CONFIG, calendarClient, calendarClient.eventCache);
 
 console.log('✅ Module instances created');
 
@@ -134,6 +136,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             case 'performBackgroundSync':
                 const result = await calendarClient.performBackgroundSync();
                 return result;
+
+            case 'checkForNewAssignments':
+                return await handleCheckForNewAssignments(request.assignments);
+
+            case 'getSmartSyncStats':
+                const smartSyncStats = await smartSyncManager.getStats();
+                return { success: true, stats: smartSyncStats };
 
             case 'getCacheStats':
                 const stats = calendarClient.getCacheStats();
@@ -205,6 +214,67 @@ async function handleCalendarSync(assignments) {
         });
 
         return { success: false, error: error.message };
+    }
+}
+
+// Smart sync helper - checks for new assignments and triggers sync if needed
+async function handleCheckForNewAssignments(assignments) {
+    try {
+        console.log(`🧠 Smart sync check: received ${assignments.length} assignments from content script`);
+
+        // Check if user is authenticated
+        const authStatus = await authManager.getAuthStatus();
+        if (!authStatus.authenticated) {
+            console.log('⏭️ User not authenticated, skipping smart sync check');
+            return {
+                success: true,
+                synced: false,
+                reason: 'Not authenticated'
+            };
+        }
+
+        // Check if there are new assignments that should trigger a sync
+        const checkResult = await smartSyncManager.checkForNewAssignments(assignments);
+
+        if (!checkResult.shouldSync) {
+            return {
+                success: true,
+                synced: false,
+                reason: checkResult.reason,
+                newAssignmentsCount: 0
+            };
+        }
+
+        // Perform smart sync
+        console.log(`🚀 Triggering smart sync for ${checkResult.newAssignments.length} new assignments`);
+        const syncResult = await smartSyncManager.performSmartSync(checkResult.newAssignments);
+
+        if (syncResult.success) {
+            console.log(`✅ Smart sync successful: ${syncResult.results.created} created, ${syncResult.results.skipped} skipped`);
+            return {
+                success: true,
+                synced: true,
+                reason: checkResult.reason,
+                newAssignmentsCount: checkResult.newAssignments.length,
+                results: syncResult.results
+            };
+        } else {
+            console.error('❌ Smart sync failed:', syncResult.error);
+            return {
+                success: true,
+                synced: false,
+                reason: `Sync failed: ${syncResult.error}`,
+                newAssignmentsCount: checkResult.newAssignments.length
+            };
+        }
+
+    } catch (error) {
+        console.error('❌ Error in handleCheckForNewAssignments:', error);
+        return {
+            success: false,
+            synced: false,
+            error: error.message
+        };
     }
 }
 
