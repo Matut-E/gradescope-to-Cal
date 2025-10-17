@@ -145,9 +145,19 @@ class CalendarManager {
             const response = await chrome.runtime.sendMessage({ action: 'authenticate' });
 
             if (response.success) {
-                this.updateStatus('✅ Google Calendar connected! Auto-sync enabled.', 'success');
+                // Check if first-time sync happened
+                if (response.firstTimeSync && response.syncResults) {
+                    const results = response.syncResults;
+                    this.updateStatus(
+                        `✅ Google Calendar connected! ${results.created} assignments synced immediately. Auto-sync enabled.`,
+                        'success'
+                    );
+                } else {
+                    this.updateStatus('✅ Google Calendar connected! Auto-sync enabled.', 'success');
+                }
                 await this.checkAuthStatus();
                 await this.updateAutoSyncStatus();
+                await this.countStoredAssignments();
             } else {
                 console.error('Authentication failed:', response.error);
                 this.updateStatus(`❌ Authentication failed: ${response.error}`, 'warning');

@@ -99,6 +99,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             case 'authenticate':
                 await authManager.authenticate();
                 await autoSyncManager.setupAutoSync();
+
+                // First-time sync: If assignments already extracted, sync immediately
+                const firstTimeSyncResult = await handleFirstTimeSync();
+                if (firstTimeSyncResult.synced) {
+                    return {
+                        success: true,
+                        message: 'Authentication successful',
+                        firstTimeSync: true,
+                        syncResults: firstTimeSyncResult.results
+                    };
+                }
+
                 return { success: true, message: 'Authentication successful' };
 
             case 'getAuthStatus':
@@ -273,6 +285,86 @@ async function handleCheckForNewAssignments(assignments) {
         return {
             success: false,
             synced: false,
+            error: error.message
+        };
+    }
+}
+
+// First-time sync helper - syncs immediately after first authentication if assignments exist
+async function handleFirstTimeSync() {
+    try {
+        // Check if this is first-time authentication (no previous sync)
+        const storage = await chrome.storage.local.get(['last_auto_sync']);
+        const hasExistingSync = storage.last_auto_sync;
+
+        if (hasExistingSync) {
+            console.log('⏭️ Not first-time authentication, skipping first-time sync');
+            return { synced: false, reason: 'Not first-time authentication' };
+        }
+
+        console.log('🎉 First-time authentication detected! Checking for existing assignments...');
+
+        // Check if assignments have already been extracted
+        const allStorage = await chrome.storage.local.get(null);
+        const assignmentKeys = Object.keys(allStorage).filter(key =>
+            key.startsWith('assignments_') && allStorage[key].assignments
+        );
+
+        if (assignmentKeys.length === 0) {
+            console.log('📭 No assignments extracted yet, skipping first-time sync');
+            return { synced: false, reason: 'No assignments extracted yet' };
+        }
+
+        // Collect all assignments from storage
+        const allAssignments = [];
+        for (const key of assignmentKeys) {
+            const data = allStorage[key];
+            if (data.assignments && Array.isArray(data.assignments)) {
+                allAssignments.push(...data.assignments);
+            }
+        }
+
+        // Deduplicate by assignmentId
+        const uniqueAssignments = Array.from(
+            new Map(allAssignments.map(a => [a.assignmentId, a])).values()
+        );
+
+        // Filter for calendar-eligible assignments (upcoming, not submitted)
+        const calendarEligible = uniqueAssignments.filter(a =>
+            a.dueDate && !a.isSubmitted
+        );
+
+        if (calendarEligible.length === 0) {
+            console.log('📭 No calendar-eligible assignments found, skipping first-time sync');
+            return { synced: false, reason: 'No calendar-eligible assignments' };
+        }
+
+        console.log(`🚀 First-time sync: Found ${calendarEligible.length} assignments to sync!`);
+
+        // Perform the sync
+        const results = await calendarClient.syncAssignments(calendarEligible);
+
+        const syncTimestamp = new Date().toISOString();
+        await chrome.storage.local.set({
+            last_auto_sync: syncTimestamp,
+            last_sync_results: results,
+            lastSyncType: 'first_time'
+        });
+
+        console.log(`✅ First-time sync complete: ${results.created} created, ${results.skipped} skipped`);
+
+        return {
+            synced: true,
+            reason: 'First-time sync completed',
+            assignmentCount: calendarEligible.length,
+            results: results
+        };
+
+    } catch (error) {
+        console.error('❌ Error in handleFirstTimeSync:', error);
+        return {
+            synced: false,
+            reason: `Error: ${error.message}`,
             error: error.message
         };
     }

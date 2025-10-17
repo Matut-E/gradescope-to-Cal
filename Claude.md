@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Key characteristics**:
 - **Open source**: MIT licensed, publicly available
-- **Automatic sync**: Background sync every 24 hours + smart sync on extraction
+- **Automatic sync**: First-time sync + manual sync + 24-hour auto-sync + smart sync on extraction
 - **Production version**: v1.8.0 on Chrome Web Store
 - **Privacy-first**: Zero-server architecture, all processing in browser
 
@@ -18,11 +18,14 @@ This extension provides:
 
 1. **Assignment Extraction**: Extracts upcoming assignments from Gradescope dashboard and course pages
 2. **Google Calendar Integration**: OAuth 2.0 authentication and Calendar API v3 integration
-3. **Background Auto-Sync**: 24-hour interval automatic syncing with alarms
-4. **Smart Sync on Extraction**: Instantly syncs new assignments to calendar when detected (no 24-hour wait)
-5. **Calendar Events**: Creates visible events with assignment details and Gradescope links
-6. **Smart Deduplication**: Uses extended properties to prevent duplicate events
-7. **Upcoming Assignments Only**: Filters out past assignments to keep your calendar clean
+3. **Four Sync Mechanisms**:
+   - **First-Time Sync**: Immediate sync on first authentication (if assignments already extracted)
+   - **Manual Sync**: User-triggered sync via "Sync to Calendar" button
+   - **24-Hour Auto-Sync**: Scheduled background sync every 24 hours
+   - **Smart Sync on Extraction**: Instant sync when new assignments detected (60-min cooldown)
+4. **Calendar Events**: Creates visible events with assignment details and Gradescope links
+5. **Smart Deduplication**: Uses extended properties to prevent duplicate events
+6. **Upcoming Assignments Only**: Filters out past assignments to keep your calendar clean
 
 ## Architecture
 
@@ -38,8 +41,11 @@ This extension provides:
 2. **Background Service Worker** (`src/background.js`):
    - Handles OAuth authentication (dual strategy: Chrome native + PKCE)
    - Manages Calendar API requests with event caching
-   - Implements auto-sync alarms (24-hour intervals)
-   - Smart sync on extraction (instant sync for new assignments)
+   - Implements four sync mechanisms:
+     - First-time sync (immediate sync on first auth)
+     - Manual sync (user-triggered)
+     - Auto-sync alarms (24-hour intervals)
+     - Smart sync on extraction (instant sync for new assignments)
    - Handles message passing between components
    - Manages refresh tokens and token validation
 
@@ -122,27 +128,42 @@ Deduplication via `gradescope_assignment_id` in extended properties.
 
 ### Auto-Sync Flow
 
-**24-Hour Auto-Sync** (scheduled background sync):
-1. Alarm triggers every 24 hours
-2. Background script fetches stored assignments
-3. Checks for new assignments via event cache
-4. Creates calendar events for new assignments
-5. Updates `lastAutoSync` timestamp
+The extension has **four sync mechanisms** to ensure assignments reach the calendar quickly:
 
-**Smart Sync on Extraction** (immediate sync after extraction):
-1. Content script extracts assignments from Gradescope page
-2. Sends `checkForNewAssignments` message to background
-3. SmartSyncManager checks event cache for new assignments
-4. If new assignments found AND rate limit allows (60-minute cooldown):
+**1. First-Time Sync** (immediate sync on first authentication):
+- Triggered when user connects Google Calendar for the first time
+- Checks if assignments have already been extracted (via "Extract Assignments" button)
+- If assignments exist, syncs them immediately to calendar
+- Starts 24-hour auto-sync countdown
+- Provides instant gratification for new users: extract → connect → done!
+- Implementation: `handleFirstTimeSync()` in `background.js` (lines 293-371)
+
+**2. Manual Sync** (user-triggered):
+- User clicks "Sync to Calendar" button in popup
+- Syncs all calendar-eligible assignments immediately
+- No rate limiting or cooldown
+
+**3. 24-Hour Auto-Sync** (scheduled background sync):
+- Alarm triggers every 24 hours
+- Background script fetches stored assignments
+- Checks for new assignments via event cache
+- Creates calendar events for new assignments
+- Updates `lastAutoSync` timestamp
+
+**4. Smart Sync on Extraction** (immediate sync after extraction):
+- Content script extracts assignments from Gradescope page
+- Sends `checkForNewAssignments` message to background
+- SmartSyncManager checks event cache for new assignments
+- If new assignments found AND rate limit allows (60-minute cooldown):
    - Immediately syncs new assignments to calendar
    - Updates `lastSmartSyncTimestamp` and `lastSyncType: 'smart'`
-5. If rate limited, waits until cooldown expires
+- If rate limited, waits until cooldown expires
 
-**Benefits of Smart Sync**:
-- No need to wait 24 hours for new assignments to appear in calendar
-- User visits Gradescope → new assignment detected → instantly synced
-- Rate limiting prevents excessive API calls (60-minute minimum between smart syncs)
-- Manual sync and 24-hour auto-sync unaffected by smart sync cooldown
+**Benefits**:
+- **First-time sync**: New users get calendar events immediately after setup
+- **Smart sync**: No need to wait 24 hours for new assignments
+- **Rate limiting**: Prevents excessive API calls (60-minute cooldown for smart sync)
+- **Redundancy**: Multiple sync paths ensure assignments always reach calendar
 
 ## Development
 
@@ -376,12 +397,13 @@ When making changes, test:
 2. Individual course page extraction
 3. Calendar event creation
 4. Event deduplication (re-sync same assignments)
-5. 24-hour auto-sync trigger
-6. Smart sync on extraction (instant sync for new assignments)
-7. Smart sync rate limiting (60-minute cooldown)
-8. OAuth authentication flow
-9. Token refresh on expiration
-10. Cross-browser compatibility (Chrome-based browsers)
+5. **First-time sync** (extract assignments → connect calendar → immediate sync)
+6. 24-hour auto-sync trigger
+7. Smart sync on extraction (instant sync for new assignments)
+8. Smart sync rate limiting (60-minute cooldown)
+9. OAuth authentication flow
+10. Token refresh on expiration
+11. Cross-browser compatibility (Chrome-based browsers)
 
 ## Version History
 
