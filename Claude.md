@@ -24,8 +24,12 @@ This extension provides:
    - **24-Hour Auto-Sync**: Scheduled background sync every 24 hours
    - **Smart Sync on Extraction**: Instant sync when new assignments detected (60-min cooldown)
 4. **Calendar Events**: Creates visible events with assignment details and Gradescope links
-5. **Smart Deduplication**: Uses extended properties to prevent duplicate events
-6. **Upcoming Assignments Only**: Filters out past assignments to keep your calendar clean
+5. **Customizable Event Appearance**:
+   - **Event Colors**: Choose from 11 Google Calendar colors
+   - **Reminder Schedule**: None, single (1 day), double (1 day + 1 hour), or custom (up to 3 reminders)
+   - **Display Timing**: Show at actual deadline time or as all-day events
+6. **Smart Deduplication**: Uses extended properties to prevent duplicate events
+7. **Upcoming Assignments Only**: Filters out past assignments to keep your calendar clean
 
 ## Architecture
 
@@ -69,13 +73,25 @@ Google Calendar API
 
 ### Storage Schema
 
+**Assignment Data**:
 - `assignments_<method>_<timestamp>`: Assignment data ready for calendar sync
   - `assignments`: Array of upcoming assignments with due dates
   - `allAssignments`: All extracted assignments (for reference)
 
+**Authentication & Sync**:
 - `authToken`, `refreshToken`, `tokenExpiry`: OAuth tokens
 - `autoSyncEnabled`, `autoSyncInterval`, `lastAutoSync`: Auto-sync state
 - `eventCache`: In-memory cache of calendar events for deduplication
+
+**User Preferences** (chrome.storage.local):
+- `settings_auto_sync`: Enable/disable automatic 24-hour sync (default: `true`)
+- `settings_create_reminders`: Master toggle for reminders (default: `true`)
+- `reminderSchedule`: `'none' | 'single' | 'double' | 'custom'` (default: `'double'`)
+- `customReminders`: Array of minutes before due date, e.g. `[1440, 60]` (default: `[1440, 60]`)
+- `eventDisplayTime`: `'deadline' | 'allday'` (default: `'deadline'`)
+- `eventColorId`: Google Calendar color ID 1-11 (stored in chrome.storage.sync, default: `'9'` Blueberry)
+
+**Onboarding**:
 - `userHasPinned`, `dismissedExtractionBanner`: Onboarding state
 
 ## Key Implementation Details
@@ -89,20 +105,61 @@ Google Calendar API
 
 ### Calendar Event Format
 
-Calendar event format:
+The extension creates two possible event formats based on user preferences:
+
+**Timed Event** (default, `eventDisplayTime: 'deadline'`):
 ```js
 {
   summary: "[Course] Assignment Title",
-  start: { date: "2025-01-20" },
-  end: { date: "2025-01-20" },
+  start: {
+    dateTime: "2025-01-20T23:59:00.000Z",
+    timeZone: "America/Los_Angeles"
+  },
+  end: {
+    dateTime: "2025-01-20T23:59:00.000Z",
+    timeZone: "America/Los_Angeles"
+  },
   description: "Assignment details + Gradescope link",
+  colorId: "9",  // User-selected color (default: Blueberry)
+  reminders: {
+    useDefault: false,
+    overrides: [
+      { method: 'popup', minutes: 1440 },  // 1 day before
+      { method: 'popup', minutes: 60 }      // 1 hour before
+    ]
+  },
   extendedProperties: {
     private: { gradescope_assignment_id: "123456" }
   }
 }
 ```
 
-Deduplication via `gradescope_assignment_id` in extended properties.
+**All-Day Event** (`eventDisplayTime: 'allday'`):
+```js
+{
+  summary: "[Course] Assignment Title",
+  start: { date: "2025-01-20" },
+  end: { date: "2025-01-20" },
+  description: "Assignment details + Gradescope link",
+  colorId: "9",
+  reminders: {
+    useDefault: false,
+    overrides: [
+      { method: 'popup', minutes: 1440 },  // 1 day before (day-of reminder)
+      { method: 'popup', minutes: 0 }      // Day-of reminder at 9 AM
+    ]
+  },
+  extendedProperties: {
+    private: { gradescope_assignment_id: "123456" }
+  }
+}
+```
+
+**Notes**:
+- Deduplication via `gradescope_assignment_id` in extended properties
+- All-day events have reminder limitations: hour-based reminders are converted to day-of notifications
+- Reminders respect user's `reminderSchedule` preference (none/single/double/custom)
+- Colors are customizable via `eventColorId` (1-11, synced across devices)
 
 ### Assignment Extraction Logic
 
@@ -164,6 +221,47 @@ The extension has **four sync mechanisms** to ensure assignments reach the calen
 - **Smart sync**: No need to wait 24 hours for new assignments
 - **Rate limiting**: Prevents excessive API calls (60-minute cooldown for smart sync)
 - **Redundancy**: Multiple sync paths ensure assignments always reach calendar
+
+### Calendar Event Customization
+
+The extension provides comprehensive customization options in the **Event Appearance** section of the options page:
+
+**Event Colors**:
+- 11 Google Calendar colors to choose from
+- Visual color picker with live preview
+- Default: Blueberry (#5484ed)
+- Synced across devices via `chrome.storage.sync`
+
+**Reminder Schedule** (4 options):
+1. **None**: No reminders created
+2. **Single**: 1 day before due date (1440 minutes)
+3. **Double** (default): 1 day + 1 hour before (1440 + 60 minutes)
+4. **Custom**: Up to 3 custom reminders with inline builder
+   - Units: minutes, hours, or days
+   - Pre-populated with double preset when first selected
+   - Dynamic add/delete interface
+
+**Display Timing** (2 options):
+1. **Deadline** (default): Shows event at actual due time
+   - Most Gradescope assignments due at 11:59 PM
+   - Supports accurate time-specific reminders (e.g., "1 hour before")
+   - Best for precise scheduling
+2. **All-Day**: Shows event as all-day at top of calendar
+   - Maximum visibility in calendar view
+   - **Limitation**: Only supports day-of reminders (Google Calendar API constraint)
+   - Hour-based reminders automatically converted to day-of notifications
+
+**Implementation Notes**:
+- All settings stored in `chrome.storage.local` for instant retrieval
+- `settings_create_reminders` acts as master toggle (preserved for backward compatibility)
+- Custom reminders stored as array of minutes for simplicity
+- Settings applied in `calendarAPIClient.js` during event creation (lines 54-194)
+- Full dark mode support with CSS variables
+
+**UI Location**:
+- Options page → Smart Auto-Sync Settings → Event Appearance (collapsible section)
+- Contains: Color picker, Reminder Schedule, Display Timing
+- All settings saved via "Save Settings" button
 
 ## Development
 
@@ -373,12 +471,18 @@ The extension uses a **CSS variable-based theming system**:
 - `src/auth/`: Authentication modules (Chrome native + PKCE OAuth + smart sync)
   - `authenticationManager.js`: OAuth authentication
   - `tokenManager.js`: Token lifecycle management
-  - `calendarAPIClient.js`: Calendar API wrapper
+  - `calendarAPIClient.js`: Calendar API wrapper + reminder/display settings application
   - `eventCache.js`: Performance caching layer
   - `autoSyncManager.js`: 24-hour automatic sync scheduling
   - `smartSyncManager.js`: Smart sync on extraction (instant sync for new assignments)
 - `src/popup/`: Popup UI modules (calendar, settings, theme)
-- `src/options/`: Options page modules (settings, pin prompts)
+- `src/options/`: Options page modules (settings, pin prompts, theme)
+  - `options-settings.js`: Settings management including reminder schedule, custom reminders, and display timing
+  - `options-theme.js`: Dark mode toggle implementation
+  - `options-pin-prompt.js`: Pin to toolbar onboarding
+  - `options-main.js`: Options page initialization
+- `src/options.html`: Options page UI with Event Appearance section (colors, reminders, display timing)
+- `src/options.css`: Dark mode compatible styling including reminder/display timing UI
 - `src/manifest.json`: Extension metadata + permissions
 - `prepare-release.ps1`: PowerShell script to package releases
 
@@ -404,6 +508,19 @@ When making changes, test:
 9. OAuth authentication flow
 10. Token refresh on expiration
 11. Cross-browser compatibility (Chrome-based browsers)
+12. **Event Appearance Settings**:
+    - Color picker selection and persistence
+    - Reminder schedule options (none, single, double, custom)
+    - Custom reminder builder (add, edit, delete reminders)
+    - Display timing (deadline vs all-day events)
+    - Settings save and load correctly
+    - Dark mode styling for all new UI elements
+13. **Calendar Event Customization**:
+    - Events created with correct color
+    - Reminders match selected schedule
+    - Timed events show correct deadline time
+    - All-day events appear at top of calendar
+    - All-day event reminders converted to day-of notifications
 
 ## Version History
 

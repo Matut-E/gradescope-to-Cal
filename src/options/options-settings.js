@@ -32,10 +32,15 @@ class OptionsSettings {
     static selectedEventColorId = '9'; // Default to Blueberry
 
     /**
+     * Local state for custom reminders
+     * Stores custom reminder times in minutes
+     */
+    static customReminders = [1440, 60]; // Default to double preset
+
+    /**
      * Track previous settings to detect what changed
      */
     static previousSettings = {
-        createReminders: true,
         eventColorId: '9'
     };
 
@@ -245,13 +250,14 @@ class OptionsSettings {
      */
     static async loadSettings() {
         const autoSyncCheckbox = document.getElementById('autoSync');
-        const createRemindersCheckbox = document.getElementById('createReminders');
 
         try {
             const settings = await chrome.storage.local.get([
                 'settings_auto_sync',
-                'settings_create_reminders',
-                'settings_auto_discovery'
+                'settings_auto_discovery',
+                'reminderSchedule',
+                'customReminders',
+                'eventDisplayTime'
             ]);
 
             // Load color preference from sync storage
@@ -264,10 +270,29 @@ class OptionsSettings {
 
             // Set default values and load saved settings
             autoSyncCheckbox.checked = settings.settings_auto_sync !== false; // Default true
-            createRemindersCheckbox.checked = settings.settings_create_reminders !== false; // Default true
+
+            // Load reminder schedule (default: 'double')
+            const reminderSchedule = settings.reminderSchedule || 'double';
+            const reminderRadio = document.querySelector(`input[name="reminderSchedule"][value="${reminderSchedule}"]`);
+            if (reminderRadio) {
+                reminderRadio.checked = true;
+            }
+
+            // Load custom reminders (default: [1440, 60] for double preset)
+            const customReminders = settings.customReminders || [1440, 60];
+            OptionsSettings.customReminders = customReminders;
+
+            // Show/hide custom reminder builder based on selection
+            OptionsSettings.toggleCustomReminderBuilder(reminderSchedule === 'custom');
+
+            // Load event display timing (default: 'deadline')
+            const eventDisplayTime = settings.eventDisplayTime || 'deadline';
+            const displayRadio = document.querySelector(`input[name="eventDisplayTime"][value="${eventDisplayTime}"]`);
+            if (displayRadio) {
+                displayRadio.checked = true;
+            }
 
             // Initialize previous settings for change detection
-            OptionsSettings.previousSettings.createReminders = createRemindersCheckbox.checked;
             OptionsSettings.previousSettings.eventColorId = eventColorId;
 
             // Update color picker UI
@@ -284,7 +309,6 @@ class OptionsSettings {
      */
     static async saveSettings(triggerSource = 'manual') {
         const autoSyncCheckbox = document.getElementById('autoSync');
-        const createRemindersCheckbox = document.getElementById('createReminders');
         const saveSettingsBtn = document.getElementById('saveSettings');
         const authStatus = document.getElementById('authStatus');
 
@@ -293,13 +317,25 @@ class OptionsSettings {
             const authResponse = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
             const isAuthenticated = authResponse.success && authResponse.authenticated && authResponse.tokenValid;
 
+            // Get selected reminder schedule
+            const reminderScheduleRadio = document.querySelector('input[name="reminderSchedule"]:checked');
+            const reminderSchedule = reminderScheduleRadio ? reminderScheduleRadio.value : 'double';
+
+            // Get selected event display timing
+            const eventDisplayTimeRadio = document.querySelector('input[name="eventDisplayTime"]:checked');
+            const eventDisplayTime = eventDisplayTimeRadio ? eventDisplayTimeRadio.value : 'deadline';
+
             const settings = {
                 settings_auto_sync: autoSyncCheckbox.checked,
-                settings_create_reminders: createRemindersCheckbox.checked,
+                settings_create_reminders: true, // Always enabled (controlled via reminderSchedule now)
                 // Advanced settings are always enabled (hardcoded)
                 settings_auto_discovery: true,
                 // Store the last save timestamp
-                settings_last_updated: new Date().toISOString()
+                settings_last_updated: new Date().toISOString(),
+                // New settings for reminder schedule and display timing
+                reminderSchedule: reminderSchedule,
+                customReminders: OptionsSettings.customReminders,
+                eventDisplayTime: eventDisplayTime
             };
 
             await chrome.storage.local.set(settings);
@@ -307,6 +343,9 @@ class OptionsSettings {
             // Save event color to sync storage
             await chrome.storage.sync.set({ eventColorId: OptionsSettings.selectedEventColorId });
             console.log('🎨 Saved event color ID:', OptionsSettings.selectedEventColorId);
+            console.log('🔔 Saved reminder schedule:', reminderSchedule);
+            console.log('🔔 Saved custom reminders:', OptionsSettings.customReminders);
+            console.log('📅 Saved event display timing:', eventDisplayTime);
 
             // If auto-sync setting changed, update the background service
             if (autoSyncCheckbox.checked) {
@@ -315,13 +354,11 @@ class OptionsSettings {
                 await chrome.runtime.sendMessage({ action: 'disableAutoSync' });
             }
 
-            // Determine if calendar-specific settings (reminders/color) changed
-            const reminderChanged = OptionsSettings.previousSettings.createReminders !== createRemindersCheckbox.checked;
+            // Determine if calendar-specific settings (color) changed
             const colorChanged = OptionsSettings.previousSettings.eventColorId !== OptionsSettings.selectedEventColorId;
-            const calendarSettingChanged = reminderChanged || colorChanged;
+            const calendarSettingChanged = colorChanged;
 
             // Update previous settings
-            OptionsSettings.previousSettings.createReminders = createRemindersCheckbox.checked;
             OptionsSettings.previousSettings.eventColorId = OptionsSettings.selectedEventColorId;
 
             // Remove any existing warning first
@@ -470,6 +507,159 @@ class OptionsSettings {
             } catch (error) {
                 alert('Error clearing data: ' + error.message);
             }
+        }
+    }
+
+    /**
+     * Toggle custom reminder builder visibility
+     * @param {boolean} show - Whether to show the builder
+     */
+    static toggleCustomReminderBuilder(show) {
+        const customReminderBuilder = document.getElementById('customReminderBuilder');
+        if (customReminderBuilder) {
+            customReminderBuilder.style.display = show ? 'block' : 'none';
+            if (show) {
+                OptionsSettings.renderCustomReminders();
+            }
+        }
+    }
+
+    /**
+     * Render custom reminder rows in the builder
+     */
+    static renderCustomReminders() {
+        const customReminderList = document.getElementById('customReminderList');
+        const addReminderBtn = document.getElementById('addReminderBtn');
+
+        if (!customReminderList) return;
+
+        // Clear existing rows
+        customReminderList.innerHTML = '';
+
+        // Render each reminder
+        OptionsSettings.customReminders.forEach((minutes, index) => {
+            const row = OptionsSettings.createCustomReminderRow(minutes, index);
+            customReminderList.appendChild(row);
+        });
+
+        // Update "Add reminder" button state
+        if (addReminderBtn) {
+            addReminderBtn.disabled = OptionsSettings.customReminders.length >= 3;
+        }
+    }
+
+    /**
+     * Create a custom reminder row element
+     * @param {number} minutes - Reminder time in minutes
+     * @param {number} index - Index in the customReminders array
+     * @returns {HTMLElement} The reminder row element
+     */
+    static createCustomReminderRow(minutes, index) {
+        const row = document.createElement('div');
+        row.className = 'custom-reminder-row';
+
+        // Convert minutes to appropriate unit for display
+        let value, unit;
+        if (minutes >= 1440 && minutes % 1440 === 0) {
+            value = minutes / 1440;
+            unit = 'days';
+        } else if (minutes >= 60 && minutes % 60 === 0) {
+            value = minutes / 60;
+            unit = 'hours';
+        } else {
+            value = minutes;
+            unit = 'minutes';
+        }
+
+        row.innerHTML = `
+            <input type="number" min="1" value="${value}" data-index="${index}" class="reminder-value-input">
+            <select data-index="${index}" class="reminder-unit-select">
+                <option value="minutes" ${unit === 'minutes' ? 'selected' : ''}>minutes</option>
+                <option value="hours" ${unit === 'hours' ? 'selected' : ''}>hours</option>
+                <option value="days" ${unit === 'days' ? 'selected' : ''}>days</option>
+            </select>
+            <span class="reminder-text">before</span>
+            <button type="button" class="reminder-delete-btn" data-index="${index}">× delete</button>
+        `;
+
+        // Add event listeners
+        const valueInput = row.querySelector('.reminder-value-input');
+        const unitSelect = row.querySelector('.reminder-unit-select');
+        const deleteBtn = row.querySelector('.reminder-delete-btn');
+
+        valueInput.addEventListener('change', () => {
+            OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
+        });
+
+        unitSelect.addEventListener('change', () => {
+            OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            OptionsSettings.deleteCustomReminder(index);
+        });
+
+        return row;
+    }
+
+    /**
+     * Add a new custom reminder
+     */
+    static addCustomReminder() {
+        if (OptionsSettings.customReminders.length >= 3) {
+            return;
+        }
+
+        // Add default reminder (1 day before)
+        OptionsSettings.customReminders.push(1440);
+        OptionsSettings.renderCustomReminders();
+    }
+
+    /**
+     * Delete a custom reminder
+     * @param {number} index - Index of the reminder to delete
+     */
+    static deleteCustomReminder(index) {
+        OptionsSettings.customReminders.splice(index, 1);
+        OptionsSettings.renderCustomReminders();
+    }
+
+    /**
+     * Update a custom reminder value
+     * @param {number} index - Index of the reminder
+     * @param {number} value - New value
+     * @param {string} unit - Unit (minutes, hours, days)
+     */
+    static updateCustomReminder(index, value, unit) {
+        let minutes = value;
+
+        // Convert to minutes based on unit
+        if (unit === 'hours') {
+            minutes = value * 60;
+        } else if (unit === 'days') {
+            minutes = value * 1440;
+        }
+
+        OptionsSettings.customReminders[index] = minutes;
+    }
+
+    /**
+     * Handle reminder schedule radio button changes
+     */
+    static handleReminderScheduleChange() {
+        const selectedRadio = document.querySelector('input[name="reminderSchedule"]:checked');
+        if (!selectedRadio) return;
+
+        const value = selectedRadio.value;
+
+        // Show/hide custom reminder builder
+        OptionsSettings.toggleCustomReminderBuilder(value === 'custom');
+
+        // Pre-populate custom reminders based on selection
+        if (value === 'custom' && OptionsSettings.customReminders.length === 0) {
+            // Start with double preset if empty
+            OptionsSettings.customReminders = [1440, 60];
+            OptionsSettings.renderCustomReminders();
         }
     }
 
@@ -628,6 +818,18 @@ class OptionsSettings {
         }
         if (showStatsBtn) {
             showStatsBtn.addEventListener('click', OptionsSettings.showDataStatistics);
+        }
+
+        // Event listeners for reminder schedule radio buttons
+        const reminderScheduleRadios = document.querySelectorAll('input[name="reminderSchedule"]');
+        reminderScheduleRadios.forEach(radio => {
+            radio.addEventListener('change', OptionsSettings.handleReminderScheduleChange);
+        });
+
+        // Event listener for "Add reminder" button
+        const addReminderBtn = document.getElementById('addReminderBtn');
+        if (addReminderBtn) {
+            addReminderBtn.addEventListener('click', OptionsSettings.addCustomReminder);
         }
     }
 }

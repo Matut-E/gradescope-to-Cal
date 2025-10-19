@@ -58,19 +58,32 @@ class CalendarAPIClient {
         const timezone = assignment.timezone || 'America/Los_Angeles';
         console.log(`🌍 Using timezone: ${timezone} ${assignment.timezone ? '(detected)' : '(fallback)'}`);
 
-        // Load user settings for reminders and color
+        // Load user settings
         let eventColorId = '9'; // Default Blueberry
         let createReminders = true; // Default true
+        let reminderSchedule = 'double'; // Default double
+        let customReminders = [1440, 60]; // Default double preset
+        let eventDisplayTime = 'deadline'; // Default deadline
 
         try {
-            const localSettings = await chrome.storage.local.get(['settings_create_reminders']);
+            const localSettings = await chrome.storage.local.get([
+                'settings_create_reminders',
+                'reminderSchedule',
+                'customReminders',
+                'eventDisplayTime'
+            ]);
             const syncSettings = await chrome.storage.sync.get(['eventColorId']);
 
             eventColorId = syncSettings.eventColorId || '9';
             createReminders = localSettings.settings_create_reminders !== false;
+            reminderSchedule = localSettings.reminderSchedule || 'double';
+            customReminders = localSettings.customReminders || [1440, 60];
+            eventDisplayTime = localSettings.eventDisplayTime || 'deadline';
 
             console.log('🎨 Using event color ID:', eventColorId);
             console.log('🔔 Create reminders:', createReminders);
+            console.log('🔔 Reminder schedule:', reminderSchedule);
+            console.log('📅 Event display timing:', eventDisplayTime);
         } catch (error) {
             console.warn('⚠️ Failed to load settings, using defaults:', error);
         }
@@ -82,16 +95,6 @@ class CalendarAPIClient {
                 dateStyle: 'full',
                 timeStyle: 'short'
             })}\n\nSubmit at: ${assignment.url}\n\nExtracted from: ${assignment.pageUrl}`,
-
-            // Use timed event with actual due time for accurate reminders
-            start: {
-                dateTime: dueDate.toISOString(),
-                timeZone: timezone
-            },
-            end: {
-                dateTime: dueDate.toISOString(),
-                timeZone: timezone
-            },
 
             location: 'Gradescope',
             source: {
@@ -109,14 +112,83 @@ class CalendarAPIClient {
             colorId: eventColorId
         };
 
-        // Add reminders if enabled (now accurate to actual due time)
-        if (createReminders) {
+        // Apply event display timing preference
+        if (eventDisplayTime === 'allday') {
+            // All-day event format - use timezone-aware date formatting
+            // This prevents UTC conversion from shifting the date
+            const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            const dateOnly = dateFormatter.format(dueDate); // Returns "YYYY-MM-DD" in local timezone
+            event.start = { date: dateOnly };
+            event.end = { date: dateOnly };
+        } else {
+            // Timed event format (deadline time)
+            event.start = {
+                dateTime: dueDate.toISOString(),
+                timeZone: timezone
+            };
+            event.end = {
+                dateTime: dueDate.toISOString(),
+                timeZone: timezone
+            };
+        }
+
+        // Apply reminder schedule
+        if (createReminders && reminderSchedule !== 'none') {
+            let reminderMinutes = [];
+
+            switch (reminderSchedule) {
+                case 'single':
+                    reminderMinutes = [1440]; // 1 day before
+                    break;
+                case 'double':
+                    reminderMinutes = [1440, 60]; // 1 day + 1 hour before
+                    break;
+                case 'custom':
+                    reminderMinutes = customReminders;
+                    break;
+                default:
+                    reminderMinutes = [1440, 60]; // Fallback to double
+            }
+
+            // For all-day events, Google Calendar only allows "day of" reminders (minutes = 0)
+            // or reminders measured in full days
+            if (eventDisplayTime === 'allday') {
+                // Convert minutes to full days, or use 0 for same-day reminders
+                reminderMinutes = reminderMinutes.map(minutes => {
+                    if (minutes >= 1440 && minutes % 1440 === 0) {
+                        // Full days - keep as is
+                        return minutes;
+                    } else if (minutes < 1440) {
+                        // Less than a day - convert to day-of reminder (0 minutes at 9 AM)
+                        return 0;
+                    } else {
+                        // Not a full day - round to nearest day
+                        return Math.round(minutes / 1440) * 1440;
+                    }
+                });
+
+                // Remove duplicates and sort
+                reminderMinutes = [...new Set(reminderMinutes)].sort((a, b) => b - a);
+            }
+
+            // Set reminders
             event.reminders = {
                 useDefault: false,
-                overrides: [
-                    { method: 'popup', minutes: 1440 },  // 24 hours before actual due time
-                    { method: 'popup', minutes: 60 }      // 1 hour before actual due time
-                ]
+                overrides: reminderMinutes.map(minutes => ({
+                    method: 'popup',
+                    minutes: minutes
+                }))
+            };
+        } else {
+            // Explicitly disable reminders (prevents Google Calendar from using default reminders)
+            event.reminders = {
+                useDefault: false,
+                overrides: []
             };
         }
 

@@ -72,23 +72,13 @@
             <input type="checkbox" id="autoSync" checked>
         </div>
 
-        <div class="setting-item">
-            <div>
-                <label for="createReminders">Create calendar reminders</label>
-                <div class="setting-description">
-                    Add notification reminders to assignment events (1 day and 1 hour before due date)
-                </div>
-            </div>
-            <input type="checkbox" id="createReminders" checked>
-        </div>
-
         <!-- Event Color Picker (Collapsible) -->
         <details class="event-appearance-section">
             <summary class="event-appearance-summary">
                 <div class="summary-content">
                     <h4 style="margin: 0;">🎨 Event Appearance</h4>
                     <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
-                        Customize calendar event colors
+                        Customize colors, reminders, and display settings
                     </p>
                 </div>
                 <div class="summary-icon">▼</div>
@@ -148,6 +138,80 @@
 
                 <div id="colorSelectionStatus" class="setting-description" style="text-align: center; margin-top: 10px; font-weight: 500;">
                     Selected: <span id="selectedColorName">Blueberry</span>
+                </div>
+
+                <!-- Reminder Schedule Section -->
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h5 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                        🔔 Reminder Schedule
+                    </h5>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                        Choose when to receive notifications before assignment deadlines
+                    </p>
+
+                    <div class="reminder-options">
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="none">
+                            <span class="radio-label">None</span>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="single">
+                            <span class="radio-label">Single reminder (1 day before)</span>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="double" checked>
+                            <span class="radio-label">Double reminder (1 day + 1 hour before)</span>
+                            <span class="radio-badge">Default</span>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="custom">
+                            <span class="radio-label">Custom</span>
+                        </label>
+                    </div>
+
+                    <!-- Custom Reminder Builder (inline toggle) -->
+                    <div id="customReminderBuilder" class="custom-reminder-builder" style="display: none;">
+                        <div class="custom-reminder-list" id="customReminderList">
+                            <!-- Custom reminder rows will be added here dynamically -->
+                        </div>
+                        <button type="button" id="addReminderBtn" class="add-reminder-btn">
+                            + Add reminder
+                        </button>
+                        <p class="setting-description" style="margin-top: 8px; font-size: 12px;">
+                            Maximum 3 reminders
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Assignment Display Timing Section -->
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h5 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                        📅 Assignment Display Timing
+                    </h5>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                        Choose how assignments appear in your calendar
+                    </p>
+
+                    <div class="display-timing-options">
+                        <label class="radio-option">
+                            <input type="radio" name="eventDisplayTime" value="deadline" checked>
+                            <div class="radio-content">
+                                <span class="radio-label">Show at deadline time</span>
+                                <span class="radio-badge">Default</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="eventDisplayTime" value="allday">
+                            <div class="radio-content">
+                                <span class="radio-label">Show as all-day event</span>
+                                <span class="radio-helper-text warning-text">⚠️ Only supports day-of reminders, not time-specific alerts</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
         </details>

@@ -1140,6 +1140,240 @@ details[open].event-appearance-section .summary-icon {
     border-top: 1px solid var(--border-color);
 }
 
+/* Reminder Schedule and Display Timing Styles */
+.reminder-options,
+.display-timing-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.radio-option:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--button-bg);
+}
+
+[data-theme="dark"] .radio-option {
+    background: rgba(39, 39, 42, 0.4);
+}
+
+[data-theme="dark"] .radio-option:hover {
+    background: rgba(39, 39, 42, 0.7);
+    border-color: var(--berkeley-blue);
+}
+
+.radio-option input[type="radio"] {
+    margin-top: 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.radio-option input[type="radio"]:checked {
+    accent-color: var(--button-bg);
+}
+
+[data-theme="dark"] .radio-option input[type="radio"]:checked {
+    accent-color: var(--california-gold);
+}
+
+.radio-label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.radio-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.radio-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: linear-gradient(45deg, #007bff, #28a745);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 10px;
+    vertical-align: middle;
+}
+
+[data-theme="dark"] .radio-badge {
+    background: linear-gradient(45deg, var(--berkeley-blue), var(--california-gold));
+}
+
+.radio-helper-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-top: 2px;
+}
+
+.warning-text {
+    color: var(--warning);
+}
+
+.warning-icon {
+    display: inline;
+}
+
+/* Custom Reminder Builder */
+.custom-reminder-builder {
+    margin-top: 12px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .custom-reminder-builder {
+    background: rgba(39, 39, 42, 0.6);
+    border-color: rgba(244, 244, 245, 0.15);
+}
+
+.custom-reminder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.custom-reminder-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+[data-theme="dark"] .custom-reminder-row {
+    background: rgba(39, 39, 42, 0.8);
+}
+
+.custom-reminder-row input[type="number"] {
+    width: 80px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .custom-reminder-row input[type="number"] {
+    background: var(--bg-tertiary);
+}
+
+.custom-reminder-row input[type="number"]:focus {
+    outline: 2px solid var(--button-bg);
+    border-color: var(--button-bg);
+}
+
+[data-theme="dark"] .custom-reminder-row input[type="number"]:focus {
+    outline-color: var(--berkeley-blue);
+    border-color: var(--berkeley-blue);
+}
+
+.custom-reminder-row select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+[data-theme="dark"] .custom-reminder-row select {
+    background: var(--bg-tertiary);
+}
+
+.custom-reminder-row select:focus {
+    outline: 2px solid var(--button-bg);
+    border-color: var(--button-bg);
+}
+
+[data-theme="dark"] .custom-reminder-row select:focus {
+    outline-color: var(--berkeley-blue);
+    border-color: var(--berkeley-blue);
+}
+
+.custom-reminder-row .reminder-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.reminder-delete-btn {
+    padding: 6px 10px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.reminder-delete-btn:hover {
+    background: #c82333;
+    transform: scale(1.05);
+}
+
+.add-reminder-btn {
+    padding: 10px 16px;
+    background: var(--button-bg);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.add-reminder-btn:hover {
+    background: var(--button-hover);
+}
+
+.add-reminder-btn:disabled {
+    background: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .add-reminder-btn {
+    background: linear-gradient(135deg, var(--berkeley-blue), #004A93);
+}
+
+[data-theme="dark"] .add-reminder-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 50, 98, 0.5);
+    transform: translateY(-2px);
+}
+
 /* ================================
    GRADE CONFIGURATION SECTION
    ================================ */

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(git shortlog:*)",
+      "Read(//c/Users/Matut/gtcExtension/dev/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
