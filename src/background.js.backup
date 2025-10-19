@@ -386,17 +386,10 @@ chrome.runtime.onStartup.addListener(async () => {
 // ============================================================================
 
 // Extension installation handler - show welcome page
-chrome.runtime.onInstalled.addListener(async (details) => {
+chrome.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
         console.log('🎉 Extension installed! Opening welcome page...');
         chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
-
-        // Set install date for feedback prompt system (only on first install)
-        const data = await chrome.storage.local.get('installDate');
-        if (!data.installDate) {
-            await chrome.storage.local.set({ installDate: Date.now() });
-            console.log('📬 Install date recorded for feedback system');
-        }
     } else if (details.reason === 'update') {
         console.log('🔄 Extension updated to version', chrome.runtime.getManifest().version);
     }

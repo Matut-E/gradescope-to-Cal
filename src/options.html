@@ -237,43 +237,69 @@
     </div>
 
     <!-- Privacy Information -->
-    <div class="privacy-section">
-        <h3>🔒 Privacy & Security</h3>
-        <p><strong>Zero-server architecture:</strong> This extension processes everything locally in your browser.
-        No assignment data, personal information, or authentication tokens are ever sent to external servers.</p>
+    <div class="section">
+        <details class="privacy-collapsible-section">
+            <summary class="privacy-collapsible-summary">
+                <div class="summary-content">
+                    <h2 style="margin: 0;">🔒 Privacy & Security</h2>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
+                        Learn about our zero-server architecture and security practices
+                    </p>
+                </div>
+                <div class="summary-icon">▼</div>
+            </summary>
 
-        <p><strong>Data collection:</strong> We collect zero user data. The extension only stores:</p>
-        <ul>
-            <li>Assignment information you choose to extract from Gradescope</li>
-            <li>Your Google Calendar authentication tokens (stored securely in browser)</li>
-            <li>Your sync preferences and settings</li>
-        </ul>
+            <div class="privacy-collapsible-content">
+                <p><strong>Zero-server architecture:</strong> This extension processes everything locally in your browser.
+                No assignment data, personal information, or authentication tokens are ever sent to external servers.</p>
 
-        <p><strong>Permissions explained:</strong> This extension only requests the minimum permissions needed:</p>
-        <ul>
-            <li><code>storage</code> - Store your settings and extracted assignments locally</li>
-            <li><code>identity</code> - Handle Google OAuth authentication securely</li>
-            <li><code>alarms</code> - Schedule daily background sync operations</li>
-            <li><code>scripting</code> - Extract assignment data from Gradescope pages you visit</li>
-            <li><code>*.gradescope.com</code> - Access Gradescope pages for assignment extraction</li>
-            <li><code>*.googleapis.com</code> - Direct communication with Google Calendar API</li>
-        </ul>
+                <p><strong>Data collection:</strong> We collect zero user data. The extension only stores:</p>
+                <ul>
+                    <li>Assignment information you choose to extract from Gradescope</li>
+                    <li>Your Google Calendar authentication tokens (stored securely in browser)</li>
+                    <li>Your sync preferences and settings</li>
+                </ul>
 
-        <div style="margin-top: 20px; padding: 15px; background: rgba(72, 187, 120, 0.1); border-radius: 6px;">
-            <strong>🛡️ Enhanced Security Features:</strong>
-            <ul style="margin: 10px 0;">
-                <li>Dual OAuth client support for optimal browser compatibility</li>
-                <li>Automatic token refresh and secure credential management</li>
-                <li>Rate-limited API calls to respect service quotas</li>
-                <li>Smart caching to minimize unnecessary network requests</li>
-            </ul>
-        </div>
+                <p><strong>Permissions explained:</strong> This extension only requests the minimum permissions needed:</p>
+                <ul>
+                    <li><code>storage</code> - Store your settings and extracted assignments locally</li>
+                    <li><code>identity</code> - Handle Google OAuth authentication securely</li>
+                    <li><code>alarms</code> - Schedule daily background sync operations</li>
+                    <li><code>scripting</code> - Extract assignment data from Gradescope pages you visit</li>
+                    <li><code>*.gradescope.com</code> - Access Gradescope pages for assignment extraction</li>
+                    <li><code>*.googleapis.com</code> - Direct communication with Google Calendar API</li>
+                </ul>
+
+                <div style="margin-top: 20px; padding: 15px; background: rgba(72, 187, 120, 0.1); border-radius: 6px;">
+                    <strong>🛡️ Enhanced Security Features:</strong>
+                    <ul style="margin: 10px 0;">
+                        <li>Dual OAuth client support for optimal browser compatibility</li>
+                        <li>Automatic token refresh and secure credential management</li>
+                        <li>Rate-limited API calls to respect service quotas</li>
+                        <li>Smart caching to minimize unnecessary network requests</li>
+                    </ul>
+                </div>
+            </div>
+        </details>
+    </div>
     </div>
 
     <!-- Load modules (calendar functionality only - no grade modules) -->
+        <script src="utils/feedbackBanner.js"></script>
     <script src="options/options-theme.js"></script>
     <script src="options/options-settings.js"></script>
     <script src="options/options-pin-prompt.js"></script>
     <script src="options/options-main.js"></script>
-</body>
+
+    <!-- Help & Feedback Section -->
+    <div class="section">
+        <h2>📧 Help & Feedback</h2>
+        <p>Questions? Bugs? Feature requests? I'd love to hear from you!</p>
+        <div class="info-box">
+            <strong>Email:</strong> <a href="mailto:gradescope.to.cal@gmail.com" class="contact-link">gradescope.to.cal@gmail.com</a><br>
+            <strong>GitHub Issues:</strong> <a href="https://github.com/Matut-E/gradescope-to-Cal/issues" target="_blank" class="contact-link">Report a bug or request a feature</a>
+        </div>
+    </div>
+
+    </body>
 </html>

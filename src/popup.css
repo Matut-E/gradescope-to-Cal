@@ -707,3 +707,188 @@ body {
     color: var(--text-primary);
     background: var(--bg-secondary);
 }
+
+
+/* ============================================================================
+   FEEDBACK BANNER STYLES
+   ============================================================================ */
+
+/* Feedback Banner Container */
+.feedback-banner {
+    position: relative;
+    background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    border: 3px solid #007bff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+    transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Feedback Banner - Dark Mode */
+[data-theme="dark"] .feedback-banner {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%);
+    border: 3px solid var(--info);
+    border-left: 6px solid var(--info);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+/* Close Button (×) */
+.feedback-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    color: #003262;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.feedback-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+[data-theme="dark"] .feedback-close {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .feedback-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Feedback Content */
+.feedback-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feedback-content h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #003262;
+}
+
+[data-theme="dark"] .feedback-content h4 {
+    color: var(--text-primary);
+}
+
+.feedback-content p {
+    margin: 0;
+    font-size: 14px;
+    color: #003262;
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .feedback-content p {
+    color: var(--text-secondary);
+}
+
+/* Feedback Action Buttons */
+.feedback-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.feedback-actions .btn-primary,
+.feedback-actions .btn-secondary {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.feedback-actions .btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.feedback-actions .btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.feedback-actions .btn-secondary {
+    background: rgba(0, 0, 0, 0.1);
+    color: #003262;
+}
+
+.feedback-actions .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .feedback-actions .btn-primary {
+    background: var(--berkeley-blue);
+    color: var(--california-gold);
+}
+
+[data-theme="dark"] .feedback-actions .btn-primary:hover {
+    background: var(--button-hover);
+    box-shadow: 0 4px 12px rgba(253, 181, 21, 0.3);
+}
+
+[data-theme="dark"] .feedback-actions .btn-secondary {
+    background: var(--button-secondary-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .feedback-actions .btn-secondary:hover {
+    background: var(--button-secondary-hover);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .feedback-banner {
+        padding: 16px 20px;
+    }
+
+    .feedback-content h4 {
+        font-size: 14px;
+    }
+
+    .feedback-content p {
+        font-size: 13px;
+    }
+
+    .feedback-actions {
+        flex-direction: column;
+    }
+
+    .feedback-actions .btn-primary,
+    .feedback-actions .btn-secondary {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+}

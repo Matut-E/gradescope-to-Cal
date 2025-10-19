@@ -33,6 +33,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize pin prompt helper (uses static methods)
         await PinPromptManager.initialize();
 
+        // Check and show feedback banner if conditions are met
+        try {
+            const feedbackBanner = new FeedbackBanner();
+            if (await feedbackBanner.shouldShow()) {
+                const container = document.querySelector('.header');
+                feedbackBanner.show(container);
+            }
+        } catch (error) {
+            console.error('Error checking feedback banner:', error);
+        }
+
         console.log('✅ Options page initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing options page:', error);
