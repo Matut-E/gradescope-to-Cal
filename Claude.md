@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Key characteristics**:
 - **Open source**: MIT licensed, publicly available
 - **Automatic sync**: First-time sync + manual sync + 24-hour auto-sync + smart sync on extraction
-- **Production version**: v1.8.0 on Chrome Web Store
+- **Production version**: v1.8.5 on Chrome Web Store
 - **Privacy-first**: Zero-server architecture, all processing in browser
 
 ## Core Features
@@ -468,6 +468,10 @@ The extension uses a **CSS variable-based theming system**:
 - `src/utils/assignmentParser.js`: Assignment parsing from Gradescope DOM
 - `src/utils/gradeExtractor.js`: Basic extraction utilities and calendar filtering
 - `src/utils/dateParser.js`: Due date parsing and timezone detection
+- `src/utils/feedbackBanner.js`: User feedback/review banner logic (post-usage prompt)
+- `src/utils/pageDetector.js`: Gradescope page type detection
+- `src/utils/testFunctions.js`: Debug and testing utilities
+- `src/utils/pinBannerInjector.js`: Pin to toolbar reminder banner injection
 - `src/auth/`: Authentication modules (Chrome native + PKCE OAuth + smart sync)
   - `authenticationManager.js`: OAuth authentication
   - `tokenManager.js`: Token lifecycle management
@@ -476,13 +480,23 @@ The extension uses a **CSS variable-based theming system**:
   - `autoSyncManager.js`: 24-hour automatic sync scheduling
   - `smartSyncManager.js`: Smart sync on extraction (instant sync for new assignments)
 - `src/popup/`: Popup UI modules (calendar, settings, theme)
+  - `popup-main.js`: Popup initialization and module coordination
+  - `popup-calendar.js`: Calendar sync UI and controls
+  - `popup-storage.js`: Storage utilities for popup
+  - `popup-tabs.js`: Tab navigation for popup interface
+  - `popup-theme.js`: Dark mode toggle for popup
+- `src/popup.html`: Popup interface with extraction and sync controls
+- `src/popup.css`: Dark mode compatible popup styling
 - `src/options/`: Options page modules (settings, pin prompts, theme)
+  - `options-main.js`: Options page initialization
   - `options-settings.js`: Settings management including reminder schedule, custom reminders, and display timing
+  - `options-tabs.js`: Tab navigation for options page
   - `options-theme.js`: Dark mode toggle implementation
   - `options-pin-prompt.js`: Pin to toolbar onboarding
-  - `options-main.js`: Options page initialization
 - `src/options.html`: Options page UI with Event Appearance section (colors, reminders, display timing)
 - `src/options.css`: Dark mode compatible styling including reminder/display timing UI
+- `src/welcome.html`: First-time user onboarding page
+- `src/welcome.js`: Onboarding flow logic and tutorial
 - `src/manifest.json`: Extension metadata + permissions
 - `prepare-release.ps1`: PowerShell script to package releases
 
