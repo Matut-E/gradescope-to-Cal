@@ -28,7 +28,7 @@ export default async function handler(
   try {
     // Send email via Resend
     const data = await resend.emails.send({
-      from: 'Gradescope to Cal <noreply@gstocal.me>',
+      from: 'Gradescope to Cal <noreply@gs2cal.me>',
       to: email,
       subject: 'Install Gradescope to Cal on Your Laptop',
       html: `
@@ -41,7 +41,7 @@ export default async function handler(
             <p style="margin: 0 0 10px 0; font-weight: 600;">To install on your laptop:</p>
             <ol style="margin: 0; padding-left: 20px;">
               <li style="margin-bottom: 8px;">Open <strong>Chrome, Brave, or Edge</strong> on your <strong>laptop or desktop</strong></li>
-              <li style="margin-bottom: 8px;">Visit <a href="https://gstocal.me" style="color: #003262; font-weight: 600; text-decoration: none;">gstocal.me</a></li>
+              <li style="margin-bottom: 8px;">Visit <a href="https://gs2cal.me" style="color: #003262; font-weight: 600; text-decoration: none;">gs2cal.me</a></li>
               <li>Click "Add to Chrome" (takes 30 seconds)</li>
             </ol>
           </div>
@@ -61,7 +61,7 @@ export default async function handler(
           </p>
 
           <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
-            Questions? Visit <a href="https://gstocal.me" style="color: #003262;">gstocal.me</a>
+            Questions? Visit <a href="https://gs2cal.me" style="color: #003262;">gs2cal.me</a>
           </p>
         </div>
       `

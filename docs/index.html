@@ -185,7 +185,7 @@
                                 class="btn btn-secondary"
                                 style="width: 100%; justify-content: center;"
                             >
-                                Copy gstocal.me
+                                Copy gs2cal.me
                             </button>
                         </div>
 
@@ -202,7 +202,7 @@
                                 margin: 0.5rem 0;
                                 letter-spacing: 0.02em;
                             ">
-                                gstocal.me
+                                gs2cal.me
                             </p>
                             <p style="font-size: 0.875rem; color: var(--gray-500); margin-top: 0.25rem;">
                                 Type this in your laptop browser later
@@ -1052,13 +1052,13 @@
             if (copyBtn) {
                 copyBtn.addEventListener('click', async () => {
                     try {
-                        await navigator.clipboard.writeText('gstocal.me');
+                        await navigator.clipboard.writeText('gs2cal.me');
                         showToast('✅ Copied! Paste it in your notes or text yourself', 'success');
                     } catch (error) {
                         console.error('Copy failed:', error);
                         // Fallback for older browsers
                         const textArea = document.createElement('textarea');
-                        textArea.value = 'gstocal.me';
+                        textArea.value = 'gs2cal.me';
                         textArea.style.position = 'fixed';
                         textArea.style.opacity = '0';
                         document.body.appendChild(textArea);
@@ -1067,7 +1067,7 @@
                             document.execCommand('copy');
                             showToast('✅ Copied! Paste it in your notes or text yourself', 'success');
                         } catch (err) {
-                            showToast('❌ Copy failed. Just remember: gstocal.me', 'error');
+                            showToast('❌ Copy failed. Just remember: gs2cal.me', 'error');
                         }
                         document.body.removeChild(textArea);
                     }
