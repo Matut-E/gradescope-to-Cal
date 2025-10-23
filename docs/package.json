@@ -1,0 +1,13 @@
+{
+  "name": "gradescope-to-cal-static",
+  "version": "1.0.0",
+  "description": "Static site with serverless email API",
+  "private": true,
+  "dependencies": {
+    "resend": "^3.2.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.21",
+    "@types/node": "^20.11.0"
+  }
+}
