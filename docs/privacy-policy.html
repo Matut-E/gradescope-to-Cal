@@ -267,6 +267,41 @@
         <h2>Overview</h2>
         <p>Gradescope to Cal is a browser extension that automatically syncs your Gradescope assignments to Google Calendar. We are committed to protecting your privacy through a zero-server architecture that processes all data locally in your browser.</p>
 
+        <h2>Permissions Required</h2>
+        <p>Our extension requests only the minimal permissions necessary to function. Here's exactly what we need and why:</p>
+
+        <div class="card">
+            <h3>📅 Google Calendar API Access</h3>
+            <p><strong>Scope:</strong> <code>https://www.googleapis.com/auth/calendar.events</code></p>
+            <p><strong>Purpose:</strong> To manage calendar events for your Gradescope assignments</p>
+            <p><strong>Usage:</strong></p>
+            <ul>
+                <li><strong>Create</strong>: Add new calendar events when you extract assignments from Gradescope</li>
+                <li><strong>Read</strong>: Check for existing events to prevent duplicates during sync</li>
+                <li><strong>Update</strong>: Modify event details if assignment information changes</li>
+                <li><strong>Delete</strong>: Remove events when you deselect assignments or clear sync data</li>
+            </ul>
+            <p style="margin-bottom: 0;"><strong>Important:</strong> This permission only grants access to calendar events. We cannot read your full calendar, contacts, email, or any other Google services.</p>
+        </div>
+
+        <div class="card">
+            <h3>🎓 Content Script Access to *.gradescope.com</h3>
+            <p><strong>Domain:</strong> <code>*.gradescope.com</code></p>
+            <p><strong>Purpose:</strong> To extract assignment information from Gradescope pages you visit</p>
+            <p><strong>Usage:</strong></p>
+            <ul>
+                <li>Read assignment names, due dates, and course information from visible page content</li>
+                <li>Parse assignment status (submitted, graded, not submitted)</li>
+                <li>Extract assignment URLs and identifiers for calendar event tracking</li>
+                <li>Detect page type (dashboard, course page, assignment page) to optimize extraction</li>
+            </ul>
+            <p style="margin-bottom: 0;"><strong>Important:</strong> We only access Gradescope.com pages you actively visit. We do not track your browsing history, access other websites, or monitor activity in the background.</p>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>No other permissions are requested.</strong> We do not ask for access to your browsing history, tabs, downloads, cookies, or any other sensitive data. The extension operates entirely within these two clearly defined scopes.</p>
+        </div>
+
         <h2>Information Collection and Use</h2>
 
         <h3>What We Collect</h3>

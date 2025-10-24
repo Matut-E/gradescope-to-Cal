@@ -85,6 +85,7 @@
             <div class="nav-logo">Gradescope to Cal</div>
             <ul class="nav-links">
                 <li><a href="#features">Features</a></li>
+                <li><a href="#permissions">Permissions</a></li>
                 <li><a href="#privacy">Privacy</a></li>
                 <li><a href="#installation-flow">Install</a></li>
                 <li><a href="privacy-policy.html">Privacy Policy</a></li>
@@ -370,6 +371,84 @@
                             <h3 style="color: var(--success); font-size: var(--text-h2); margin-bottom: var(--space-3);">Open Source & Auditable</h3>
                             <p style="color: var(--gray-300); font-size: var(--text-body-lg); max-width: 500px;">Every line of code on GitHub. Verify our privacy claims yourself.</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="section" id="permissions" style="background: var(--blue-900);">
+            <div class="section-container">
+                <h2 class="section-title" style="margin-bottom: var(--space-4);">
+                    Permissions & Why We Need Them
+                </h2>
+                <p style="text-align: center; font-size: var(--text-body-lg); color: var(--gray-400); max-width: 700px; margin: 0 auto var(--space-3xl);">
+                    We only request the minimal permissions required to sync your assignments. Here's exactly what we access and why.
+                </p>
+
+                <div style="max-width: 900px; margin: 0 auto;">
+                    <div style="display: grid; gap: var(--space-6); margin-bottom: var(--space-8);">
+                        <div class="card">
+                            <div style="display: flex; align-items: start; gap: var(--space-6);">
+                                <div style="font-size: 3rem; flex-shrink: 0;">📅</div>
+                                <div>
+                                    <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--california-gold);">Google Calendar Access</h3>
+                                    <p style="color: var(--gray-300); font-size: var(--text-body); margin-bottom: var(--space-4); line-height: var(--leading-relaxed);">
+                                        <strong style="color: var(--gray-100);">Scope:</strong> <code>https://www.googleapis.com/auth/calendar.events</code>
+                                    </p>
+                                    <p style="color: var(--gray-300); font-size: var(--text-body); margin-bottom: var(--space-4); line-height: var(--leading-relaxed);">
+                                        <strong style="color: var(--gray-100);">Why we need it:</strong> To create, read, update, and delete calendar events for your Gradescope assignments. This allows the extension to:
+                                    </p>
+                                    <ul style="color: var(--gray-300); padding-left: var(--space-6); margin-bottom: 0;">
+                                        <li style="margin-bottom: var(--space-2);">Create new events when assignments are extracted from Gradescope</li>
+                                        <li style="margin-bottom: var(--space-2);">Update existing events if assignment details change</li>
+                                        <li style="margin-bottom: var(--space-2);">Delete events when you remove them from the sync</li>
+                                        <li style="margin-bottom: 0;">Check for existing events to prevent duplicates</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div style="display: flex; align-items: start; gap: var(--space-6);">
+                                <div style="font-size: 3rem; flex-shrink: 0;">🎓</div>
+                                <div>
+                                    <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--california-gold);">Gradescope.com Access</h3>
+                                    <p style="color: var(--gray-300); font-size: var(--text-body); margin-bottom: var(--space-4); line-height: var(--leading-relaxed);">
+                                        <strong style="color: var(--gray-100);">Permission:</strong> Content script access to <code>*.gradescope.com</code>
+                                    </p>
+                                    <p style="color: var(--gray-300); font-size: var(--text-body); margin-bottom: var(--space-4); line-height: var(--leading-relaxed);">
+                                        <strong style="color: var(--gray-100);">Why we need it:</strong> To read assignment information from Gradescope pages you visit. This allows the extension to extract:
+                                    </p>
+                                    <ul style="color: var(--gray-300); padding-left: var(--space-6); margin-bottom: 0;">
+                                        <li style="margin-bottom: var(--space-2);">Assignment names and due dates</li>
+                                        <li style="margin-bottom: var(--space-2);">Course names and identifiers</li>
+                                        <li style="margin-bottom: var(--space-2);">Assignment URLs for quick access</li>
+                                        <li style="margin-bottom: 0;">Status information (submitted, graded, etc.)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding: var(--space-8); background: rgba(72, 187, 120, 0.05); border: 1px solid rgba(72, 187, 120, 0.2); border-radius: var(--radius-xl); border-left: 4px solid var(--success);">
+                        <h3 style="color: var(--success); margin-bottom: var(--space-4); font-size: var(--text-h3);">What We DON'T Access</h3>
+                        <ul style="list-style: none; padding: 0; display: grid; gap: var(--space-3); margin: 0;">
+                            <li style="display: flex; align-items: center; gap: var(--space-3); color: var(--gray-300);">
+                                <span style="color: var(--success); font-size: 1.5rem;">✓</span>
+                                <span><strong style="color: var(--gray-100);">No background browsing tracking</strong> – We only read the page when you visit it</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--space-3); color: var(--gray-300);">
+                                <span style="color: var(--success); font-size: 1.5rem;">✓</span>
+                                <span><strong style="color: var(--gray-100);">No access to other websites</strong> – Only Gradescope.com, nothing else</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--space-3); color: var(--gray-300);">
+                                <span style="color: var(--success); font-size: 1.5rem;">✓</span>
+                                <span><strong style="color: var(--gray-100);">No personal information collection</strong> – We don't collect names, emails, or IDs</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: var(--space-3); color: var(--gray-300); margin: 0;">
+                                <span style="color: var(--success); font-size: 1.5rem;">✓</span>
+                                <span><strong style="color: var(--gray-100);">No full calendar access</strong> – Only the events we create, not your entire calendar</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
