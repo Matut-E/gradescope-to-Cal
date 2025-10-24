@@ -43,6 +43,11 @@ const CONFIG = {
     ALARM_NAME: 'gradescope_auto_sync'
 };
 
+console.log('🚀 Enhanced background script with dual authentication loaded');
+console.log(`📱 Extension ID: ${browser.runtime.id}`);
+console.log(`🔑 Chrome Client ID: ${CONFIG.CHROME_EXTENSION_CLIENTS[browser.runtime.id] || 'not configured'}`);
+console.log(`🌐 Web Client ID: ${CONFIG.WEB_CLIENT_ID}`);
+
 // ============================================================================
 // IMPORT MODULES
 // ============================================================================
@@ -65,12 +70,6 @@ if (typeof importScripts === 'function') {
     // Firefox background script - modules already loaded via manifest
     console.log('✅ Firefox: Modules loaded via manifest.json');
 }
-
-// Log configuration AFTER polyfill is loaded
-console.log('🚀 Enhanced background script with dual authentication loaded');
-console.log(`📱 Extension ID: ${browser.runtime.id}`);
-console.log(`🔑 Chrome Client ID: ${CONFIG.CHROME_EXTENSION_CLIENTS[browser.runtime.id] || 'not configured'}`);
-console.log(`🌐 Web Client ID: ${CONFIG.WEB_CLIENT_ID}`);
 
 // ============================================================================
 // CROSS-BROWSER COMPATIBILITY HELPERS

@@ -71,14 +71,13 @@ async function showPinBannerIfNeeded(calendarAssignments) {
         console.log(`📊 Banner counts: ${assignmentCount} assignments across ${courseCount} courses`);
 
         // Check pin status from background
-        browser.runtime.sendMessage({ action: 'checkPinStatus' }, (response) => {
-            if (response && response.success && !response.isPinned) {
-                // Show the banner
-                const bannerInjector = new PinBannerInjector();
-                bannerInjector.showBanner(assignmentCount, courseCount);
-                console.log('📌 Pin banner shown to user');
-            }
-        });
+        const response = await browser.runtime.sendMessage({ action: 'checkPinStatus' });
+        if (response && response.success && !response.isPinned) {
+            // Show the banner
+            const bannerInjector = new PinBannerInjector();
+            bannerInjector.showBanner(assignmentCount, courseCount);
+            console.log('📌 Pin banner shown to user');
+        }
     } catch (error) {
         console.error('Error showing pin banner:', error);
     }
@@ -201,19 +200,18 @@ async function main() {
                 // =================================================================
                 if (uniqueCalendarAssignments.length > 0) {
                     console.log('🧠 Checking for new assignments to trigger smart sync...');
-                    browser.runtime.sendMessage({
+                    const response = await browser.runtime.sendMessage({
                         action: 'checkForNewAssignments',
                         assignments: uniqueCalendarAssignments,
                         allAssignments: allAssignments
-                    }, (response) => {
-                        if (response && response.success) {
-                            if (response.synced) {
-                                console.log(`✅ Smart sync triggered: ${response.results.created} events created`);
-                            } else {
-                                console.log(`ℹ️ Smart sync not triggered: ${response.reason}`);
-                            }
-                        }
                     });
+                    if (response && response.success) {
+                        if (response.synced) {
+                            console.log(`✅ Smart sync triggered: ${response.results.created} events created`);
+                        } else {
+                            console.log(`ℹ️ Smart sync not triggered: ${response.reason}`);
+                        }
+                    }
                 }
 
             } else {
