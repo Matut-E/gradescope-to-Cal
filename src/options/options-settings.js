@@ -6,8 +6,8 @@
  *
  * Dependencies (must be loaded before this module):
  * - chrome.runtime - Chrome messaging API
- * - chrome.storage.local - Chrome local storage
- * - chrome.storage.sync - Chrome sync storage
+ * - browser.storage.local - Chrome local storage
+ * - browser.storage.sync - Chrome sync storage
  *
  * DOM Dependencies:
  * - #authStatus - Auth status display
@@ -67,7 +67,7 @@ class OptionsSettings {
         const disconnectBtn = document.getElementById('disconnect');
 
         try {
-            const response = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
+            const response = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
 
             if (response.success && response.authenticated && response.tokenValid) {
                 if (authStatus) {
@@ -127,7 +127,7 @@ class OptionsSettings {
         const autoSyncCheckbox = document.getElementById('autoSync');
 
         try {
-            const response = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+            const response = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
 
             if (response.success) {
                 const status = response.status;
@@ -252,7 +252,7 @@ class OptionsSettings {
         const autoSyncCheckbox = document.getElementById('autoSync');
 
         try {
-            const settings = await chrome.storage.local.get([
+            const settings = await browser.storage.local.get([
                 'settings_auto_sync',
                 'settings_auto_discovery',
                 'reminderSchedule',
@@ -261,7 +261,7 @@ class OptionsSettings {
             ]);
 
             // Load color preference from sync storage
-            const syncSettings = await chrome.storage.sync.get(['eventColorId']);
+            const syncSettings = await browser.storage.sync.get(['eventColorId']);
             const eventColorId = syncSettings.eventColorId || '9'; // Default to Blueberry
             console.log('🎨 Loaded event color ID:', eventColorId);
 
@@ -314,7 +314,7 @@ class OptionsSettings {
 
         try {
             // Check authentication status
-            const authResponse = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
+            const authResponse = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
             const isAuthenticated = authResponse.success && authResponse.authenticated && authResponse.tokenValid;
 
             // Get selected reminder schedule
@@ -338,10 +338,10 @@ class OptionsSettings {
                 eventDisplayTime: eventDisplayTime
             };
 
-            await chrome.storage.local.set(settings);
+            await browser.storage.local.set(settings);
 
             // Save event color to sync storage
-            await chrome.storage.sync.set({ eventColorId: OptionsSettings.selectedEventColorId });
+            await browser.storage.sync.set({ eventColorId: OptionsSettings.selectedEventColorId });
             console.log('🎨 Saved event color ID:', OptionsSettings.selectedEventColorId);
             console.log('🔔 Saved reminder schedule:', reminderSchedule);
             console.log('🔔 Saved custom reminders:', OptionsSettings.customReminders);
@@ -349,9 +349,9 @@ class OptionsSettings {
 
             // If auto-sync setting changed, update the background service
             if (autoSyncCheckbox.checked) {
-                await chrome.runtime.sendMessage({ action: 'enableAutoSync' });
+                await browser.runtime.sendMessage({ action: 'enableAutoSync' });
             } else {
-                await chrome.runtime.sendMessage({ action: 'disableAutoSync' });
+                await browser.runtime.sendMessage({ action: 'disableAutoSync' });
             }
 
             // Determine if calendar-specific settings (color) changed
@@ -421,7 +421,7 @@ class OptionsSettings {
         authenticateBtn.textContent = 'Connecting...';
 
         try {
-            const response = await chrome.runtime.sendMessage({ action: 'authenticate' });
+            const response = await browser.runtime.sendMessage({ action: 'authenticate' });
 
             if (response.success) {
                 await OptionsSettings.checkAuthStatus();
@@ -446,7 +446,7 @@ class OptionsSettings {
         if (confirm('Are you sure you want to disconnect from Google Calendar? This will also disable auto-sync.')) {
             try {
                 // Send clear auth message to background script
-                const response = await chrome.runtime.sendMessage({ action: 'clearAuth' });
+                const response = await browser.runtime.sendMessage({ action: 'clearAuth' });
 
                 if (response.success) {
                     await OptionsSettings.checkAuthStatus();
@@ -466,9 +466,9 @@ class OptionsSettings {
     static async clearAssignmentData() {
         if (confirm('Are you sure you want to clear all extracted assignment data?')) {
             try {
-                const storage = await chrome.storage.local.get();
+                const storage = await browser.storage.local.get();
                 const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
-                await chrome.storage.local.remove(assignmentKeys);
+                await browser.storage.local.remove(assignmentKeys);
 
                 alert(`✅ Cleared ${assignmentKeys.length} assignment data entries!`);
             } catch (error) {
@@ -493,10 +493,10 @@ class OptionsSettings {
         if (confirm('⚠️ Are you sure you want to clear ALL extension data? This cannot be undone and will:\n\n• Remove all authentication\n• Delete all assignment data\n• Reset all settings\n• Disable auto-sync')) {
             try {
                 // Disable auto-sync first
-                await chrome.runtime.sendMessage({ action: 'disableAutoSync' });
+                await browser.runtime.sendMessage({ action: 'disableAutoSync' });
 
                 // Clear all storage
-                await chrome.storage.local.clear();
+                await browser.storage.local.clear();
 
                 // Reset UI
                 await OptionsSettings.checkAuthStatus();
@@ -668,7 +668,7 @@ class OptionsSettings {
      */
     static async showDataStatistics() {
         try {
-            const storage = await chrome.storage.local.get();
+            const storage = await browser.storage.local.get();
             const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
 
             let totalAssignments = 0;
@@ -706,7 +706,7 @@ class OptionsSettings {
             });
 
             // Get sync statistics
-            const syncStats = await chrome.storage.local.get(['last_auto_sync', 'last_sync_results']);
+            const syncStats = await browser.storage.local.get(['last_auto_sync', 'last_sync_results']);
 
             let statsMessage = `📊 GRADESCOPE TO CAL STATISTICS\n\n`;
             statsMessage += `📚 Assignment Data:\n`;

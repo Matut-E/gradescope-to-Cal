@@ -18,7 +18,7 @@ class BrowserCapabilityDetector {
      * Get the correct Chrome Extension client ID for the current extension
      */
     static getChromeExtensionClientId(config) {
-        const extensionId = chrome.runtime.id;
+        const extensionId = browser.runtime.id;
         const clientId = config.CHROME_EXTENSION_CLIENTS[extensionId];
 
         if (!clientId) {
@@ -61,9 +61,9 @@ class BrowserCapabilityDetector {
      */
     static async testChromeAuthCapability(config) {
         // Firefox detection - getAuthToken not supported in Firefox
-        // Firefox doesn't have chrome.identity.getAuthToken, must use PKCE
+        // Firefox doesn't have browser.identity.getAuthToken, must use PKCE
         if (typeof browser !== 'undefined' && typeof browser.runtime !== 'undefined') {
-            console.log('🦊 Firefox detected - chrome.identity.getAuthToken not supported');
+            console.log('🦊 Firefox detected - browser.identity.getAuthToken not supported');
             console.log('   - Will use PKCE authentication flow');
             return false;
         }
@@ -76,13 +76,13 @@ class BrowserCapabilityDetector {
 
         return new Promise((resolve) => {
             console.log('🔍 Testing Chrome getAuthToken capability...');
-            console.log(`   - Extension ID: ${chrome.runtime.id}`);
+            console.log(`   - Extension ID: ${browser.runtime.id}`);
             console.log(`   - Client ID: ${clientId}`);
 
-            chrome.identity.getAuthToken({
+            browser.identity.getAuthToken({
                 interactive: false
             }, (token) => {
-                const error = chrome.runtime.lastError?.message || '';
+                const error = browser.runtime.lastError?.message || '';
 
                 console.log('🔍 Chrome getAuthToken test result:');
                 console.log('   - Token received:', !!token);
@@ -97,7 +97,7 @@ class BrowserCapabilityDetector {
                 if (error.includes('Invalid OAuth2 Client ID')) {
                     console.log('❌ Chrome getAuthToken failed - Invalid client ID');
                     console.log('   - Check Google Cloud Console configuration');
-                    console.log(`   - Extension ID: ${chrome.runtime.id} should be configured for client: ${clientId}`);
+                    console.log(`   - Extension ID: ${browser.runtime.id} should be configured for client: ${clientId}`);
                     resolve(false);
                     return;
                 }
@@ -195,11 +195,11 @@ class AuthenticationManager {
 
     async authenticateWithChrome() {
         return new Promise((resolve, reject) => {
-            chrome.identity.getAuthToken({
+            browser.identity.getAuthToken({
                 interactive: true
             }, (token) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
+                if (browser.runtime.lastError) {
+                    reject(new Error(browser.runtime.lastError.message));
                     return;
                 }
 
@@ -222,11 +222,11 @@ class AuthenticationManager {
         }
 
         return new Promise((resolve, reject) => {
-            chrome.identity.getAuthToken({
+            browser.identity.getAuthToken({
                 interactive: false
             }, (token) => {
-                if (chrome.runtime.lastError) {
-                    reject(new Error(chrome.runtime.lastError.message));
+                if (browser.runtime.lastError) {
+                    reject(new Error(browser.runtime.lastError.message));
                     return;
                 }
 
@@ -252,7 +252,7 @@ class AuthenticationManager {
             const codeVerifier = PKCEHelper.generateCodeVerifier();
             const codeChallenge = await PKCEHelper.generateCodeChallenge(codeVerifier);
 
-            const redirectUri = chrome.identity.getRedirectURL();
+            const redirectUri = browser.identity.getRedirectURL();
             const authParams = new URLSearchParams({
                 client_id: this.config.WEB_CLIENT_ID,
                 response_type: 'code',
@@ -300,7 +300,7 @@ class AuthenticationManager {
             console.log('');
 
             return new Promise((resolve, reject) => {
-                chrome.identity.launchWebAuthFlow({
+                browser.identity.launchWebAuthFlow({
                     url: authURL,
                     interactive: true
                 }, async (redirectURL) => {
@@ -311,12 +311,12 @@ class AuthenticationManager {
                     console.log('╚════════════════════════════════════════════════════════════════════════╝');
                     console.log('');
 
-                    if (chrome.runtime.lastError) {
+                    if (browser.runtime.lastError) {
                         console.error('❌ launchWebAuthFlow Error:');
-                        console.error('   Message:', chrome.runtime.lastError.message);
+                        console.error('   Message:', browser.runtime.lastError.message);
                         console.error('');
                         console.error('📊 Error Analysis:');
-                        const errorMsg = chrome.runtime.lastError.message;
+                        const errorMsg = browser.runtime.lastError.message;
 
                         if (errorMsg.includes('User cancelled') || errorMsg.includes('denied access')) {
                             console.error('   This error means ONE of the following:');
@@ -333,7 +333,7 @@ class AuthenticationManager {
                             console.error('     • "invalid_client" → Check client ID configuration');
                         }
 
-                        reject(new Error(chrome.runtime.lastError.message));
+                        reject(new Error(browser.runtime.lastError.message));
                         return;
                     }
 
@@ -446,7 +446,7 @@ class AuthenticationManager {
             code: authCode,
             code_verifier: codeVerifier,
             grant_type: 'authorization_code',
-            redirect_uri: chrome.identity.getRedirectURL()
+            redirect_uri: browser.identity.getRedirectURL()
         });
 
         try {
@@ -525,7 +525,7 @@ class AuthenticationManager {
             actualMethodUsed: this.tokenManager.getAuthMethod(),
             browserInfo: {
                 type: BrowserCapabilityDetector.isActualChrome() ? 'Chrome' : 'Not-Chrome',
-                extensionId: chrome.runtime.id,
+                extensionId: browser.runtime.id,
                 chromeClientId: BrowserCapabilityDetector.getChromeExtensionClientId(this.config),
                 supportsPKCE: true
             }
@@ -539,7 +539,7 @@ class AuthenticationManager {
         if (this.tokenManager.getAuthMethod() === 'chrome_native' && this.tokenManager.getAccessToken()) {
             try {
                 await new Promise((resolve) => {
-                    chrome.identity.removeCachedAuthToken({
+                    browser.identity.removeCachedAuthToken({
                         token: this.tokenManager.getAccessToken()
                     }, resolve);
                 });

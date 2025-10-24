@@ -14,8 +14,8 @@ class AutoSyncManager {
     }
 
     async setupAutoSync() {
-        await chrome.alarms.clear(this.config.ALARM_NAME);
-        await chrome.alarms.create(this.config.ALARM_NAME, {
+        await browser.alarms.clear(this.config.ALARM_NAME);
+        await browser.alarms.create(this.config.ALARM_NAME, {
             delayInMinutes: this.config.AUTO_SYNC_INTERVAL,
             periodInMinutes: this.config.AUTO_SYNC_INTERVAL
         });
@@ -23,13 +23,13 @@ class AutoSyncManager {
     }
 
     async disableAutoSync() {
-        await chrome.alarms.clear(this.config.ALARM_NAME);
+        await browser.alarms.clear(this.config.ALARM_NAME);
         console.log('✅ Auto-sync disabled');
     }
 
     async getAutoSyncStatus() {
-        const alarm = await chrome.alarms.get(this.config.ALARM_NAME);
-        const storage = await chrome.storage.local.get(['last_auto_sync', 'last_sync_results', 'last_auto_sync_error']);
+        const alarm = await browser.alarms.get(this.config.ALARM_NAME);
+        const storage = await browser.storage.local.get(['last_auto_sync', 'last_sync_results', 'last_auto_sync_error']);
 
         return {
             enabled: !!alarm,

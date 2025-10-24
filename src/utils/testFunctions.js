@@ -121,7 +121,7 @@ class TestFunctions {
      * Test enhanced storage with category data
      */
     static testEnhancedStorage() {
-        chrome.storage.local.get().then(storage => {
+        browser.storage.local.get().then(storage => {
             const latest = Object.keys(storage)
                 .filter(k => k.startsWith('assignments_'))
                 .sort()

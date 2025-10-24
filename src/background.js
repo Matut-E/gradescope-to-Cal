@@ -44,13 +44,18 @@ const CONFIG = {
 };
 
 console.log('🚀 Enhanced background script with dual authentication loaded');
-console.log(`📱 Extension ID: ${chrome.runtime.id}`);
-console.log(`🔑 Chrome Client ID: ${CONFIG.CHROME_EXTENSION_CLIENTS[chrome.runtime.id] || 'not configured'}`);
+console.log(`📱 Extension ID: ${browser.runtime.id}`);
+console.log(`🔑 Chrome Client ID: ${CONFIG.CHROME_EXTENSION_CLIENTS[browser.runtime.id] || 'not configured'}`);
 console.log(`🌐 Web Client ID: ${CONFIG.WEB_CLIENT_ID}`);
 
 // ============================================================================
 // IMPORT MODULES (Service Worker)
 // ============================================================================
+
+// Load WebExtension Polyfill for cross-browser compatibility
+// Firefox: No-op (browser.* exists natively)
+// Chrome: Wraps chrome.* callbacks into browser.* promises
+importScripts('lib/browser-polyfill.js');
 
 // Service workers need to use importScripts for loading modules
 importScripts(
@@ -82,7 +87,7 @@ console.log('✅ Module instances created');
 // ============================================================================
 
 // Auto-sync alarm handler
-chrome.alarms.onAlarm.addListener(async (alarm) => {
+browser.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === CONFIG.ALARM_NAME) {
         console.log('⏰ Auto-sync alarm triggered');
         await calendarClient.performBackgroundSync();
@@ -93,7 +98,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 // Message handler
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const handleMessage = async () => {
         switch (request.action) {
             case 'authenticate':
@@ -168,7 +173,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const pinStatus = await checkIfPinned();
                 // Clear badge immediately if extension is pinned
                 if (pinStatus) {
-                    await chrome.action.setBadgeText({ text: '' });
+                    await browser.action.setBadgeText({ text: '' });
                     console.log('✅ Pin status checked - extension is pinned, badge cleared');
                 }
                 return { success: true, isPinned: pinStatus };
@@ -177,7 +182,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 // Attempt to open the extension popup programmatically
                 // Note: This may not work in all contexts, but we try
                 try {
-                    await chrome.action.openPopup();
+                    await browser.action.openPopup();
                     return { success: true, message: 'Popup opened' };
                 } catch (error) {
                     // Popup couldn't be opened (likely user gesture required)
@@ -209,7 +214,7 @@ async function handleCalendarSync(assignments) {
     try {
         const results = await calendarClient.syncAssignments(assignments);
 
-        await chrome.storage.local.set({
+        await browser.storage.local.set({
             last_auto_sync: new Date().toISOString(),
             last_sync_results: results
         });
@@ -218,7 +223,7 @@ async function handleCalendarSync(assignments) {
     } catch (error) {
         console.error('❌ Calendar sync failed:', error);
 
-        await chrome.storage.local.set({
+        await browser.storage.local.set({
             last_auto_sync_error: {
                 timestamp: new Date().toISOString(),
                 error: error.message
@@ -294,7 +299,7 @@ async function handleCheckForNewAssignments(assignments) {
 async function handleFirstTimeSync() {
     try {
         // Check if this is first-time authentication (no previous sync)
-        const storage = await chrome.storage.local.get(['last_auto_sync']);
+        const storage = await browser.storage.local.get(['last_auto_sync']);
         const hasExistingSync = storage.last_auto_sync;
 
         if (hasExistingSync) {
@@ -305,7 +310,7 @@ async function handleFirstTimeSync() {
         console.log('🎉 First-time authentication detected! Checking for existing assignments...');
 
         // Check if assignments have already been extracted
-        const allStorage = await chrome.storage.local.get(null);
+        const allStorage = await browser.storage.local.get(null);
         const assignmentKeys = Object.keys(allStorage).filter(key =>
             key.startsWith('assignments_') && allStorage[key].assignments
         );
@@ -345,7 +350,7 @@ async function handleFirstTimeSync() {
         const results = await calendarClient.syncAssignments(calendarEligible);
 
         const syncTimestamp = new Date().toISOString();
-        await chrome.storage.local.set({
+        await browser.storage.local.set({
             last_auto_sync: syncTimestamp,
             last_sync_results: results,
             lastSyncType: 'first_time'
@@ -371,7 +376,7 @@ async function handleFirstTimeSync() {
 }
 
 // Startup handler
-chrome.runtime.onStartup.addListener(async () => {
+browser.runtime.onStartup.addListener(async () => {
     console.log('🌟 Extension startup - checking auto-sync...');
 
     const authStatus = await authManager.getAuthStatus();
@@ -386,19 +391,19 @@ chrome.runtime.onStartup.addListener(async () => {
 // ============================================================================
 
 // Extension installation handler - show welcome page
-chrome.runtime.onInstalled.addListener(async (details) => {
+browser.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'install') {
         console.log('🎉 Extension installed! Opening welcome page...');
-        chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
+        browser.tabs.create({ url: browser.runtime.getURL('welcome.html') });
 
         // Set install date for feedback prompt system (only on first install)
-        const data = await chrome.storage.local.get('installDate');
+        const data = await browser.storage.local.get('installDate');
         if (!data.installDate) {
-            await chrome.storage.local.set({ installDate: Date.now() });
+            await browser.storage.local.set({ installDate: Date.now() });
             console.log('📬 Install date recorded for feedback system');
         }
     } else if (details.reason === 'update') {
-        console.log('🔄 Extension updated to version', chrome.runtime.getManifest().version);
+        console.log('🔄 Extension updated to version', browser.runtime.getManifest().version);
     }
 });
 
@@ -407,7 +412,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
  */
 async function checkIfPinned() {
     try {
-        const settings = await chrome.action.getUserSettings();
+        const settings = await browser.action.getUserSettings();
         return settings.isOnToolbar || false;
     } catch (error) {
         console.error('Error checking pin status:', error);
@@ -425,12 +430,12 @@ async function checkAndShowPinBadge() {
         const isPinned = await checkIfPinned();
         if (isPinned) {
             // Clear badge if pinned
-            await chrome.action.setBadgeText({ text: '' });
+            await browser.action.setBadgeText({ text: '' });
             return;
         }
 
         // Check conditions for showing badge
-        const data = await chrome.storage.local.get([
+        const data = await browser.storage.local.get([
             'hasAssignments',
             'lastPopupOpen',
             'dismissedExtractionBanner'
@@ -449,8 +454,8 @@ async function checkAndShowPinBadge() {
 
         if (timeSinceOpen > dayInMs) {
             // Show badge - using '!' character
-            await chrome.action.setBadgeText({ text: '!' });
-            await chrome.action.setBadgeBackgroundColor({ color: '#FDB515' }); // California Gold
+            await browser.action.setBadgeText({ text: '!' });
+            await browser.action.setBadgeBackgroundColor({ color: '#FDB515' }); // California Gold
             console.log('📌 Pin reminder badge shown');
         }
     } catch (error) {
@@ -459,17 +464,17 @@ async function checkAndShowPinBadge() {
 }
 
 // Set up pin status check alarm (runs every 5 minutes to detect pinning quickly)
-chrome.alarms.create('checkPinStatus', { periodInMinutes: 5 });
+browser.alarms.create('checkPinStatus', { periodInMinutes: 5 });
 
 // Track when popup is opened (check pin status and clear badge if pinned)
-chrome.action.onClicked.addListener(async () => {
-    await chrome.storage.local.set({ lastPopupOpen: Date.now() });
+browser.action.onClicked.addListener(async () => {
+    await browser.storage.local.set({ lastPopupOpen: Date.now() });
 
     // Check if extension is now pinned
     const isPinned = await checkIfPinned();
     if (isPinned) {
         // Clear badge immediately if pinned
-        await chrome.action.setBadgeText({ text: '' });
+        await browser.action.setBadgeText({ text: '' });
         console.log('✅ Extension is pinned - badge cleared');
     }
 });

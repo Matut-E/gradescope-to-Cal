@@ -99,6 +99,24 @@ async function copyManifest(platform, targetDir) {
 }
 
 /**
+ * Copy WebExtension Polyfill for cross-browser compatibility
+ */
+async function copyPolyfill(targetDir) {
+    console.log(`📚 Copying WebExtension Polyfill...`);
+
+    const polyfillSrc = path.join(__dirname, '../node_modules/webextension-polyfill/dist/browser-polyfill.min.js');
+    const polyfillDest = path.join(targetDir, 'lib/browser-polyfill.js');
+
+    if (!await fs.pathExists(polyfillSrc)) {
+        throw new Error(`Polyfill not found: ${polyfillSrc}. Run 'npm install' first.`);
+    }
+
+    await fs.ensureDir(path.join(targetDir, 'lib'));
+    await fs.copy(polyfillSrc, polyfillDest);
+    console.log('   ✅ Polyfill copied');
+}
+
+/**
  * Read version from manifest
  */
 async function getVersion(platform) {
@@ -164,6 +182,9 @@ async function buildPlatform(platform) {
 
     // Copy platform-specific manifest
     await copyManifest(platform, targetDir);
+
+    // Copy WebExtension Polyfill for cross-browser compatibility
+    await copyPolyfill(targetDir);
 
     // Create versioned release
     const { releaseDir, zipPath } = await createRelease(platform);

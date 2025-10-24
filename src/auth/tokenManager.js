@@ -23,7 +23,7 @@ class TokenManager {
 
     async initializeFromStorage() {
         try {
-            const stored = await chrome.storage.local.get([
+            const stored = await browser.storage.local.get([
                 'google_access_token',
                 'google_refresh_token',
                 'google_token_expiry',
@@ -51,7 +51,7 @@ class TokenManager {
 
     async saveTokenState() {
         try {
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 google_access_token: this.accessToken,
                 google_refresh_token: this.refreshToken,
                 google_token_expiry: this.tokenExpiry,
@@ -65,7 +65,7 @@ class TokenManager {
 
     async clearStoredAuth() {
         try {
-            await chrome.storage.local.remove([
+            await browser.storage.local.remove([
                 'google_access_token',
                 'google_refresh_token',
                 'google_token_expiry',

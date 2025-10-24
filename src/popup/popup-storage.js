@@ -9,7 +9,7 @@ class StorageUtils {
      */
     static async getAllStoredAssignments() {
         try {
-            const storage = await chrome.storage.local.get();
+            const storage = await browser.storage.local.get();
             const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
 
             let allAssignments = [];
@@ -35,7 +35,7 @@ class StorageUtils {
      */
     static async getAllCoursesWithGrades() {
         try {
-            const storage = await chrome.storage.local.get();
+            const storage = await browser.storage.local.get();
             const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
 
             const courses = {};
@@ -91,7 +91,7 @@ class StorageUtils {
      */
     static async getAssignmentsNeedingReview() {
         try {
-            const storage = await chrome.storage.local.get();
+            const storage = await browser.storage.local.get();
             const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
 
             let allReviewItems = [];

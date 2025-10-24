@@ -35,7 +35,7 @@ class PinBannerInjector {
      */
     async shouldShowBanner() {
         return new Promise((resolve) => {
-            chrome.storage.local.get(
+            browser.storage.local.get(
                 ['dismissedExtractionBanner', 'reminderDismissedAt'],
                 (data) => {
                     // Permanently dismissed
@@ -278,7 +278,7 @@ class PinBannerInjector {
         this.attachEventListeners(banner);
 
         // Update storage to track that banner was shown
-        chrome.storage.local.set({ sawExtractionBanner: true });
+        browser.storage.local.set({ sawExtractionBanner: true });
     }
 
     /**
@@ -309,13 +309,13 @@ class PinBannerInjector {
      */
     openExtension() {
         // Send message to background to open popup (or try chrome.action)
-        chrome.runtime.sendMessage({ action: 'openPopup' });
+        browser.runtime.sendMessage({ action: 'openPopup' });
 
         // Hide banner
         this.hideBanner();
 
         // Store that user clicked to open
-        chrome.storage.local.set({ clickedOpenFromBanner: true });
+        browser.storage.local.set({ clickedOpenFromBanner: true });
     }
 
     /**
@@ -323,7 +323,7 @@ class PinBannerInjector {
      */
     dismissForever() {
         this.hideBanner();
-        chrome.storage.local.set({ dismissedExtractionBanner: true });
+        browser.storage.local.set({ dismissedExtractionBanner: true });
     }
 
     /**
@@ -331,7 +331,7 @@ class PinBannerInjector {
      */
     remindLater() {
         this.hideBanner();
-        chrome.storage.local.set({ reminderDismissedAt: Date.now() });
+        browser.storage.local.set({ reminderDismissedAt: Date.now() });
     }
 
     /**

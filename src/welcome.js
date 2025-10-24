@@ -28,14 +28,14 @@ function toggleTheme() {
 async function handlePinnedClick() {
     try {
         // Store that user claimed they pinned it
-        await chrome.storage.local.set({
+        await browser.storage.local.set({
             shownWelcome: true,
             userClaimedPin: true,
             welcomeCompletedAt: Date.now()
         });
 
         // Open Gradescope in new tab
-        await chrome.tabs.create({ url: 'https://www.gradescope.com' });
+        await browser.tabs.create({ url: 'https://www.gradescope.com' });
 
         // Close welcome tab
         window.close();
@@ -49,14 +49,14 @@ async function handlePinnedClick() {
 async function handleSkipClick() {
     try {
         // Store that user skipped pinning
-        await chrome.storage.local.set({
+        await browser.storage.local.set({
             shownWelcome: true,
             userSkippedPin: true,
             welcomeCompletedAt: Date.now()
         });
 
         // Open Gradescope in new tab
-        await chrome.tabs.create({ url: 'https://www.gradescope.com' });
+        await browser.tabs.create({ url: 'https://www.gradescope.com' });
 
         // Close welcome tab
         window.close();

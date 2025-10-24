@@ -66,13 +66,13 @@ class CalendarAPIClient {
         let eventDisplayTime = 'deadline'; // Default deadline
 
         try {
-            const localSettings = await chrome.storage.local.get([
+            const localSettings = await browser.storage.local.get([
                 'settings_create_reminders',
                 'reminderSchedule',
                 'customReminders',
                 'eventDisplayTime'
             ]);
-            const syncSettings = await chrome.storage.sync.get(['eventColorId']);
+            const syncSettings = await browser.storage.sync.get(['eventColorId']);
 
             eventColorId = syncSettings.eventColorId || '9';
             createReminders = localSettings.settings_create_reminders !== false;
@@ -294,7 +294,7 @@ class CalendarAPIClient {
 
             const assignments = await this.getAllStoredAssignments();
             if (assignments.length === 0) {
-                await chrome.storage.local.set({
+                await browser.storage.local.set({
                     last_auto_sync: new Date().toISOString(),
                     last_sync_results: { created: 0, skipped: 0, errors: 0 }
                 });
@@ -307,7 +307,7 @@ class CalendarAPIClient {
 
             const results = await this.syncAssignments(assignments);
 
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 last_auto_sync: new Date().toISOString(),
                 last_sync_results: results
             });
@@ -317,7 +317,7 @@ class CalendarAPIClient {
         } catch (error) {
             console.error('❌ Background sync failed:', error);
 
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 last_auto_sync_error: {
                     timestamp: new Date().toISOString(),
                     error: error.message
@@ -334,7 +334,7 @@ class CalendarAPIClient {
 
     async getAllStoredAssignments() {
         try {
-            const storage = await chrome.storage.local.get();
+            const storage = await browser.storage.local.get();
             const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
 
             let allAssignments = [];

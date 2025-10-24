@@ -28,6 +28,7 @@
         "*://*.gradescope.com/*"
       ],
       "js": [
+        "lib/browser-polyfill.js",
         "utils/dateParser.js",
         "utils/gradeExtractor.js",
         "utils/assignmentParser.js",

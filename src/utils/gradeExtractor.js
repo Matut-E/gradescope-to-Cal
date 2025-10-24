@@ -97,7 +97,7 @@ class GradeExtractor {
      */
     static async checkExistingAssignments(assignments) {
         try {
-            const storage = await chrome.storage.local.get(null);
+            const storage = await browser.storage.local.get(null);
             const existingIds = new Set();
 
             for (const [key, value] of Object.entries(storage)) {

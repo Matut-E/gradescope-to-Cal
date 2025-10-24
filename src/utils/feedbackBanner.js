@@ -29,7 +29,7 @@ class FeedbackBanner {
      */
     async shouldShow() {
         try {
-            const data = await chrome.storage.local.get([
+            const data = await browser.storage.local.get([
                 'installDate',
                 'feedbackPromptShown',
                 'feedbackPromptDismissed',
@@ -148,18 +148,18 @@ class FeedbackBanner {
     async handleShare() {
         try {
             // Open feedback form in new tab
-            await chrome.tabs.create({ url: this.FORM_URL });
+            await browser.tabs.create({ url: this.FORM_URL });
 
             // Mark as completed (never show again)
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 feedbackPromptCompleted: true,
                 feedbackPromptShown: true
             });
 
             // Increment show count
-            const data = await chrome.storage.local.get('feedbackPromptShowCount');
+            const data = await browser.storage.local.get('feedbackPromptShowCount');
             const showCount = (data.feedbackPromptShowCount || 0) + 1;
-            await chrome.storage.local.set({ feedbackPromptShowCount: showCount });
+            await browser.storage.local.set({ feedbackPromptShowCount: showCount });
 
             console.log('📬 Feedback form opened - marked as completed');
 
@@ -177,15 +177,15 @@ class FeedbackBanner {
     async handleDismiss() {
         try {
             // Set dismissal timestamp
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 feedbackPromptDismissed: Date.now(),
                 feedbackPromptShown: true
             });
 
             // Increment show count
-            const data = await chrome.storage.local.get('feedbackPromptShowCount');
+            const data = await browser.storage.local.get('feedbackPromptShowCount');
             const showCount = (data.feedbackPromptShowCount || 0) + 1;
-            await chrome.storage.local.set({ feedbackPromptShowCount: showCount });
+            await browser.storage.local.set({ feedbackPromptShowCount: showCount });
 
             console.log('📬 Feedback banner dismissed - will show again in 14 days');
 

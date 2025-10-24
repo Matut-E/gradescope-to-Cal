@@ -2,7 +2,7 @@
  * Pin to Toolbar Prompt Manager
  *
  * Manages the onboarding prompt encouraging users to pin the extension to their toolbar.
- * Uses chrome.action.getUserSettings() to detect pin status and shows a non-blocking banner
+ * Uses browser.action.getUserSettings() to detect pin status and shows a non-blocking banner
  * after successful assignment extraction.
  *
  * Dependencies: OptionsStorage (for storage helpers)
@@ -108,9 +108,9 @@ class PinPromptManager {
      */
     static async checkPinStatus() {
         try {
-            // chrome.action.getUserSettings() available in Chrome 90+
-            if (chrome.action && chrome.action.getUserSettings) {
-                const settings = await chrome.action.getUserSettings();
+            // browser.action.getUserSettings() available in Chrome 90+
+            if (browser.action && browser.action.getUserSettings) {
+                const settings = await browser.action.getUserSettings();
                 console.log('[PinPrompt] getUserSettings:', settings);
                 return settings.isOnToolbar === true;
             } else {
@@ -130,7 +130,7 @@ class PinPromptManager {
      */
     static async getExtractionStats() {
         try {
-            const result = await chrome.storage.local.get(null);
+            const result = await browser.storage.local.get(null);
 
             // Find all assignment keys
             const assignmentKeys = Object.keys(result).filter(key => key.startsWith('assignments_'));
@@ -323,7 +323,7 @@ class PinPromptManager {
                 console.log('[PinPrompt] User permanently dismissed prompt');
             }
 
-            await chrome.storage.local.set(state);
+            await browser.storage.local.set(state);
 
         } catch (error) {
             console.error('[PinPrompt] Error dismissing prompt:', error);
@@ -335,7 +335,7 @@ class PinPromptManager {
      */
     static async markPromptShown() {
         try {
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 pinPromptShown: Date.now()
             });
         } catch (error) {
@@ -348,7 +348,7 @@ class PinPromptManager {
      */
     static async markUserHasPinned() {
         try {
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 userHasPinned: true,
                 userDismissedPermanently: true // No need to show prompt anymore
             });
@@ -363,7 +363,7 @@ class PinPromptManager {
      */
     static async getPinPromptState() {
         try {
-            const result = await chrome.storage.local.get([
+            const result = await browser.storage.local.get([
                 'pinPromptShown',
                 'userHasPinned',
                 'userDismissedPermanently',

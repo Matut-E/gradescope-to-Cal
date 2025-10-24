@@ -99,7 +99,7 @@ class SmartSyncManager {
      */
     async checkRateLimit() {
         try {
-            const storage = await chrome.storage.local.get([
+            const storage = await browser.storage.local.get([
                 'lastSmartSyncTimestamp',
                 'last_auto_sync' // Regular 24-hour sync timestamp
             ]);
@@ -149,7 +149,7 @@ class SmartSyncManager {
 
             // Update last smart sync timestamp
             const syncTimestamp = new Date().toISOString();
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 lastSmartSyncTimestamp: Date.now(),
                 lastSmartSync: syncTimestamp
             });
@@ -160,7 +160,7 @@ class SmartSyncManager {
             console.log(`✅ Smart sync complete:`, results);
 
             // Also update last_auto_sync for consistency
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 last_auto_sync: syncTimestamp,
                 last_sync_results: results,
                 lastSyncType: 'smart' // Track that this was a smart sync
@@ -176,7 +176,7 @@ class SmartSyncManager {
         } catch (error) {
             console.error('❌ Smart sync failed:', error);
 
-            await chrome.storage.local.set({
+            await browser.storage.local.set({
                 last_auto_sync_error: {
                     timestamp: new Date().toISOString(),
                     error: error.message,
@@ -198,7 +198,7 @@ class SmartSyncManager {
      */
     async getStats() {
         try {
-            const storage = await chrome.storage.local.get([
+            const storage = await browser.storage.local.get([
                 'lastSmartSyncTimestamp',
                 'lastSmartSync',
                 'lastSyncType'

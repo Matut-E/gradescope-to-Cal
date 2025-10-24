@@ -68,7 +68,7 @@ class CalendarManager {
     }
 
     updateStatusBasedOnPage() {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+        browser.tabs.query({active: true, currentWindow: true}, (tabs) => {
             if (tabs[0] && tabs[0].url) {
                 const url = tabs[0].url;
 
@@ -91,7 +91,7 @@ class CalendarManager {
         try {
             console.log('🔍 Checking authentication status...');
 
-            const response = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
+            const response = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
 
             console.log('📨 Auth status response received:', response);
 
@@ -126,7 +126,7 @@ class CalendarManager {
             if (error.message && error.message.includes('Could not establish connection')) {
                 console.error('🚫 Background script not responding - extension may need reload');
                 this.updateStatus('❌ Extension connection error - try reloading the extension', 'warning');
-            } else if (error.message && error.message.includes('chrome.runtime.sendMessage')) {
+            } else if (error.message && error.message.includes('browser.runtime.sendMessage')) {
                 console.error('🚫 Chrome runtime API error');
                 this.updateStatus('❌ Browser API error - check extension permissions', 'warning');
             }
@@ -142,7 +142,7 @@ class CalendarManager {
             this.authenticateBtn.textContent = '🔄 Connecting...';
             this.updateStatus('🔗 Connecting to Google Calendar...', 'info');
 
-            const response = await chrome.runtime.sendMessage({ action: 'authenticate' });
+            const response = await browser.runtime.sendMessage({ action: 'authenticate' });
 
             if (response.success) {
                 // Check if first-time sync happened
@@ -194,7 +194,7 @@ class CalendarManager {
 
             this.updateStatus(`🔄 Creating ${assignments.length} calendar events...`, 'info');
 
-            const response = await chrome.runtime.sendMessage({
+            const response = await browser.runtime.sendMessage({
                 action: 'syncToCalendar',
                 assignments: assignments
             });
@@ -230,7 +230,7 @@ class CalendarManager {
             if (totalAssignments > 0) {
                 this.assignmentCountDiv.textContent = `${totalAssignments} unique assignments found`;
 
-                const storage = await chrome.storage.local.get();
+                const storage = await browser.storage.local.get();
                 const hasAutodiscovered = Object.keys(storage).some(key =>
                     key.includes('autodiscovered') && storage[key].assignments?.length > 0
                 );
@@ -259,7 +259,7 @@ class CalendarManager {
             this.manualSyncBtn.textContent = '🔄 Extracting...';
             this.updateStatus('🔄 Extracting assignments from current page...', 'info');
 
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            const [tab] = await browser.tabs.query({active: true, currentWindow: true});
 
             if (!tab.url.includes('gradescope.com')) {
                 this.updateStatus('❌ Please navigate to Gradescope first', 'warning');
@@ -273,11 +273,11 @@ class CalendarManager {
             }
 
             try {
-                await chrome.tabs.sendMessage(tab.id, {action: 'manualSync'});
+                await browser.tabs.sendMessage(tab.id, {action: 'manualSync'});
                 console.log('Sent manual sync message to content script');
             } catch (error) {
                 console.log('Content script not ready, injecting fresh script...');
-                await chrome.scripting.executeScript({
+                await browser.scripting.executeScript({
                     target: {tabId: tab.id},
                     files: ['assignmentCategorizer.js', 'contentScript.js']
                 });
@@ -303,7 +303,7 @@ class CalendarManager {
 
                 const newCount = await this.countStoredAssignments();
 
-                const autoSyncStatus = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+                const autoSyncStatus = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
                 const authStatus = await this.checkAuthStatus();
 
                 if (autoSyncStatus.success && autoSyncStatus.status.enabled && authStatus && newCount > 0) {
@@ -324,13 +324,13 @@ class CalendarManager {
 
     async updateExtractButton() {
         try {
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            const [tab] = await browser.tabs.query({active: true, currentWindow: true});
             const isOnGradescope = tab?.url?.includes('gradescope.com');
 
             if (!isOnGradescope) {
                 this.manualSyncBtn.textContent = '🎯 Go to Gradescope';
                 this.manualSyncBtn.onclick = () => {
-                    chrome.tabs.create({ url: 'https://gradescope.com' });
+                    browser.tabs.create({ url: 'https://gradescope.com' });
                     window.close();
                 };
             } else {
@@ -440,7 +440,7 @@ class CalendarManager {
 
     async updateAutoSyncStatus() {
         try {
-            const response = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+            const response = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
 
             if (response.success) {
                 const status = response.status;
@@ -504,7 +504,7 @@ class CalendarManager {
 
     async toggleAutoSync() {
         try {
-            const statusResponse = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+            const statusResponse = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
             const isEnabled = statusResponse.success && statusResponse.status.enabled;
 
             const toggleBtn = document.getElementById('toggleAutoSync');
@@ -512,15 +512,15 @@ class CalendarManager {
 
             if (isEnabled) {
                 toggleBtn.textContent = '⏳ Disabling...';
-                const response = await chrome.runtime.sendMessage({ action: 'disableAutoSync' });
+                const response = await browser.runtime.sendMessage({ action: 'disableAutoSync' });
                 if (response.success) {
                     this.updateStatus('🛑 Auto-sync disabled', 'info');
                 }
             } else {
                 toggleBtn.textContent = '⏳ Enabling...';
-                const response = await chrome.runtime.sendMessage({ action: 'enableAutoSync' });
+                const response = await browser.runtime.sendMessage({ action: 'enableAutoSync' });
                 if (response.success) {
-                    const newStatusResponse = await chrome.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+                    const newStatusResponse = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
                     if (newStatusResponse.success) {
                         const interval = this.formatInterval(newStatusResponse.status.interval);
                         this.updateStatus(`▶️ Auto-sync enabled - assignments will sync automatically every ${interval}`, 'success');
@@ -546,7 +546,7 @@ class CalendarManager {
     // =============================================================================
 
     setupStorageListener() {
-        chrome.storage.onChanged.addListener((changes, namespace) => {
+        browser.storage.onChanged.addListener((changes, namespace) => {
             if (namespace === 'local') {
                 const hasAssignmentChanges = Object.keys(changes).some(key =>
                     key.startsWith('assignments_')
@@ -573,7 +573,7 @@ class CalendarManager {
 
     async showLoadingStateIfOnGradescope() {
         try {
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            const [tab] = await browser.tabs.query({active: true, currentWindow: true});
             const isOnGradescope = tab?.url?.includes('gradescope.com');
 
             if (isOnGradescope && !await this.hasRecentAssignmentData()) {
@@ -586,7 +586,7 @@ class CalendarManager {
     }
 
     async hasRecentAssignmentData() {
-        const storage = await chrome.storage.local.get();
+        const storage = await browser.storage.local.get();
         const assignmentKeys = Object.keys(storage).filter(key => key.startsWith('assignments_'));
 
         if (assignmentKeys.length === 0) return false;
@@ -634,10 +634,10 @@ class CalendarManager {
             const assignments = await window.StorageUtils.getAllStoredAssignments();
             const hasData = assignments.length > 0;
 
-            const authStatus = await chrome.runtime.sendMessage({ action: 'getAuthStatus' });
+            const authStatus = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
             const hasAuth = authStatus.success && authStatus.authenticated;
 
-            const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+            const [tab] = await browser.tabs.query({active: true, currentWindow: true});
             const isOnGradescope = tab?.url?.includes('gradescope.com');
 
             if (!hasData && !hasAuth && !isOnGradescope) {

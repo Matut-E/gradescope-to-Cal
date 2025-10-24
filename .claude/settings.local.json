@@ -4,7 +4,8 @@
       "Bash(git log:*)",
       "Bash(git shortlog:*)",
       "Read(//c/Users/Matut/gtcExtension/dev/**)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

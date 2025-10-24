@@ -11,7 +11,7 @@ class ThemeManager {
 
     async initialize() {
         // Load saved theme preference
-        const { theme } = await chrome.storage.local.get('theme');
+        const { theme } = await browser.storage.local.get('theme');
         this.currentTheme = theme || 'light';
 
         // Apply theme
@@ -31,7 +31,7 @@ class ThemeManager {
         this.currentTheme = newTheme;
 
         // Save preference
-        await chrome.storage.local.set({ theme: newTheme });
+        await browser.storage.local.set({ theme: newTheme });
     }
 
     applyTheme(theme) {

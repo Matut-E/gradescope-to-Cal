@@ -28,5 +28,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Matut-E/gradescope-to-Cal.git"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.12.0"
   }
 }

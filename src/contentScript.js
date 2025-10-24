@@ -30,7 +30,7 @@ let extractionInProgress = false;
 let lastExtractionUrl = null;
 
 // Listen for messages from popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'manualSync') {
         console.log('📬 Received manual sync request from popup');
         main();
@@ -49,10 +49,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function showPinBannerIfNeeded(calendarAssignments) {
     try {
         // Mark that we have assignments
-        await chrome.storage.local.set({ hasAssignments: calendarAssignments.length > 0 });
+        await browser.storage.local.set({ hasAssignments: calendarAssignments.length > 0 });
 
         // Check if first-time extraction (or no dismissal yet)
-        const data = await chrome.storage.local.get([
+        const data = await browser.storage.local.get([
             'dismissedExtractionBanner',
             'sawExtractionBanner'
         ]);
@@ -71,7 +71,7 @@ async function showPinBannerIfNeeded(calendarAssignments) {
         console.log(`📊 Banner counts: ${assignmentCount} assignments across ${courseCount} courses`);
 
         // Check pin status from background
-        chrome.runtime.sendMessage({ action: 'checkPinStatus' }, (response) => {
+        browser.runtime.sendMessage({ action: 'checkPinStatus' }, (response) => {
             if (response && response.success && !response.isPinned) {
                 // Show the banner
                 const bannerInjector = new PinBannerInjector();
@@ -93,7 +93,7 @@ async function showPinBannerIfNeeded(calendarAssignments) {
  */
 async function checkExistingAssignments(assignments) {
     try {
-        const storage = await chrome.storage.local.get(null);
+        const storage = await browser.storage.local.get(null);
         const existingIds = new Set();
 
         for (const [key, value] of Object.entries(storage)) {
@@ -161,7 +161,7 @@ async function main() {
             if (uniqueCalendarAssignments.length > 0 || allAssignments.length > 0) {
                 const storageKey = `assignments_${method}_${Date.now()}`;
 
-                await chrome.storage.local.set({
+                await browser.storage.local.set({
                     [storageKey]: {
                         // Store calendar assignments (for calendar sync functionality)
                         assignments: uniqueCalendarAssignments,
@@ -201,7 +201,7 @@ async function main() {
                 // =================================================================
                 if (uniqueCalendarAssignments.length > 0) {
                     console.log('🧠 Checking for new assignments to trigger smart sync...');
-                    chrome.runtime.sendMessage({
+                    browser.runtime.sendMessage({
                         action: 'checkForNewAssignments',
                         assignments: uniqueCalendarAssignments,
                         allAssignments: allAssignments
