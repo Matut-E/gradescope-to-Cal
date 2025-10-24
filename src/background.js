@@ -49,25 +49,50 @@ console.log(`🔑 Chrome Client ID: ${CONFIG.CHROME_EXTENSION_CLIENTS[browser.ru
 console.log(`🌐 Web Client ID: ${CONFIG.WEB_CLIENT_ID}`);
 
 // ============================================================================
-// IMPORT MODULES (Service Worker)
+// IMPORT MODULES
 // ============================================================================
 
-// Load WebExtension Polyfill for cross-browser compatibility
-// Firefox: No-op (browser.* exists natively)
-// Chrome: Wraps chrome.* callbacks into browser.* promises
-importScripts('lib/browser-polyfill.js');
+// Chrome MV3 service workers use importScripts
+// Firefox MV2 loads scripts via manifest.json (no importScripts needed)
+if (typeof importScripts === 'function') {
+    // Chrome service worker - load all modules
+    importScripts(
+        'lib/browser-polyfill.js',
+        'auth/eventCache.js',
+        'auth/tokenManager.js',
+        'auth/authenticationManager.js',
+        'auth/calendarAPIClient.js',
+        'auth/autoSyncManager.js',
+        'auth/smartSyncManager.js'
+    );
+    console.log('✅ Chrome: Modules loaded via importScripts');
+} else {
+    // Firefox background script - modules already loaded via manifest
+    console.log('✅ Firefox: Modules loaded via manifest.json');
+}
 
-// Service workers need to use importScripts for loading modules
-importScripts(
-    'auth/eventCache.js',
-    'auth/tokenManager.js',
-    'auth/authenticationManager.js',
-    'auth/calendarAPIClient.js',
-    'auth/autoSyncManager.js',
-    'auth/smartSyncManager.js'
-);
+// ============================================================================
+// CROSS-BROWSER COMPATIBILITY HELPERS
+// ============================================================================
 
-console.log('✅ All authentication modules loaded');
+/**
+ * Get the correct browser action API
+ * Chrome MV3: browser.action
+ * Firefox MV2: browser.browserAction
+ */
+function getBrowserAction() {
+    // Chrome MV3 uses browser.action
+    if (typeof browser.action !== 'undefined') {
+        return browser.action;
+    }
+    // Firefox MV2 uses browser.browserAction
+    if (typeof browser.browserAction !== 'undefined') {
+        return browser.browserAction;
+    }
+    // Fallback (shouldn't happen)
+    console.error('❌ Neither browser.action nor browser.browserAction is available!');
+    return null;
+}
 
 // ============================================================================
 // INITIALIZE INSTANCES
@@ -173,8 +198,11 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const pinStatus = await checkIfPinned();
                 // Clear badge immediately if extension is pinned
                 if (pinStatus) {
-                    await browser.action.setBadgeText({ text: '' });
-                    console.log('✅ Pin status checked - extension is pinned, badge cleared');
+                    const action = getBrowserAction();
+                    if (action) {
+                        await action.setBadgeText({ text: '' });
+                        console.log('✅ Pin status checked - extension is pinned, badge cleared');
+                    }
                 }
                 return { success: true, isPinned: pinStatus };
 
@@ -182,8 +210,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 // Attempt to open the extension popup programmatically
                 // Note: This may not work in all contexts, but we try
                 try {
-                    await browser.action.openPopup();
-                    return { success: true, message: 'Popup opened' };
+                    const action = getBrowserAction();
+                    if (action && action.openPopup) {
+                        await action.openPopup();
+                        return { success: true, message: 'Popup opened' };
+                    } else {
+                        return { success: false, error: 'openPopup API not available' };
+                    }
                 } catch (error) {
                     // Popup couldn't be opened (likely user gesture required)
                     return { success: false, error: 'Could not open popup - user gesture required' };
@@ -412,11 +445,18 @@ browser.runtime.onInstalled.addListener(async (details) => {
  */
 async function checkIfPinned() {
     try {
-        const settings = await browser.action.getUserSettings();
-        return settings.isOnToolbar || false;
+        const action = getBrowserAction();
+        if (action && action.getUserSettings) {
+            const settings = await action.getUserSettings();
+            return settings.isOnToolbar || false;
+        } else {
+            // getUserSettings not available (Firefox or older Chrome)
+            // Assume pinned to avoid showing unnecessary prompts
+            return true;
+        }
     } catch (error) {
         console.error('Error checking pin status:', error);
-        // If API not available, assume pinned (older Chrome versions)
+        // If API not available, assume pinned
         return true;
     }
 }
@@ -426,11 +466,19 @@ async function checkIfPinned() {
  */
 async function checkAndShowPinBadge() {
     try {
+        const action = getBrowserAction();
+        if (!action) {
+            console.warn('⚠️ Browser action API not available, skipping badge check');
+            return;
+        }
+
         // Check if already pinned
         const isPinned = await checkIfPinned();
         if (isPinned) {
             // Clear badge if pinned
-            await browser.action.setBadgeText({ text: '' });
+            if (action.setBadgeText) {
+                await action.setBadgeText({ text: '' });
+            }
             return;
         }
 
@@ -454,8 +502,12 @@ async function checkAndShowPinBadge() {
 
         if (timeSinceOpen > dayInMs) {
             // Show badge - using '!' character
-            await browser.action.setBadgeText({ text: '!' });
-            await browser.action.setBadgeBackgroundColor({ color: '#FDB515' }); // California Gold
+            if (action.setBadgeText) {
+                await action.setBadgeText({ text: '!' });
+            }
+            if (action.setBadgeBackgroundColor) {
+                await action.setBadgeBackgroundColor({ color: '#FDB515' }); // California Gold
+            }
             console.log('📌 Pin reminder badge shown');
         }
     } catch (error) {
@@ -467,17 +519,22 @@ async function checkAndShowPinBadge() {
 browser.alarms.create('checkPinStatus', { periodInMinutes: 5 });
 
 // Track when popup is opened (check pin status and clear badge if pinned)
-browser.action.onClicked.addListener(async () => {
-    await browser.storage.local.set({ lastPopupOpen: Date.now() });
+const action = getBrowserAction();
+if (action && action.onClicked) {
+    action.onClicked.addListener(async () => {
+        await browser.storage.local.set({ lastPopupOpen: Date.now() });
 
-    // Check if extension is now pinned
-    const isPinned = await checkIfPinned();
-    if (isPinned) {
-        // Clear badge immediately if pinned
-        await browser.action.setBadgeText({ text: '' });
-        console.log('✅ Extension is pinned - badge cleared');
-    }
-});
+        // Check if extension is now pinned
+        const isPinned = await checkIfPinned();
+        if (isPinned) {
+            // Clear badge immediately if pinned
+            if (action.setBadgeText) {
+                await action.setBadgeText({ text: '' });
+            }
+            console.log('✅ Extension is pinned - badge cleared');
+        }
+    });
+}
 
 // Initialize on service worker start
 (async () => {

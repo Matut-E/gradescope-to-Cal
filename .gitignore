@@ -24,6 +24,9 @@ key.pem
 /dist/
 /build/
 
+# Generated library files (WebExtension Polyfill)
+src/lib/
+
 # ===========================================
 # DEVELOPMENT ENVIRONMENT
 # ===========================================
