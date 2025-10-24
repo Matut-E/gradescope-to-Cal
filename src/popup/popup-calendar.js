@@ -67,20 +67,19 @@ class CalendarManager {
         }
     }
 
-    updateStatusBasedOnPage() {
-        browser.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            if (tabs[0] && tabs[0].url) {
-                const url = tabs[0].url;
+    async updateStatusBasedOnPage() {
+        const tabs = await browser.tabs.query({active: true, currentWindow: true});
+        if (tabs[0] && tabs[0].url) {
+            const url = tabs[0].url;
 
-                if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
-                    this.updateStatus('🏠 Perfect! Dashboard detected - ready for extraction', 'success');
-                } else if (url.includes('gradescope.com')) {
-                    this.updateStatus('📍 On Gradescope - ready for extraction', 'info');
-                } else {
-                    this.updateStatus('🎯 Ready to go to Gradescope', 'info');
-                }
+            if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
+                this.updateStatus('🏠 Perfect! Dashboard detected - ready for extraction', 'success');
+            } else if (url.includes('gradescope.com')) {
+                this.updateStatus('📍 On Gradescope - ready for extraction', 'info');
+            } else {
+                this.updateStatus('🎯 Ready to go to Gradescope', 'info');
             }
-        });
+        }
     }
 
     // =============================================================================
@@ -242,7 +241,7 @@ class CalendarManager {
                 }
             } else {
                 this.assignmentCountDiv.textContent = 'No assignment data found yet';
-                this.updateStatusBasedOnPage();
+                await this.updateStatusBasedOnPage();
             }
 
             return totalAssignments;

@@ -299,139 +299,135 @@ class AuthenticationManager {
             console.log('⏳ Now opening OAuth flow in Firefox popup...');
             console.log('');
 
-            return new Promise((resolve, reject) => {
-                browser.identity.launchWebAuthFlow({
+            try {
+                const redirectURL = await browser.identity.launchWebAuthFlow({
                     url: authURL,
                     interactive: true
-                }, async (redirectURL) => {
-                    // Log the raw result
-                    console.log('');
-                    console.log('╔════════════════════════════════════════════════════════════════════════╗');
-                    console.log('║  📥 OAUTH FLOW COMPLETED - Analyzing Result                            ║');
-                    console.log('╚════════════════════════════════════════════════════════════════════════╝');
-                    console.log('');
-
-                    if (browser.runtime.lastError) {
-                        console.error('❌ launchWebAuthFlow Error:');
-                        console.error('   Message:', browser.runtime.lastError.message);
-                        console.error('');
-                        console.error('📊 Error Analysis:');
-                        const errorMsg = browser.runtime.lastError.message;
-
-                        if (errorMsg.includes('User cancelled') || errorMsg.includes('denied access')) {
-                            console.error('   This error means ONE of the following:');
-                            console.error('   1. You clicked "Cancel" or "Deny" on Google\'s OAuth page');
-                            console.error('   2. Google showed an error page and Firefox couldn\'t capture the redirect');
-                            console.error('   3. The OAuth popup was closed before completing');
-                            console.error('');
-                            console.error('🔍 To diagnose:');
-                            console.error('   - Try the MANUAL TEST (copy the OAuth URL logged above)');
-                            console.error('   - In a regular Firefox window, you\'ll see Google\'s actual error');
-                            console.error('   - Common Google errors:');
-                            console.error('     • "redirect_uri_mismatch" → Check Google Cloud Console redirect URI');
-                            console.error('     • "access_denied" → Check OAuth consent screen test users');
-                            console.error('     • "invalid_client" → Check client ID configuration');
-                        }
-
-                        reject(new Error(browser.runtime.lastError.message));
-                        return;
-                    }
-
-                    if (!redirectURL) {
-                        console.error('❌ No redirect URL received (authorization was cancelled)');
-                        reject(new Error('Authorization cancelled'));
-                        return;
-                    }
-
-                    // Parse redirect URL and log ALL parameters
-                    console.log('✅ Redirect URL received:', redirectURL);
-                    console.log('');
-
-                    try {
-                        const url = new URL(redirectURL);
-                        console.log('📊 Redirect URL Analysis:');
-                        console.log('   Protocol:', url.protocol);
-                        console.log('   Host:', url.host);
-                        console.log('   Pathname:', url.pathname);
-                        console.log('   Search params:', url.search);
-                        console.log('');
-
-                        // Log ALL query parameters
-                        if (url.searchParams.toString()) {
-                            console.log('🔍 All Query Parameters:');
-                            for (const [key, value] of url.searchParams.entries()) {
-                                console.log(`   ${key}: ${value}`);
-                            }
-                            console.log('');
-                        }
-
-                        const authCode = url.searchParams.get('code');
-                        const error = url.searchParams.get('error');
-                        const errorDescription = url.searchParams.get('error_description');
-
-                        if (!authCode) {
-                            console.error('❌ No authorization code in redirect URL');
-                            console.error('');
-
-                            if (error) {
-                                console.error('🔴 Google OAuth Error Detected:');
-                                console.error('   Error code:', error);
-                                console.error('   Description:', errorDescription || 'No description provided');
-                                console.error('');
-
-                                // Provide specific fix instructions based on error type
-                                if (error === 'redirect_uri_mismatch') {
-                                    console.error('🔧 FIX FOR redirect_uri_mismatch:');
-                                    console.error('   1. Go to: https://console.cloud.google.com/apis/credentials');
-                                    console.error('   2. Find your Web Application OAuth client');
-                                    console.error('   3. Add these EXACT values:');
-                                    console.error('');
-                                    console.error('   Authorized JavaScript origins (NO trailing slash):');
-                                    console.error(`      ${redirectUri.replace(/\/$/, '')}`);
-                                    console.error('');
-                                    console.error('   Authorized redirect URIs (WITH trailing slash):');
-                                    console.error(`      ${redirectUri}`);
-                                    console.error('');
-                                } else if (error === 'access_denied') {
-                                    console.error('🔧 FIX FOR access_denied:');
-                                    console.error('   1. Check OAuth Consent Screen in Google Cloud Console');
-                                    console.error('   2. If in Testing mode: Add your Gmail as a test user');
-                                    console.error('   3. Verify calendar scope is enabled');
-                                    console.error('   4. Check privacy policy URL is accessible');
-                                } else if (error === 'invalid_client') {
-                                    console.error('🔧 FIX FOR invalid_client:');
-                                    console.error('   1. Verify client_id matches in Google Cloud Console');
-                                    console.error(`   2. Current client_id: ${this.config.WEB_CLIENT_ID}`);
-                                    console.error('   3. Ensure OAuth client type is "Web application"');
-                                } else {
-                                    console.error('🔧 UNKNOWN ERROR - Check Google Cloud Console:');
-                                    console.error('   1. Verify Calendar API is enabled');
-                                    console.error('   2. Check OAuth consent screen configuration');
-                                    console.error('   3. Try the manual test to see full error details');
-                                }
-
-                                throw new Error(`Google OAuth Error: ${error} - ${errorDescription || 'No description'}`);
-                            } else {
-                                throw new Error('No authorization code and no error parameter in redirect URL');
-                            }
-                        }
-
-                        console.log('✅ Authorization code received successfully');
-                        console.log('   Code preview:', authCode.substring(0, 20) + '...');
-                        console.log('');
-
-                        console.log('🔑 Exchanging code for tokens...');
-                        await this.exchangeCodeForTokens(authCode, codeVerifier);
-
-                        console.log('✅ PKCE authentication successful');
-                        resolve(true);
-
-                    } catch (error) {
-                        console.error('❌ PKCE auth failed:', error);
-                        reject(error);
-                    }
                 });
-            });
+
+                // Log the raw result
+                console.log('');
+                console.log('╔════════════════════════════════════════════════════════════════════════╗');
+                console.log('║  📥 OAUTH FLOW COMPLETED - Analyzing Result                            ║');
+                console.log('╚════════════════════════════════════════════════════════════════════════╝');
+                console.log('');
+
+                if (browser.runtime.lastError) {
+                    console.error('❌ launchWebAuthFlow Error:');
+                    console.error('   Message:', browser.runtime.lastError.message);
+                    console.error('');
+                    console.error('📊 Error Analysis:');
+                    const errorMsg = browser.runtime.lastError.message;
+
+                    if (errorMsg.includes('User cancelled') || errorMsg.includes('denied access')) {
+                        console.error('   This error means ONE of the following:');
+                        console.error('   1. You clicked "Cancel" or "Deny" on Google\'s OAuth page');
+                        console.error('   2. Google showed an error page and Firefox couldn\'t capture the redirect');
+                        console.error('   3. The OAuth popup was closed before completing');
+                        console.error('');
+                        console.error('🔍 To diagnose:');
+                        console.error('   - Try the MANUAL TEST (copy the OAuth URL logged above)');
+                        console.error('   - In a regular Firefox window, you\'ll see Google\'s actual error');
+                        console.error('   - Common Google errors:');
+                        console.error('     • "redirect_uri_mismatch" → Check Google Cloud Console redirect URI');
+                        console.error('     • "access_denied" → Check OAuth consent screen test users');
+                        console.error('     • "invalid_client" → Check client ID configuration');
+                    }
+
+                    throw new Error(browser.runtime.lastError.message);
+                }
+
+                if (!redirectURL) {
+                    console.error('❌ No redirect URL received (authorization was cancelled)');
+                    throw new Error('Authorization cancelled');
+                }
+
+                // Parse redirect URL and log ALL parameters
+                console.log('✅ Redirect URL received:', redirectURL);
+                console.log('');
+
+                const url = new URL(redirectURL);
+                console.log('📊 Redirect URL Analysis:');
+                console.log('   Protocol:', url.protocol);
+                console.log('   Host:', url.host);
+                console.log('   Pathname:', url.pathname);
+                console.log('   Search params:', url.search);
+                console.log('');
+
+                // Log ALL query parameters
+                if (url.searchParams.toString()) {
+                    console.log('🔍 All Query Parameters:');
+                    for (const [key, value] of url.searchParams.entries()) {
+                        console.log(`   ${key}: ${value}`);
+                    }
+                    console.log('');
+                }
+
+                const authCode = url.searchParams.get('code');
+                const error = url.searchParams.get('error');
+                const errorDescription = url.searchParams.get('error_description');
+
+                if (!authCode) {
+                    console.error('❌ No authorization code in redirect URL');
+                    console.error('');
+
+                    if (error) {
+                        console.error('🔴 Google OAuth Error Detected:');
+                        console.error('   Error code:', error);
+                        console.error('   Description:', errorDescription || 'No description provided');
+                        console.error('');
+
+                        // Provide specific fix instructions based on error type
+                        if (error === 'redirect_uri_mismatch') {
+                            console.error('🔧 FIX FOR redirect_uri_mismatch:');
+                            console.error('   1. Go to: https://console.cloud.google.com/apis/credentials');
+                            console.error('   2. Find your Web Application OAuth client');
+                            console.error('   3. Add these EXACT values:');
+                            console.error('');
+                            console.error('   Authorized JavaScript origins (NO trailing slash):');
+                            console.error(`      ${redirectUri.replace(/\/$/, '')}`);
+                            console.error('');
+                            console.error('   Authorized redirect URIs (WITH trailing slash):');
+                            console.error(`      ${redirectUri}`);
+                            console.error('');
+                        } else if (error === 'access_denied') {
+                            console.error('🔧 FIX FOR access_denied:');
+                            console.error('   1. Check OAuth Consent Screen in Google Cloud Console');
+                            console.error('   2. If in Testing mode: Add your Gmail as a test user');
+                            console.error('   3. Verify calendar scope is enabled');
+                            console.error('   4. Check privacy policy URL is accessible');
+                        } else if (error === 'invalid_client') {
+                            console.error('🔧 FIX FOR invalid_client:');
+                            console.error('   1. Verify client_id matches in Google Cloud Console');
+                            console.error(`   2. Current client_id: ${this.config.WEB_CLIENT_ID}`);
+                            console.error('   3. Ensure OAuth client type is "Web application"');
+                        } else {
+                            console.error('🔧 UNKNOWN ERROR - Check Google Cloud Console:');
+                            console.error('   1. Verify Calendar API is enabled');
+                            console.error('   2. Check OAuth consent screen configuration');
+                            console.error('   3. Try the manual test to see full error details');
+                        }
+
+                        throw new Error(`Google OAuth Error: ${error} - ${errorDescription || 'No description'}`);
+                    } else {
+                        throw new Error('No authorization code and no error parameter in redirect URL');
+                    }
+                }
+
+                console.log('✅ Authorization code received successfully');
+                console.log('   Code preview:', authCode.substring(0, 20) + '...');
+                console.log('');
+
+                console.log('🔑 Exchanging code for tokens...');
+                await this.exchangeCodeForTokens(authCode, codeVerifier);
+
+                console.log('✅ PKCE authentication successful');
+                return true;
+
+            } catch (error) {
+                console.error('❌ PKCE auth failed:', error);
+                throw error;
+            }
 
         } catch (error) {
             console.error('❌ PKCE setup failed:', error);
