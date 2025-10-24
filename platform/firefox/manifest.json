@@ -1,0 +1,83 @@
+{
+  "manifest_version": 2,
+  "name": "Gradescope to Cal",
+  "version": "1.8.5",
+  "description": "Automatically sync Gradescope assignments to Google Calendar (Firefox compatible)",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gradescope-to-cal@example.com",
+      "strict_min_version": "109.0"
+    }
+  },
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "identity",
+    "alarms",
+    "*://*.gradescope.com/*",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
+  ],
+
+  "background": {
+    "scripts": [
+      "lib/browser-polyfill.js",
+      "auth/eventCache.js",
+      "auth/tokenManager.js",
+      "auth/authenticationManager.js",
+      "auth/calendarAPIClient.js",
+      "auth/autoSyncManager.js",
+      "auth/smartSyncManager.js",
+      "background.js"
+    ],
+    "persistent": false
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.gradescope.com/*"
+      ],
+      "js": [
+        "lib/browser-polyfill.js",
+        "utils/dateParser.js",
+        "utils/gradeExtractor.js",
+        "utils/assignmentParser.js",
+        "utils/pageDetector.js",
+        "utils/testFunctions.js",
+        "utils/pinBannerInjector.js",
+        "contentScript.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_title": "Gradescope to Cal",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+
+  "web_accessible_resources": [
+    "options.html",
+    "welcome.html"
+  ]
+}

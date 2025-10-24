@@ -1,0 +1,32 @@
+{
+  "name": "gradescope-to-cal",
+  "version": "1.8.5",
+  "description": "Automatically sync Gradescope assignments to Google Calendar",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js --all",
+    "build:chrome": "node scripts/build.js --chrome",
+    "build:firefox": "node scripts/build.js --firefox",
+    "clean": "node scripts/build.js --clean",
+    "watch:firefox": "npm run build:firefox && web-ext run --source-dir=build/firefox --start-url about:debugging#/runtime/this-firefox"
+  },
+  "keywords": [
+    "gradescope",
+    "calendar",
+    "google-calendar",
+    "browser-extension",
+    "chrome-extension",
+    "firefox-addon"
+  ],
+  "author": "Matut-E",
+  "license": "MIT",
+  "devDependencies": {
+    "archiver": "^7.0.1",
+    "fs-extra": "^11.2.0",
+    "web-ext": "^8.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Matut-E/gradescope-to-Cal.git"
+  }
+}
