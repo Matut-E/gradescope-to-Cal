@@ -60,7 +60,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 
 ## Privacy Policy
 
-Full privacy policy available at: [Privacy Policy](https://matut-e.github.io/gradescope-to-Cal/privacy-policy.html)
+Full privacy policy available at: [Privacy Policy](https://www.gs2cal.me/privacy-policy.html)
 
 ## Support
 
