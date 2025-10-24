@@ -242,27 +242,6 @@ class AuthenticationManager {
     }
 
     // ------------------------------------------------------------------------
-    // FIREFOX OAUTH REDIRECT URI HELPER
-    // ------------------------------------------------------------------------
-
-    /**
-     * Get Firefox-compatible loopback redirect URI
-     *
-     * Firefox extensions cannot use moz-extension:// or .allizom.org URLs with Google OAuth.
-     * Firefox 86+ supports loopback addresses (http://127.0.0.1/mozoauth2/[uuid]/)
-     * which Google OAuth accepts for native apps without domain verification.
-     *
-     * Reference: Bugzilla #1635344
-     * @returns {string} Loopback redirect URI
-     */
-    getFirefoxLoopbackRedirectUri() {
-        const firefoxRedirectUri = browser.identity.getRedirectURL();
-        // Extract UUID from: https://12731c78dc7198589655214ad525c39b3e40badb.extensions.allizom.org/
-        const extensionUUID = firefoxRedirectUri.split('//')[1].split('.')[0];
-        return `http://127.0.0.1/mozoauth2/${extensionUUID}/`;
-    }
-
-    // ------------------------------------------------------------------------
     // PKCE AUTHENTICATION
     // ------------------------------------------------------------------------
 
@@ -273,8 +252,7 @@ class AuthenticationManager {
             const codeVerifier = PKCEHelper.generateCodeVerifier();
             const codeChallenge = await PKCEHelper.generateCodeChallenge(codeVerifier);
 
-            // Use loopback address for Firefox OAuth compatibility
-            const redirectUri = this.getFirefoxLoopbackRedirectUri();
+            const redirectUri = browser.identity.getRedirectURL();
             const authParams = new URLSearchParams({
                 client_id: this.config.WEB_CLIENT_ID,
                 response_type: 'code',
@@ -464,7 +442,7 @@ class AuthenticationManager {
             code: authCode,
             code_verifier: codeVerifier,
             grant_type: 'authorization_code',
-            redirect_uri: this.getFirefoxLoopbackRedirectUri()
+            redirect_uri: browser.identity.getRedirectURL()
         });
 
         try {
