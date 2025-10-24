@@ -200,17 +200,65 @@ async function main() {
                 // =================================================================
                 if (uniqueCalendarAssignments.length > 0) {
                     console.log('🧠 Checking for new assignments to trigger smart sync...');
-                    const response = await browser.runtime.sendMessage({
-                        action: 'checkForNewAssignments',
-                        assignments: uniqueCalendarAssignments,
-                        allAssignments: allAssignments
-                    });
-                    if (response && response.success) {
-                        if (response.synced) {
-                            console.log(`✅ Smart sync triggered: ${response.results.created} events created`);
+                    console.log(`📤 Sending checkForNewAssignments message to background script...`);
+                    console.log(`   - Assignments to check: ${uniqueCalendarAssignments.length}`);
+                    console.log(`   - Message action: "checkForNewAssignments"`);
+
+                    try {
+                        // Add timeout detection
+                        const messagePromise = browser.runtime.sendMessage({
+                            action: 'checkForNewAssignments',
+                            assignments: uniqueCalendarAssignments,
+                            allAssignments: allAssignments
+                        });
+
+                        // Race against a timeout
+                        const timeoutPromise = new Promise((resolve) => {
+                            setTimeout(() => {
+                                resolve({ timeout: true });
+                            }, 5000); // 5 second timeout
+                        });
+
+                        const response = await Promise.race([messagePromise, timeoutPromise]);
+
+                        if (response.timeout) {
+                            console.error('');
+                            console.error('⚠️ TIMEOUT: Background script did not respond within 5 seconds!');
+                            console.error('   This usually means:');
+                            console.error('   1. Background script is not running (event page unloaded)');
+                            console.error('   2. Background script crashed or has an error');
+                            console.error('   3. Message handler is not registered');
+                            console.error('');
+                            console.error('   Try opening the Browser Console (Ctrl+Shift+J) to check for errors');
+                            console.error('');
+                        } else if (!response) {
+                            console.error('');
+                            console.error('❌ No response from background script');
+                            console.error('   Background script may have crashed or not loaded');
+                            console.error('');
+                        } else if (response.success) {
+                            console.log('📬 Received response from background script:');
+                            if (response.synced) {
+                                console.log(`✅ Smart sync triggered: ${response.results.created} events created`);
+                            } else {
+                                console.log(`ℹ️ Smart sync not triggered: ${response.reason}`);
+                            }
                         } else {
-                            console.log(`ℹ️ Smart sync not triggered: ${response.reason}`);
+                            console.error('');
+                            console.error('❌ Background script returned error:');
+                            console.error('   ', response.error || 'Unknown error');
+                            console.error('');
                         }
+                    } catch (error) {
+                        console.error('');
+                        console.error('❌ Error sending message to background script:');
+                        console.error('   ', error.message);
+                        console.error('');
+                        console.error('   Possible causes:');
+                        console.error('   1. Background script not loaded yet');
+                        console.error('   2. Extension context invalidated (extension was reloaded)');
+                        console.error('   3. Firefox event page issue (persistent: false)');
+                        console.error('');
                     }
                 }
 

@@ -67,10 +67,18 @@ if (typeof importScripts === 'function') {
 }
 
 // Log configuration AFTER polyfill is loaded
-console.log('🚀 Enhanced background script with dual authentication loaded');
-console.log(`📱 Extension ID: ${browser.runtime.id}`);
-console.log(`🔑 Chrome Client ID: ${CONFIG.CHROME_EXTENSION_CLIENTS[browser.runtime.id] || 'not configured'}`);
-console.log(`🌐 Web Client ID: ${CONFIG.WEB_CLIENT_ID}`);
+console.log('');
+console.log('╔════════════════════════════════════════════════════════════════════════╗');
+console.log('║  🚀 BACKGROUND SCRIPT WAKE/LOAD EVENT                                  ║');
+console.log('╚════════════════════════════════════════════════════════════════════════╝');
+console.log('');
+console.log('📊 Script Initialization:');
+console.log('   - Timestamp:', new Date().toISOString());
+console.log('   - Extension ID:', browser.runtime.id);
+console.log('   - Chrome Client ID:', CONFIG.CHROME_EXTENSION_CLIENTS[browser.runtime.id] || 'not configured');
+console.log('   - Web Client ID:', CONFIG.WEB_CLIENT_ID);
+console.log('   - Browser:', typeof browser.runtime.getBrowserInfo !== 'undefined' ? 'Firefox' : 'Chrome-based');
+console.log('');
 
 // ============================================================================
 // CROSS-BROWSER COMPATIBILITY HELPERS
@@ -100,13 +108,19 @@ function getBrowserAction() {
 // ============================================================================
 
 // Create module instances
+console.log('🔧 Creating module instances...');
 const tokenManager = new TokenManager(CONFIG);
+console.log('   ✓ TokenManager created');
 const authManager = new AuthenticationManager(CONFIG, tokenManager);
+console.log('   ✓ AuthenticationManager created');
 const calendarClient = new CalendarAPIClient(CONFIG, tokenManager, authManager);
+console.log('   ✓ CalendarAPIClient created');
 const autoSyncManager = new AutoSyncManager(CONFIG);
+console.log('   ✓ AutoSyncManager created');
 const smartSyncManager = new SmartSyncManager(CONFIG, calendarClient, calendarClient.eventCache);
-
-console.log('✅ Module instances created');
+console.log('   ✓ SmartSyncManager created');
+console.log('');
+console.log('✅ All modules initialized and ready');
 
 // ============================================================================
 // EXTENSION EVENT HANDLERS
@@ -124,12 +138,54 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 // Message handler
+console.log('📝 Registering message handler...');
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Log every message received
+    console.log('');
+    console.log('📨 MESSAGE RECEIVED from', sender.tab ? `tab ${sender.tab.id}` : 'extension');
+    console.log('   - Action:', request.action);
+    console.log('   - Timestamp:', new Date().toISOString());
+    if (request.action === 'checkForNewAssignments') {
+        console.log('   - Assignments count:', request.assignments?.length || 0);
+    }
+    console.log('');
+
     const handleMessage = async () => {
         switch (request.action) {
             case 'authenticate':
                 await authManager.authenticate();
                 await autoSyncManager.setupAutoSync();
+
+                // Post-authentication diagnostics: Verify storage state
+                const postAuthStorage = await browser.storage.local.get([
+                    'google_access_token',
+                    'google_refresh_token',
+                    'google_token_expiry',
+                    'google_auth_method'
+                ]);
+
+                console.log('');
+                console.log('╔════════════════════════════════════════════════════════════════════════╗');
+                console.log('║  ✅ AUTHENTICATION COMPLETE - Final Storage State                     ║');
+                console.log('╚════════════════════════════════════════════════════════════════════════╝');
+                console.log('');
+                console.log('📊 browser.storage.local contents:');
+                console.log('   - google_access_token:', !!postAuthStorage.google_access_token ? '✓ STORED' : '✗ MISSING');
+                console.log('   - google_refresh_token:', !!postAuthStorage.google_refresh_token ? '✓ STORED' : '✗ MISSING');
+                console.log('   - google_token_expiry:', postAuthStorage.google_token_expiry ? `✓ STORED (${new Date(postAuthStorage.google_token_expiry).toISOString()})` : '✗ MISSING');
+                console.log('   - google_auth_method:', postAuthStorage.google_auth_method || '✗ MISSING');
+                console.log('');
+
+                if (!postAuthStorage.google_refresh_token) {
+                    console.warn('⚠️ WARNING: No refresh token in storage!');
+                    console.warn('   You will need to re-authenticate when the access token expires (in ~1 hour).');
+                    console.warn('');
+                    console.warn('   To get a refresh token:');
+                    console.warn('   1. Revoke app access: https://myaccount.google.com/permissions');
+                    console.warn('   2. Clear authentication in extension');
+                    console.warn('   3. Reconnect to Google Calendar');
+                    console.warn('');
+                }
 
                 // First-time sync: If assignments already extracted, sync immediately
                 const firstTimeSyncResult = await handleFirstTimeSync();
@@ -242,6 +298,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     return true;
 });
+console.log('✅ Message handler registered and ready to receive messages');
+console.log('');
 
 // Calendar sync helper
 async function handleCalendarSync(assignments) {
@@ -332,29 +390,57 @@ async function handleCheckForNewAssignments(assignments) {
 // First-time sync helper - syncs immediately after first authentication if assignments exist
 async function handleFirstTimeSync() {
     try {
+        console.log('');
+        console.log('╔════════════════════════════════════════════════════════════════════════╗');
+        console.log('║  🔍 FIRST-TIME SYNC CHECK                                              ║');
+        console.log('╚════════════════════════════════════════════════════════════════════════╝');
+        console.log('');
+
         // Check if this is first-time authentication (no previous sync)
-        const storage = await browser.storage.local.get(['last_auto_sync']);
+        const storage = await browser.storage.local.get(['last_auto_sync', 'lastSyncType']);
         const hasExistingSync = storage.last_auto_sync;
 
+        console.log('📊 Storage check:');
+        console.log('   - last_auto_sync:', hasExistingSync || 'NOT SET');
+        console.log('   - lastSyncType:', storage.lastSyncType || 'NOT SET');
+
         if (hasExistingSync) {
+            console.log('');
             console.log('⏭️ Not first-time authentication, skipping first-time sync');
+            console.log('   (last sync was:', hasExistingSync, ')');
+            console.log('');
+            console.log('💡 TIP: To test first-time sync, clear storage:');
+            console.log('   browser.storage.local.remove([\'last_auto_sync\', \'lastSyncType\'])');
+            console.log('');
             return { synced: false, reason: 'Not first-time authentication' };
         }
 
-        console.log('🎉 First-time authentication detected! Checking for existing assignments...');
+        console.log('✅ First-time authentication detected! (no previous sync found)');
+        console.log('');
 
         // Check if assignments have already been extracted
+        console.log('🔍 Searching for extracted assignments in storage...');
         const allStorage = await browser.storage.local.get(null);
         const assignmentKeys = Object.keys(allStorage).filter(key =>
             key.startsWith('assignments_') && allStorage[key].assignments
         );
 
+        console.log(`   - Found ${assignmentKeys.length} assignment storage keys:`);
+        assignmentKeys.forEach(key => {
+            console.log(`      • ${key}: ${allStorage[key].assignments?.length || 0} assignments`);
+        });
+
         if (assignmentKeys.length === 0) {
+            console.log('');
             console.log('📭 No assignments extracted yet, skipping first-time sync');
+            console.log('   User needs to extract assignments first (click "Extract Assignments Now")');
+            console.log('');
             return { synced: false, reason: 'No assignments extracted yet' };
         }
 
         // Collect all assignments from storage
+        console.log('');
+        console.log('📦 Collecting all assignments from storage...');
         const allAssignments = [];
         for (const key of assignmentKeys) {
             const data = allStorage[key];
@@ -362,23 +448,34 @@ async function handleFirstTimeSync() {
                 allAssignments.push(...data.assignments);
             }
         }
+        console.log(`   ✓ Collected ${allAssignments.length} total assignments`);
 
         // Deduplicate by assignmentId
         const uniqueAssignments = Array.from(
             new Map(allAssignments.map(a => [a.assignmentId, a])).values()
         );
+        console.log(`   ✓ ${uniqueAssignments.length} unique assignments (after deduplication)`);
 
         // Filter for calendar-eligible assignments (upcoming, not submitted)
         const calendarEligible = uniqueAssignments.filter(a =>
             a.dueDate && !a.isSubmitted
         );
+        console.log(`   ✓ ${calendarEligible.length} calendar-eligible assignments (upcoming + not submitted)`);
 
         if (calendarEligible.length === 0) {
+            console.log('');
             console.log('📭 No calendar-eligible assignments found, skipping first-time sync');
+            console.log('   All assignments may be:');
+            console.log('   - Already submitted');
+            console.log('   - Missing due dates');
+            console.log('   - Past due date');
+            console.log('');
             return { synced: false, reason: 'No calendar-eligible assignments' };
         }
 
-        console.log(`🚀 First-time sync: Found ${calendarEligible.length} assignments to sync!`);
+        console.log('');
+        console.log(`🚀 Starting first-time sync for ${calendarEligible.length} assignments!`);
+        console.log('');
 
         // Perform the sync
         const results = await calendarClient.syncAssignments(calendarEligible);
@@ -390,7 +487,16 @@ async function handleFirstTimeSync() {
             lastSyncType: 'first_time'
         });
 
-        console.log(`✅ First-time sync complete: ${results.created} created, ${results.skipped} skipped`);
+        console.log('');
+        console.log('╔════════════════════════════════════════════════════════════════════════╗');
+        console.log('║  ✅ FIRST-TIME SYNC COMPLETE                                           ║');
+        console.log('╚════════════════════════════════════════════════════════════════════════╝');
+        console.log('');
+        console.log('📊 Results:');
+        console.log(`   - Created: ${results.created} events`);
+        console.log(`   - Skipped: ${results.skipped} events`);
+        console.log(`   - Failed: ${results.failed} events`);
+        console.log('');
 
         return {
             synced: true,
@@ -400,7 +506,12 @@ async function handleFirstTimeSync() {
         };
 
     } catch (error) {
+        console.error('');
         console.error('❌ Error in handleFirstTimeSync:', error);
+        console.error('   Error type:', error.name);
+        console.error('   Error message:', error.message);
+        console.error('   Stack:', error.stack);
+        console.error('');
         return {
             synced: false,
             reason: `Error: ${error.message}`,
@@ -540,14 +651,32 @@ if (action && action.onClicked) {
 // Initialize on service worker start
 (async () => {
     try {
+        console.log('🔄 Running async initialization...');
         await tokenManager.initializeFromStorage();
-        console.log('✅ Background script initialized with dual authentication');
+        console.log('   ✓ Token manager initialized from storage');
 
         // Initial pin status check
         await checkAndShowPinBadge();
+        console.log('   ✓ Pin status checked');
+
+        console.log('');
+        console.log('╔════════════════════════════════════════════════════════════════════════╗');
+        console.log('║  ✅ BACKGROUND SCRIPT FULLY READY                                      ║');
+        console.log('╚════════════════════════════════════════════════════════════════════════╝');
+        console.log('');
+        console.log('📡 Ready to receive messages:');
+        console.log('   - authenticate');
+        console.log('   - getAuthStatus');
+        console.log('   - syncToCalendar');
+        console.log('   - checkForNewAssignments  ← Smart sync trigger');
+        console.log('   - performBackgroundSync   ← 24-hour auto-sync');
+        console.log('');
+        console.log('🕐 Current time:', new Date().toISOString());
+        console.log('');
     } catch (error) {
-        console.error('Initialization error:', error);
+        console.error('');
+        console.error('❌ INITIALIZATION ERROR:', error);
+        console.error('   Background script may not function correctly!');
+        console.error('');
     }
 })();
-
-console.log('✅ Enhanced background script with dual authentication ready');

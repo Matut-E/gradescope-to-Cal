@@ -242,6 +242,36 @@ class AuthenticationManager {
     }
 
     // ------------------------------------------------------------------------
+    // REDIRECT URI HELPER (CROSS-BROWSER COMPATIBILITY)
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the correct redirect URI for the current browser
+     *
+     * Firefox: Uses loopback address (http://127.0.0.1/mozoauth2/[uuid]/)
+     *   - Google does not accept extensions.allizom.org (requires domain verification)
+     *   - Firefox 86+ supports loopback addresses per RFC 8252 section 7.3
+     *   - Google exempts desktop apps from loopback deprecation
+     *
+     * Chrome: Uses standard extension URI (https://[extension-id].chromiumapp.org/)
+     *   - Chrome extensions have verifiable redirect URIs
+     *
+     * @returns {string} Redirect URI for OAuth flow
+     */
+    getRedirectUri() {
+        const baseUri = browser.identity.getRedirectURL();
+
+        // Firefox detection - use loopback address
+        if (baseUri.includes('extensions.allizom.org')) {
+            const extensionUUID = baseUri.split('//')[1].split('.')[0];
+            return `http://127.0.0.1/mozoauth2/${extensionUUID}/`;
+        }
+
+        // Chrome/Chromium - use standard extension URI
+        return baseUri;
+    }
+
+    // ------------------------------------------------------------------------
     // PKCE AUTHENTICATION
     // ------------------------------------------------------------------------
 
@@ -252,7 +282,9 @@ class AuthenticationManager {
             const codeVerifier = PKCEHelper.generateCodeVerifier();
             const codeChallenge = await PKCEHelper.generateCodeChallenge(codeVerifier);
 
-            const redirectUri = browser.identity.getRedirectURL();
+            // Use loopback address (Google requires this for Firefox extensions)
+            const redirectUri = this.getRedirectUri();
+
             const authParams = new URLSearchParams({
                 client_id: this.config.WEB_CLIENT_ID,
                 response_type: 'code',
@@ -271,7 +303,7 @@ class AuthenticationManager {
             // ========================================================================
             console.log('');
             console.log('╔════════════════════════════════════════════════════════════════════════╗');
-            console.log('║  🔍 FIREFOX OAUTH DIAGNOSTIC MODE                                      ║');
+            console.log('║  🔍 FIREFOX OAUTH DIAGNOSTIC MODE (PKCE + LOOPBACK)                   ║');
             console.log('╚════════════════════════════════════════════════════════════════════════╝');
             console.log('');
             console.log('📋 MANUAL TEST INSTRUCTIONS:');
@@ -280,7 +312,7 @@ class AuthenticationManager {
             console.log('   3. Paste the URL into the address bar and press Enter');
             console.log('   4. Complete the Google sign-in and authorization');
             console.log('   5. Observe what happens:');
-            console.log('      - Success: You\'ll see a redirect to https://...extensions.allizom.org/?code=...');
+            console.log('      - Success: You\'ll see a redirect to http://127.0.0.1/mozoauth2/...?code=...');
             console.log('      - Failure: Google will show an error page with details');
             console.log('');
             console.log('🔗 OAUTH URL (copy everything below):');
@@ -295,6 +327,10 @@ class AuthenticationManager {
             console.log('   - Client ID:', this.config.WEB_CLIENT_ID);
             console.log('   - Scope:', this.config.SCOPE);
             console.log('   - Challenge method: S256 (PKCE)');
+            console.log('   - Redirect: LOOPBACK ADDRESS (http://127.0.0.1/mozoauth2/...)');
+            console.log('');
+            console.log('⚠️  CRITICAL: Add this URI to Google Cloud Console redirect URIs:');
+            console.log('   ', redirectUri);
             console.log('');
             console.log('⏳ Now opening OAuth flow in Firefox popup...');
             console.log('');
@@ -426,6 +462,15 @@ class AuthenticationManager {
 
             } catch (error) {
                 console.error('❌ PKCE auth failed:', error);
+
+                if (error.message.includes('User cancelled') || error.message.includes('denied access')) {
+                    throw new Error(
+                        'OAuth authentication failed. If you completed the Google sign-in, ' +
+                        'this might be caused by privacy extensions (uBlock Origin, Privacy Badger, etc.) ' +
+                        'or Firefox Enhanced Tracking Protection. Try temporarily disabling them and reconnecting.'
+                    );
+                }
+
                 throw error;
             }
 
@@ -442,7 +487,7 @@ class AuthenticationManager {
             code: authCode,
             code_verifier: codeVerifier,
             grant_type: 'authorization_code',
-            redirect_uri: browser.identity.getRedirectURL()
+            redirect_uri: this.getRedirectUri()
         });
 
         try {
@@ -459,8 +504,33 @@ class AuthenticationManager {
 
             const tokens = await response.json();
 
+            // Diagnostic logging: Show exactly what Google returned
+            console.log('');
+            console.log('📦 Token Exchange Response from Google:');
+            console.log('   - access_token:', tokens.access_token ? `YES ✓ (${tokens.access_token.substring(0, 20)}...)` : 'NO ✗');
+            console.log('   - refresh_token:', tokens.refresh_token ? `YES ✓ (${tokens.refresh_token.substring(0, 20)}...)` : 'NO ✗');
+            console.log('   - expires_in:', tokens.expires_in, 'seconds');
+            console.log('   - token_type:', tokens.token_type);
+            console.log('   - scope:', tokens.scope);
+            console.log('');
+
             if (!tokens.access_token) {
                 throw new Error('No access token received');
+            }
+
+            if (!tokens.refresh_token) {
+                console.error('');
+                console.error('⚠️ WARNING: NO REFRESH TOKEN RECEIVED FROM GOOGLE!');
+                console.error('   This means you will need to re-authenticate when the access token expires.');
+                console.error('');
+                console.error('   Possible reasons:');
+                console.error('   1. User previously granted consent (Google only issues refresh token on first consent)');
+                console.error('   2. OAuth configuration issue in Google Cloud Console');
+                console.error('   3. Missing access_type=offline in request (but we have it...)');
+                console.error('');
+                console.error('   To fix: Revoke access at https://myaccount.google.com/permissions');
+                console.error('   Then try authenticating again - Google will issue a fresh refresh token.');
+                console.error('');
             }
 
             this.tokenManager.setTokens(

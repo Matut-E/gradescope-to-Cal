@@ -31,6 +31,22 @@ class EventCache {
             }
 
             console.log(`💾 Cache miss for assignment ${assignmentId}`);
+            console.log(`   🔍 Diagnostic: Assignment ${assignmentId} not found in cache`);
+            console.log(`   📊 Current cache contents (${this.cache.size} entries):`);
+
+            // Show first 5 cached assignment IDs for comparison
+            let count = 0;
+            for (const [cachedId, data] of this.cache.entries()) {
+                if (count < 5) {
+                    console.log(`      • Cached ID: ${cachedId} → "${data.eventData.summary}"`);
+                    count++;
+                }
+            }
+            if (this.cache.size > 5) {
+                console.log(`      • ... and ${this.cache.size - 5} more`);
+            }
+            console.log(`   ⚠️ Looking for: ${assignmentId} (not in cache)`);
+
             return null;
 
         } catch (cacheError) {
@@ -43,11 +59,27 @@ class EventCache {
         const now = Date.now();
         const cacheAge = this.lastFullRefresh ? (now - this.lastFullRefresh) : Infinity;
 
-        if (cacheAge < this.CACHE_DURATION) return;
+        console.log('');
+        console.log('🔍 EventCache.ensureCacheValid() called:');
+        console.log('   - Current cache size:', this.cache.size);
+        console.log('   - Last refresh:', this.lastFullRefresh ? new Date(this.lastFullRefresh).toISOString() : 'NEVER');
+        console.log('   - Cache age:', cacheAge === Infinity ? 'NEVER REFRESHED' : `${Math.round(cacheAge / 1000)}s`);
+        console.log('   - Cache duration limit:', this.CACHE_DURATION / 1000, 'seconds');
+        console.log('   - Cache valid?:', cacheAge < this.CACHE_DURATION);
 
-        if (this.refreshPromise) return await this.refreshPromise;
+        if (cacheAge < this.CACHE_DURATION) {
+            console.log('   ✅ Cache is still valid, skipping refresh');
+            console.log('');
+            return;
+        }
 
-        console.log('🔄 Cache expired, refreshing...');
+        if (this.refreshPromise) {
+            console.log('   ⏳ Refresh already in progress, waiting...');
+            return await this.refreshPromise;
+        }
+
+        console.log('   🔄 Cache needs refresh, starting...');
+        console.log('');
         this.refreshPromise = this.refreshCache();
 
         try {
@@ -59,33 +91,58 @@ class EventCache {
 
     async refreshCache() {
         try {
+            console.log('📡 EventCache.refreshCache() - Fetching events from Google Calendar API...');
             const events = await this.getAllGradescopeEvents();
+            console.log(`   ✓ Received ${events.length} events from API`);
+
             this.cache.clear();
+            console.log('   ✓ Cache cleared');
 
             let cachedCount = 0;
+            let withAssignmentId = 0;
+            let withoutAssignmentId = 0;
+
             events.forEach(event => {
                 const assignmentId = event.extendedProperties?.private?.gradescope_assignment_id;
-                if (assignmentId && !this.cache.has(assignmentId)) {
-                    this.cache.set(assignmentId, {
-                        eventId: event.id,
-                        lastUpdated: Date.now(),
-                        eventData: {
-                            summary: event.summary,
-                            start: event.start,
-                            end: event.end,
-                            htmlLink: event.htmlLink
-                        }
-                    });
-                    cachedCount++;
+                if (assignmentId) {
+                    withAssignmentId++;
+                    if (!this.cache.has(assignmentId)) {
+                        this.cache.set(assignmentId, {
+                            eventId: event.id,
+                            lastUpdated: Date.now(),
+                            eventData: {
+                                summary: event.summary,
+                                start: event.start,
+                                end: event.end,
+                                htmlLink: event.htmlLink
+                            }
+                        });
+                        cachedCount++;
+                        console.log(`   ✓ Cached assignment ${assignmentId}: "${event.summary}"`);
+                    }
+                } else {
+                    withoutAssignmentId++;
                 }
             });
 
             this.lastFullRefresh = Date.now();
-            console.log(`✅ Cache refresh complete: ${cachedCount} events cached`);
+            console.log('');
+            console.log('✅ Cache refresh complete:');
+            console.log(`   - Total events fetched: ${events.length}`);
+            console.log(`   - With gradescope_assignment_id: ${withAssignmentId}`);
+            console.log(`   - Without gradescope_assignment_id: ${withoutAssignmentId}`);
+            console.log(`   - Actually cached: ${cachedCount}`);
+            console.log(`   - Final cache size: ${this.cache.size}`);
+            console.log('');
+
             this.enforceCacheLimit();
 
         } catch (error) {
+            console.error('');
             console.error('❌ Cache refresh failed:', error);
+            console.error('   Error details:', error.message);
+            console.error('   Stack:', error.stack);
+            console.error('');
             throw error;
         }
     }
@@ -105,9 +162,23 @@ class EventCache {
             maxResults: '1000'
         });
 
+        console.log('');
+        console.log('📡 getAllGradescopeEvents() - Fetching calendar events:');
+        console.log('   - Time range:', sixMonthsAgo.toISOString().split('T')[0], 'to', sixMonthsFromNow.toISOString().split('T')[0]);
+        console.log('   - Max results: 1000');
+
         try {
+            console.log('   - Making API request...');
             const response = await this.client.makeAPIRequest(`/calendars/primary/events?${params}`);
             const allEvents = response.items || [];
+            console.log(`   ✓ API returned ${allEvents.length} total events`);
+
+            let filterStats = {
+                hasAssignmentId: 0,
+                summaryMatch: 0,
+                descriptionMatch: 0,
+                locationMatch: 0
+            };
 
             const gradescopeEvents = allEvents.filter(event => {
                 const hasAssignmentId = !!event.extendedProperties?.private?.gradescope_assignment_id;
@@ -122,14 +193,36 @@ class EventCache {
                 const descriptionMatches = event.description && event.description.includes('Gradescope');
                 const locationMatches = event.location && event.location.includes('Gradescope');
 
+                if (hasAssignmentId) filterStats.hasAssignmentId++;
+                if (summaryMatches) filterStats.summaryMatch++;
+                if (descriptionMatches) filterStats.descriptionMatch++;
+                if (locationMatches) filterStats.locationMatch++;
+
                 return hasAssignmentId || summaryMatches || descriptionMatches || locationMatches;
             });
 
-            console.log(`📡 Found ${gradescopeEvents.length} Gradescope events out of ${allEvents.length} total`);
+            console.log('');
+            console.log('   ✅ Filter results:');
+            console.log(`      - Total events: ${allEvents.length}`);
+            console.log(`      - Gradescope events: ${gradescopeEvents.length}`);
+            console.log(`      - With gradescope_assignment_id: ${filterStats.hasAssignmentId}`);
+            console.log(`      - With Gradescope in summary: ${filterStats.summaryMatch}`);
+            console.log(`      - With Gradescope in description: ${filterStats.descriptionMatch}`);
+            console.log(`      - With Gradescope in location: ${filterStats.locationMatch}`);
+            console.log('');
+
             return gradescopeEvents;
 
         } catch (error) {
-            console.error('❌ API call failed:', error);
+            console.error('');
+            console.error('❌ getAllGradescopeEvents() API call failed:', error);
+            console.error('   Error type:', error.name);
+            console.error('   Error message:', error.message);
+            if (error.response) {
+                console.error('   HTTP status:', error.response.status);
+                console.error('   Response:', await error.response.text());
+            }
+            console.error('');
             return [];
         }
     }

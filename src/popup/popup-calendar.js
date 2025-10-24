@@ -345,6 +345,8 @@ class CalendarManager {
 
     async viewStoredData() {
         try {
+            console.log('📊 Opening storage viewer page...');
+
             const assignments = await window.StorageUtils.getAllStoredAssignments();
 
             if (assignments.length === 0) {
@@ -352,50 +354,17 @@ class CalendarManager {
                 return;
             }
 
-            let output = '📅 EXTRACTED ASSIGNMENT DATA:\n\n';
+            // Use browser.tabs.create() for proper cross-browser support
+            // This opens the storage-viewer.html page which loads data dynamically
+            const url = browser.runtime.getURL('storage-viewer.html');
+            console.log('   - Opening URL:', url);
 
-            assignments.forEach((assignment, index) => {
-                output += `${index + 1}. ${assignment.title}\n`;
-                output += `   Course: ${assignment.course}\n`;
-
-                let dueDateDisplay = 'No due date';
-                if (assignment.dueDate) {
-                    try {
-                        const dateObj = new Date(assignment.dueDate);
-                        if (!isNaN(dateObj.getTime())) {
-                            dueDateDisplay = dateObj.toLocaleDateString();
-                        }
-                    } catch (e) {
-                        dueDateDisplay = 'Date parsing error';
-                    }
-                }
-
-                output += `   Due: ${dueDateDisplay}\n`;
-                output += `   URL: ${assignment.url}\n`;
-                output += `   ID: ${assignment.assignmentId}\n`;
-
-                if (assignment.autoDiscovered) {
-                    output += `   📡 Auto-discovered from dashboard\n`;
-                }
-
-                output += `\n`;
-            });
-
-            output += '\n🔍 Note: Assignments appear as events in your calendar for better visibility.';
-
-            const newWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-            newWindow.document.write(`
-                <html>
-                <head><title>Extracted Assignment Data</title></head>
-                <body style="font-family: monospace; padding: 20px; white-space: pre-wrap;">
-                    ${output.replace(/\n/g, '<br>')}
-                </body>
-                </html>
-            `);
+            await browser.tabs.create({ url: url });
+            console.log('   ✅ Storage viewer page opened');
 
         } catch (error) {
-            console.error('Error viewing storage:', error);
-            alert('Error accessing stored data: ' + error.message);
+            console.error('❌ Error opening storage viewer:', error);
+            alert('Error opening data viewer: ' + error.message);
         }
     }
 
