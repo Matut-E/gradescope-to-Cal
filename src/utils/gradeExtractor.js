@@ -81,9 +81,9 @@ class GradeExtractor {
             }
         }
 
-        // Check for late submission indicators
-        const rowHTML = row.innerHTML.toLowerCase();
-        if (rowHTML.includes('late') || rowHTML.includes('overdue')) {
+        // Check for late submission indicators (use textContent instead of innerHTML for safety)
+        const rowText = row.textContent.toLowerCase();
+        if (rowText.includes('late') || rowText.includes('overdue')) {
             gradeData.isLate = true;
         }
 

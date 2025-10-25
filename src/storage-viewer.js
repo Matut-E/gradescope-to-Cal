@@ -85,20 +85,47 @@ function renderStats(assignments) {
         return dueDate > new Date();
     }).length;
 
-    statsContainer.innerHTML = `
-        <div class="stat-card">
-            <div class="stat-value">${totalCount}</div>
-            <div class="stat-label">Total Assignments</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${courseCount}</div>
-            <div class="stat-label">Courses</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${upcomingCount}</div>
-            <div class="stat-label">Upcoming</div>
-        </div>
-    `;
+    // Safe replacement for innerHTML
+    statsContainer.textContent = '';
+
+    // Create Total Assignments card
+    const totalCard = document.createElement('div');
+    totalCard.className = 'stat-card';
+    const totalValue = document.createElement('div');
+    totalValue.className = 'stat-value';
+    totalValue.textContent = totalCount;
+    const totalLabel = document.createElement('div');
+    totalLabel.className = 'stat-label';
+    totalLabel.textContent = 'Total Assignments';
+    totalCard.appendChild(totalValue);
+    totalCard.appendChild(totalLabel);
+    statsContainer.appendChild(totalCard);
+
+    // Create Courses card
+    const courseCard = document.createElement('div');
+    courseCard.className = 'stat-card';
+    const courseValue = document.createElement('div');
+    courseValue.className = 'stat-value';
+    courseValue.textContent = courseCount;
+    const courseLabel = document.createElement('div');
+    courseLabel.className = 'stat-label';
+    courseLabel.textContent = 'Courses';
+    courseCard.appendChild(courseValue);
+    courseCard.appendChild(courseLabel);
+    statsContainer.appendChild(courseCard);
+
+    // Create Upcoming card
+    const upcomingCard = document.createElement('div');
+    upcomingCard.className = 'stat-card';
+    const upcomingValue = document.createElement('div');
+    upcomingValue.className = 'stat-value';
+    upcomingValue.textContent = upcomingCount;
+    const upcomingLabel = document.createElement('div');
+    upcomingLabel.className = 'stat-label';
+    upcomingLabel.textContent = 'Upcoming';
+    upcomingCard.appendChild(upcomingValue);
+    upcomingCard.appendChild(upcomingLabel);
+    statsContainer.appendChild(upcomingCard);
 }
 
 /**
@@ -121,45 +148,104 @@ function renderAssignments(assignments) {
         return dateB - dateA;
     });
 
-    listContainer.innerHTML = sorted.map((assignment, index) => {
-        const autoDiscoveredBadge = assignment.autoDiscovered
-            ? '<span class="badge">📡 Auto-discovered</span>'
-            : '';
+    // Safe replacement for innerHTML - use createElement
+    listContainer.textContent = '';
 
-        return `
-            <div class="assignment-card">
-                <div class="assignment-header">
-                    <div class="assignment-title">${escapeHtml(assignment.title || 'Untitled Assignment')}</div>
-                    <div class="assignment-number">#${index + 1}</div>
-                </div>
-                <div class="assignment-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Course:</span>
-                        <span class="detail-value">${escapeHtml(assignment.course || 'Unknown Course')}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Due Date:</span>
-                        <span class="detail-value">${formatDate(assignment.dueDate)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">URL:</span>
-                        <a href="${escapeHtml(assignment.url || '#')}" target="_blank" class="assignment-url">
-                            View on Gradescope →
-                        </a>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">ID:</span>
-                        <span class="detail-value" style="font-family: monospace; font-size: 12px;">${escapeHtml(assignment.assignmentId || 'N/A')}</span>
-                    </div>
-                    ${autoDiscoveredBadge ? `
-                    <div class="detail-row">
-                        ${autoDiscoveredBadge}
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
+    sorted.forEach((assignment, index) => {
+        // Create card
+        const card = document.createElement('div');
+        card.className = 'assignment-card';
+
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'assignment-header';
+
+        const title = document.createElement('div');
+        title.className = 'assignment-title';
+        title.textContent = assignment.title || 'Untitled Assignment';
+
+        const number = document.createElement('div');
+        number.className = 'assignment-number';
+        number.textContent = `#${index + 1}`;
+
+        header.appendChild(title);
+        header.appendChild(number);
+        card.appendChild(header);
+
+        // Create details section
+        const details = document.createElement('div');
+        details.className = 'assignment-details';
+
+        // Course row
+        const courseRow = document.createElement('div');
+        courseRow.className = 'detail-row';
+        const courseLabel = document.createElement('span');
+        courseLabel.className = 'detail-label';
+        courseLabel.textContent = 'Course:';
+        const courseValue = document.createElement('span');
+        courseValue.className = 'detail-value';
+        courseValue.textContent = assignment.course || 'Unknown Course';
+        courseRow.appendChild(courseLabel);
+        courseRow.appendChild(courseValue);
+        details.appendChild(courseRow);
+
+        // Due date row
+        const dateRow = document.createElement('div');
+        dateRow.className = 'detail-row';
+        const dateLabel = document.createElement('span');
+        dateLabel.className = 'detail-label';
+        dateLabel.textContent = 'Due Date:';
+        const dateValue = document.createElement('span');
+        dateValue.className = 'detail-value';
+        dateValue.textContent = formatDate(assignment.dueDate);
+        dateRow.appendChild(dateLabel);
+        dateRow.appendChild(dateValue);
+        details.appendChild(dateRow);
+
+        // URL row
+        const urlRow = document.createElement('div');
+        urlRow.className = 'detail-row';
+        const urlLabel = document.createElement('span');
+        urlLabel.className = 'detail-label';
+        urlLabel.textContent = 'URL:';
+        const urlLink = document.createElement('a');
+        urlLink.href = assignment.url || '#';
+        urlLink.target = '_blank';
+        urlLink.className = 'assignment-url';
+        urlLink.textContent = 'View on Gradescope →';
+        urlRow.appendChild(urlLabel);
+        urlRow.appendChild(urlLink);
+        details.appendChild(urlRow);
+
+        // ID row
+        const idRow = document.createElement('div');
+        idRow.className = 'detail-row';
+        const idLabel = document.createElement('span');
+        idLabel.className = 'detail-label';
+        idLabel.textContent = 'ID:';
+        const idValue = document.createElement('span');
+        idValue.className = 'detail-value';
+        idValue.style.fontFamily = 'monospace';
+        idValue.style.fontSize = '12px';
+        idValue.textContent = assignment.assignmentId || 'N/A';
+        idRow.appendChild(idLabel);
+        idRow.appendChild(idValue);
+        details.appendChild(idRow);
+
+        // Auto-discovered badge (if applicable)
+        if (assignment.autoDiscovered) {
+            const badgeRow = document.createElement('div');
+            badgeRow.className = 'detail-row';
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = '📡 Auto-discovered';
+            badgeRow.appendChild(badge);
+            details.appendChild(badgeRow);
+        }
+
+        card.appendChild(details);
+        listContainer.appendChild(card);
+    });
 
     listContainer.style.display = 'flex';
     emptyState.style.display = 'none';
@@ -200,12 +286,26 @@ async function init() {
 
     } catch (error) {
         console.error('❌ Error initializing storage viewer:', error);
-        document.getElementById('emptyState').innerHTML = `
-            <div class="empty-state-icon">⚠️</div>
-            <div class="empty-state-title">Error Loading Data</div>
-            <div>${escapeHtml(error.message)}</div>
-        `;
-        document.getElementById('emptyState').style.display = 'block';
+
+        // Safe replacement for innerHTML
+        const emptyState = document.getElementById('emptyState');
+        emptyState.textContent = '';
+
+        const icon = document.createElement('div');
+        icon.className = 'empty-state-icon';
+        icon.textContent = '⚠️';
+        emptyState.appendChild(icon);
+
+        const title = document.createElement('div');
+        title.className = 'empty-state-title';
+        title.textContent = 'Error Loading Data';
+        emptyState.appendChild(title);
+
+        const message = document.createElement('div');
+        message.textContent = error.message;
+        emptyState.appendChild(message);
+
+        emptyState.style.display = 'block';
     }
 }
 

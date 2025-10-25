@@ -29,6 +29,7 @@
       ],
       "js": [
         "lib/browser-polyfill.js",
+        "utils/browserDetector.js",
         "utils/dateParser.js",
         "utils/gradeExtractor.js",
         "utils/assignmentParser.js",

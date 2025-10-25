@@ -43,24 +43,37 @@ class CalendarManager {
 
     updateStatus(message, type = 'info') {
         this.statusDiv.className = `status ${type}`;
-        this.statusDiv.innerHTML = `<div>${message}</div>`;
+        // Safe replacement for innerHTML
+        this.statusDiv.textContent = '';
+        const messageDiv = document.createElement('div');
+        messageDiv.textContent = message;
+        this.statusDiv.appendChild(messageDiv);
     }
 
     updateAuthStatus(status) {
         if (status.authenticated && status.tokenValid) {
             this.authStatusDiv.className = 'status success';
-            this.authStatusDiv.innerHTML = '<div>✅ Google Calendar connected</div>';
+            this.authStatusDiv.textContent = '';
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = '✅ Google Calendar connected';
+            this.authStatusDiv.appendChild(messageDiv);
             this.authenticateBtn.style.display = 'none';
             this.calendarSyncBtn.disabled = false;
         } else if (status.authenticated && !status.tokenValid) {
             this.authStatusDiv.className = 'status warning';
-            this.authStatusDiv.innerHTML = '<div>⚠️ Authentication expired</div>';
+            this.authStatusDiv.textContent = '';
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = '⚠️ Authentication expired';
+            this.authStatusDiv.appendChild(messageDiv);
             this.authenticateBtn.style.display = 'block';
             this.authenticateBtn.textContent = '🔄 Refresh Authentication';
             this.calendarSyncBtn.disabled = true;
         } else {
             this.authStatusDiv.className = 'status info';
-            this.authStatusDiv.innerHTML = '<div>🔍 Google Calendar not connected</div>';
+            this.authStatusDiv.textContent = '';
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = '🔍 Google Calendar not connected';
+            this.authStatusDiv.appendChild(messageDiv);
             this.authenticateBtn.style.display = 'block';
             this.authenticateBtn.textContent = '🔗 Connect Google Calendar';
             this.calendarSyncBtn.disabled = true;
@@ -151,12 +164,37 @@ class CalendarManager {
                         `✅ Google Calendar connected! ${results.created} assignments synced immediately. Auto-sync enabled.`,
                         'success'
                     );
+
+                    // Firefox fix: Poll for storage updates instead of single delayed refresh
+                    // In Firefox, storage writes are async and timing varies
+                    console.log('🔄 First-time sync detected, polling for storage updates...');
+
+                    let pollCount = 0;
+                    const maxPolls = 20; // 20 polls × 100ms = 2 seconds max
+                    const pollInterval = setInterval(async () => {
+                        pollCount++;
+                        const count = await this.countStoredAssignments();
+
+                        // Stop polling if assignments found or max polls reached
+                        if (count > 0 || pollCount >= maxPolls) {
+                            clearInterval(pollInterval);
+                            const elapsed = pollCount * 100;
+                            console.log(`✅ Popup refreshed after ${elapsed}ms (${pollCount} polls)`);
+
+                            if (count === 0 && pollCount >= maxPolls) {
+                                console.warn('⚠️ Max polls reached without finding assignments');
+                            }
+                        }
+                    }, 100); // Poll every 100ms
                 } else {
                     this.updateStatus('✅ Google Calendar connected! Auto-sync enabled.', 'success');
                 }
+
+                // Refresh all status displays
                 await this.checkAuthStatus();
                 await this.updateAutoSyncStatus();
-                await this.countStoredAssignments();
+                await this.countStoredAssignments(); // Immediate refresh
+
             } else {
                 console.error('Authentication failed:', response.error);
                 this.updateStatus(`❌ Authentication failed: ${response.error}`, 'warning');
@@ -189,6 +227,23 @@ class CalendarManager {
             if (assignments.length === 0) {
                 this.updateStatus('❌ No assignments found. Visit Gradescope dashboard or course pages first.', 'warning');
                 return;
+            }
+
+            // Force cache refresh before sync to ensure we have latest event data
+            // This is crucial for detecting duplicates, especially in Firefox
+            console.log('🔄 Forcing cache refresh before sync...');
+            this.updateStatus('🔄 Refreshing calendar cache...', 'info');
+
+            try {
+                const cacheRefresh = await browser.runtime.sendMessage({ action: 'forceCacheRefresh' });
+                if (cacheRefresh.success) {
+                    console.log('✅ Cache refreshed successfully');
+                } else {
+                    console.warn('⚠️ Cache refresh failed, continuing with sync anyway');
+                }
+            } catch (cacheError) {
+                console.warn('⚠️ Cache refresh error:', cacheError);
+                // Continue with sync even if cache refresh fails
             }
 
             this.updateStatus(`🔄 Creating ${assignments.length} calendar events...`, 'info');
@@ -375,24 +430,52 @@ class CalendarManager {
     createAutoSyncSection() {
         const autoSyncSection = document.createElement('div');
         autoSyncSection.className = 'section';
-        autoSyncSection.innerHTML = `
-            <div class="section-title">Automatic Sync</div>
 
-            <div id="autoSyncStatus" class="status info">
-                <div>⏳ Checking auto-sync status...</div>
-            </div>
+        // Create section title
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'section-title';
+        titleDiv.textContent = 'Automatic Sync';
+        autoSyncSection.appendChild(titleDiv);
 
-            <button id="toggleAutoSync" class="button secondary">
-                ⚙️ Configure Auto-Sync
-            </button>
+        // Create status div
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'autoSyncStatus';
+        statusDiv.className = 'status info';
+        const statusMessage = document.createElement('div');
+        statusMessage.textContent = '⏳ Checking auto-sync status...';
+        statusDiv.appendChild(statusMessage);
+        autoSyncSection.appendChild(statusDiv);
 
-            <div id="autoSyncDetails" class="auto-sync-details" style="display: none;">
-                <div class="auto-sync-info">
-                    <small id="nextSyncTime">Next sync: calculating...</small><br>
-                    <small id="lastSyncTime">Last sync: never</small>
-                </div>
-            </div>
-        `;
+        // Create toggle button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'toggleAutoSync';
+        toggleBtn.className = 'button secondary';
+        toggleBtn.textContent = '⚙️ Configure Auto-Sync';
+        autoSyncSection.appendChild(toggleBtn);
+
+        // Create details section
+        const detailsDiv = document.createElement('div');
+        detailsDiv.id = 'autoSyncDetails';
+        detailsDiv.className = 'auto-sync-details';
+        detailsDiv.style.display = 'none';
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'auto-sync-info';
+
+        const nextSyncSmall = document.createElement('small');
+        nextSyncSmall.id = 'nextSyncTime';
+        nextSyncSmall.textContent = 'Next sync: calculating...';
+        infoDiv.appendChild(nextSyncSmall);
+
+        infoDiv.appendChild(document.createElement('br'));
+
+        const lastSyncSmall = document.createElement('small');
+        lastSyncSmall.id = 'lastSyncTime';
+        lastSyncSmall.textContent = 'Last sync: never';
+        infoDiv.appendChild(lastSyncSmall);
+
+        detailsDiv.appendChild(infoDiv);
+        autoSyncSection.appendChild(detailsDiv);
 
         const calendarSection = this.authStatusDiv.closest('.section');
         const nextSection = calendarSection.nextElementSibling;
@@ -408,19 +491,45 @@ class CalendarManager {
 
     async updateAutoSyncStatus() {
         try {
+            // Check authentication status first - auto-sync requires authentication
+            const authStatus = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
+            const isAuthenticated = authStatus.success && authStatus.authenticated && authStatus.tokenValid;
+
+            const autoSyncStatusDiv = document.getElementById('autoSyncStatus');
+            const toggleBtn = document.getElementById('toggleAutoSync');
+            const detailsDiv = document.getElementById('autoSyncDetails');
+            const nextSyncDiv = document.getElementById('nextSyncTime');
+            const lastSyncDiv = document.getElementById('lastSyncTime');
+
+            // If not authenticated, disable auto-sync controls
+            if (!isAuthenticated) {
+                autoSyncStatusDiv.className = 'status info';
+                autoSyncStatusDiv.textContent = '';
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = '🔒 Connect Google Calendar to enable auto-sync';
+                autoSyncStatusDiv.appendChild(messageDiv);
+                toggleBtn.disabled = true;
+                toggleBtn.textContent = '🔒 Auto-Sync (Connect Calendar First)';
+                toggleBtn.className = 'button secondary';
+                detailsDiv.style.display = 'none';
+                return;
+            }
+
+            // User is authenticated - proceed with normal auto-sync status check
             const response = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
 
             if (response.success) {
                 const status = response.status;
-                const autoSyncStatusDiv = document.getElementById('autoSyncStatus');
-                const toggleBtn = document.getElementById('toggleAutoSync');
-                const detailsDiv = document.getElementById('autoSyncDetails');
-                const nextSyncDiv = document.getElementById('nextSyncTime');
-                const lastSyncDiv = document.getElementById('lastSyncTime');
+
+                // Re-enable button now that we're authenticated
+                toggleBtn.disabled = false;
 
                 if (status.enabled) {
                     autoSyncStatusDiv.className = 'status success';
-                    autoSyncStatusDiv.innerHTML = `<div>🔄 Auto-sync enabled (every ${this.formatInterval(status.interval)})</div>`;
+                    autoSyncStatusDiv.textContent = '';
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = `🔄 Auto-sync enabled (every ${this.formatInterval(status.interval)})`;
+                    autoSyncStatusDiv.appendChild(messageDiv);
                     toggleBtn.textContent = '🛑 Disable Auto-Sync';
                     toggleBtn.className = 'button secondary';
 
@@ -451,13 +560,21 @@ class CalendarManager {
                     if (status.lastError) {
                         const errorTime = new Date(status.lastError.timestamp);
                         if (errorTime > new Date(status.lastSync || 0)) {
-                            lastSyncDiv.innerHTML += `<br><span style="color: #dc3545;">Last error: ${status.lastError.error}</span>`;
+                            // Safe replacement for innerHTML +=
+                            lastSyncDiv.appendChild(document.createElement('br'));
+                            const errorSpan = document.createElement('span');
+                            errorSpan.style.color = '#dc3545';
+                            errorSpan.textContent = `Last error: ${status.lastError.error}`;
+                            lastSyncDiv.appendChild(errorSpan);
                         }
                     }
 
                 } else {
                     autoSyncStatusDiv.className = 'status info';
-                    autoSyncStatusDiv.innerHTML = '<div>⏸️ Auto-sync disabled</div>';
+                    autoSyncStatusDiv.textContent = '';
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = '⏸️ Auto-sync disabled';
+                    autoSyncStatusDiv.appendChild(messageDiv);
                     toggleBtn.textContent = '▶️ Enable Auto-Sync';
                     toggleBtn.className = 'button';
                     detailsDiv.style.display = 'none';
@@ -626,14 +743,23 @@ class CalendarManager {
         const helpDiv = document.createElement('div');
         helpDiv.className = 'quick-setup-banner';
 
-        helpDiv.innerHTML = `
-            <strong>🚀 Quick Setup:</strong><br>
-            Click the blue button below to visit Gradescope, then reopen this popup!
+        // Build help content safely
+        const strong = document.createElement('strong');
+        strong.textContent = '🚀 Quick Setup:';
+        helpDiv.appendChild(strong);
 
-            <div class="quick-setup-tip">
-                💡 <em>Works best from the main dashboard page</em>
-            </div>
-        `;
+        helpDiv.appendChild(document.createElement('br'));
+
+        const text = document.createTextNode('Click the blue button below to visit Gradescope, then reopen this popup!');
+        helpDiv.appendChild(text);
+
+        const tipDiv = document.createElement('div');
+        tipDiv.className = 'quick-setup-tip';
+        tipDiv.textContent = '💡 ';
+        const tipEm = document.createElement('em');
+        tipEm.textContent = 'Works best from the main dashboard page';
+        tipDiv.appendChild(tipEm);
+        helpDiv.appendChild(tipDiv);
 
         this.statusDiv.parentNode.insertBefore(helpDiv, this.statusDiv.nextSibling);
 

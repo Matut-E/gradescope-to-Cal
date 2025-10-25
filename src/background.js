@@ -53,6 +53,7 @@ if (typeof importScripts === 'function') {
     // Chrome service worker - load all modules
     importScripts(
         'lib/browser-polyfill.js',
+        'utils/browserDetector.js',
         'auth/eventCache.js',
         'auth/tokenManager.js',
         'auth/authenticationManager.js',
@@ -79,6 +80,9 @@ console.log('   - Chrome Client ID:', CONFIG.CHROME_EXTENSION_CLIENTS[browser.ru
 console.log('   - Web Client ID:', CONFIG.WEB_CLIENT_ID);
 console.log('   - Browser:', typeof browser.runtime.getBrowserInfo !== 'undefined' ? 'Firefox' : 'Chrome-based');
 console.log('');
+
+// Log browser detection results
+browserDetector.logDetection();
 
 // ============================================================================
 // CROSS-BROWSER COMPATIBILITY HELPERS
@@ -554,21 +558,32 @@ browser.runtime.onInstalled.addListener(async (details) => {
 
 /**
  * Check if extension is pinned to toolbar
+ * Firefox: Always returns true (auto-pinned by Firefox)
+ * Chrome: Uses getUserSettings() API to detect pin status
  */
 async function checkIfPinned() {
     try {
+        // Firefox auto-pins extensions, so always return true
+        if (browserDetector.isFirefox()) {
+            console.log('🦊 Firefox detected - extensions are auto-pinned, returning true');
+            return true;
+        }
+
+        // Chrome: Use getUserSettings API (available Chrome 90+)
         const action = getBrowserAction();
         if (action && action.getUserSettings) {
             const settings = await action.getUserSettings();
-            return settings.isOnToolbar || false;
+            const isPinned = settings.isOnToolbar || false;
+            console.log('📌 Pin status (getUserSettings):', isPinned);
+            return isPinned;
         } else {
-            // getUserSettings not available (Firefox or older Chrome)
-            // Assume pinned to avoid showing unnecessary prompts
+            // Older Chrome versions without getUserSettings
+            console.warn('⚠️ getUserSettings API not available, assuming pinned');
             return true;
         }
     } catch (error) {
         console.error('Error checking pin status:', error);
-        // If API not available, assume pinned
+        // If API not available, assume pinned to avoid showing unnecessary prompts
         return true;
     }
 }

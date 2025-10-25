@@ -192,18 +192,59 @@ class CalendarAPIClient {
             };
         }
 
+        console.log('📝 Creating calendar event with data:');
+        console.log('   - Summary:', event.summary);
+        console.log('   - Assignment ID:', assignment.assignmentId);
+        console.log('   - Extended properties:', JSON.stringify(event.extendedProperties, null, 2));
+
         const response = await this.makeAPIRequest('/calendars/primary/events', {
             method: 'POST',
             body: JSON.stringify(event)
         });
 
+        console.log('✅ Event created successfully:');
+        console.log('   - Event ID:', response.id);
+        console.log('   - HTML Link:', response.htmlLink);
+        console.log('   - Extended properties in response:', JSON.stringify(response.extendedProperties, null, 2));
+
+        // Verify extended properties were saved
+        if (!response.extendedProperties?.private?.gradescope_assignment_id) {
+            console.error('⚠️ WARNING: Extended properties NOT returned by API!');
+            console.error('   This may cause duplicate event creation on next sync.');
+            console.error('   Request had:', assignment.assignmentId);
+            console.error('   Response has:', response.extendedProperties);
+        }
+
         this.eventCache.invalidateAssignment(assignment.assignmentId);
         return response;
     }
 
-    async findExistingEvent(assignmentId) {
+    async findExistingEvent(assignmentId, assignment = null) {
         try {
-            return await this.eventCache.getExistingEvent(assignmentId);
+            // First try: Use assignment ID (extended properties)
+            const eventById = await this.eventCache.getExistingEvent(assignmentId);
+            if (eventById) {
+                return eventById;
+            }
+
+            // Second try: Use summary + date fallback (for Firefox or when extended properties fail)
+            if (assignment && assignment.course && assignment.title && assignment.dueDate) {
+                console.log('   🔄 Extended properties search failed, trying summary + date fallback...');
+                const eventBySummary = await this.eventCache.searchBySummaryAndDate(
+                    assignment.course,
+                    assignment.title,
+                    assignment.dueDate
+                );
+
+                if (eventBySummary) {
+                    console.log('   ✅ Found event via fallback search!');
+                    return eventBySummary;
+                }
+            }
+
+            // No event found
+            return null;
+
         } catch (error) {
             console.error(`❌ Error finding event ${assignmentId}:`, error.message);
             return null;
@@ -211,6 +252,13 @@ class CalendarAPIClient {
     }
 
     async syncAssignments(assignments) {
+        console.log('');
+        console.log('╔════════════════════════════════════════════════════════════════════════╗');
+        console.log('║  🔄 SYNCING ASSIGNMENTS TO CALENDAR                                    ║');
+        console.log('╚════════════════════════════════════════════════════════════════════════╝');
+        console.log('');
+        console.log(`📊 Starting sync for ${assignments.length} assignments`);
+
         const results = {
             created: 0,
             skipped: 0,
@@ -218,9 +266,17 @@ class CalendarAPIClient {
             details: []
         };
 
-        for (const assignment of assignments) {
+        for (let i = 0; i < assignments.length; i++) {
+            const assignment = assignments[i];
+            console.log('');
+            console.log(`[${i + 1}/${assignments.length}] Processing: "${assignment.title}"`);
+            console.log(`   - Course: ${assignment.course}`);
+            console.log(`   - Assignment ID: ${assignment.assignmentId}`);
+            console.log(`   - Due Date: ${assignment.dueDate}`);
+
             try {
                 if (!assignment.dueDate) {
+                    console.log('   ⏭️  SKIPPED: No due date');
                     results.skipped++;
                     results.details.push({
                         assignment: assignment.title,
@@ -230,9 +286,12 @@ class CalendarAPIClient {
                     continue;
                 }
 
-                const existingEvent = await this.findExistingEvent(assignment.assignmentId);
+                console.log('   🔍 Checking if event already exists...');
+                const existingEvent = await this.findExistingEvent(assignment.assignmentId, assignment);
 
                 if (existingEvent) {
+                    console.log('   ✅ SKIPPED: Event already exists');
+                    console.log(`      Event ID: ${existingEvent.id}`);
                     results.skipped++;
                     results.details.push({
                         assignment: assignment.title,
@@ -243,7 +302,9 @@ class CalendarAPIClient {
                     continue;
                 }
 
+                console.log('   🆕 No existing event found, creating new event...');
                 await this.createEventFromAssignment(assignment);
+                console.log('   ✅ CREATED: New event added to calendar');
                 results.created++;
                 results.details.push({
                     assignment: assignment.title,

@@ -383,7 +383,8 @@
             </div>
         </div>
 
-        <div class="pin-section">
+        <!-- Chrome: Show pin instructions -->
+        <div class="pin-section" id="pin-instructions">
             <div class="pin-title">
                 <span>📌</span>
                 <span>First Step: Pin This Extension</span>
@@ -411,6 +412,20 @@
             </div>
         </div>
 
+        <!-- Firefox: Show auto-pinned message -->
+        <div class="pin-section" id="firefox-auto-pinned" style="display: none;">
+            <div class="pin-title">
+                <span>✅</span>
+                <span>Extension Already Pinned!</span>
+            </div>
+            <p class="pin-subtitle">
+                Good news! Firefox automatically pins extensions to your toolbar. You're all set!
+            </p>
+            <div class="step-visual" style="font-size: 72px; background: rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 32px; text-align: center; margin: 16px 0;">
+                🦊
+            </div>
+        </div>
+
         <div class="buttons">
             <button class="btn btn-primary" id="pinnedBtn">
                 <span>✅</span>
@@ -433,6 +448,10 @@
 
     <!-- Load WebExtension Polyfill for cross-browser compatibility -->
     <script src="lib/browser-polyfill.js"></script>
+
+    <!-- Load browser detection utility -->
+    <script src="utils/browserDetector.js"></script>
+
     <script src="welcome.js"></script>
 </body>
 </html>

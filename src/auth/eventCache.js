@@ -27,6 +27,8 @@ class EventCache {
             const cachedData = this.cache.get(assignmentId);
             if (cachedData) {
                 console.log(`💾 Cache hit for assignment ${assignmentId}`);
+                console.log(`   ✅ Found event: ${cachedData.eventId}`);
+                console.log(`   📅 Summary: "${cachedData.eventData.summary}"`);
                 return { id: cachedData.eventId, ...cachedData.eventData };
             }
 
@@ -34,23 +36,30 @@ class EventCache {
             console.log(`   🔍 Diagnostic: Assignment ${assignmentId} not found in cache`);
             console.log(`   📊 Current cache contents (${this.cache.size} entries):`);
 
-            // Show first 5 cached assignment IDs for comparison
+            // Show first 10 cached assignment IDs for comparison (increased from 5)
             let count = 0;
             for (const [cachedId, data] of this.cache.entries()) {
-                if (count < 5) {
+                if (count < 10) {
                     console.log(`      • Cached ID: ${cachedId} → "${data.eventData.summary}"`);
                     count++;
                 }
             }
-            if (this.cache.size > 5) {
-                console.log(`      • ... and ${this.cache.size - 5} more`);
+            if (this.cache.size > 10) {
+                console.log(`      • ... and ${this.cache.size - 10} more`);
             }
             console.log(`   ⚠️ Looking for: ${assignmentId} (not in cache)`);
+            console.log(`   🔬 Assignment ID type: ${typeof assignmentId}`);
+            console.log(`   🔬 Assignment ID length: ${String(assignmentId).length}`);
 
-            return null;
+            // Try fallback API search
+            console.log(`   🔄 Attempting fallback API search...`);
+            return await this.fallbackToDirectAPI(assignmentId);
 
         } catch (cacheError) {
-            console.warn('🔄 Cache failed, using fallback API:', cacheError.message);
+            console.error('❌ Cache failed with error:', cacheError);
+            console.error('   Error type:', cacheError.name);
+            console.error('   Error message:', cacheError.message);
+            console.warn('🔄 Using fallback API...');
             return await this.fallbackToDirectAPI(assignmentId);
         }
     }
@@ -229,6 +238,7 @@ class EventCache {
 
     async fallbackToDirectAPI(assignmentId) {
         try {
+            console.log('   🔍 Fallback API: Searching by assignment ID in extended properties...');
             const searchParams = new URLSearchParams({
                 q: `gradescope_assignment_id:${assignmentId}`,
                 singleEvents: 'true',
@@ -238,20 +248,90 @@ class EventCache {
             const response = await this.client.makeAPIRequest(`/calendars/primary/events?${searchParams}`);
 
             if (response.items && response.items.length > 0) {
+                console.log(`   📝 Found ${response.items.length} potential matches via extended properties`);
                 const exactMatch = response.items.find(event =>
                     event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
                 );
 
                 if (exactMatch) {
-                    console.log(`✅ Fallback API found event: ${exactMatch.id}`);
+                    console.log(`   ✅ Fallback API found exact match: ${exactMatch.id}`);
                     return exactMatch;
                 }
+            } else {
+                console.log('   ⚠️ No events found via extended properties search');
             }
 
             return null;
 
         } catch (error) {
             console.error('❌ Fallback API failed:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Search for event by summary and date (fallback when extended properties don't work)
+     * Used when extended properties aren't being returned properly (e.g., Firefox issues)
+     * @param {string} course - Course name
+     * @param {string} title - Assignment title
+     * @param {string} dueDate - ISO date string
+     */
+    async searchBySummaryAndDate(course, title, dueDate) {
+        try {
+            console.log('   🔍 Fallback search by summary and date...');
+
+            // Construct the expected summary format: "[Course] Title"
+            const expectedSummary = `${course}: ${title}`;
+            console.log(`   🔍 Looking for summary: "${expectedSummary}"`);
+
+            // Parse the due date to get the date range for search
+            const due = new Date(dueDate);
+            const dayBefore = new Date(due);
+            dayBefore.setDate(due.getDate() - 1);
+            const dayAfter = new Date(due);
+            dayAfter.setDate(due.getDate() + 1);
+
+            console.log(`   📅 Searching in date range: ${dayBefore.toISOString()} to ${dayAfter.toISOString()}`);
+
+            // Search for all Gradescope events in the date range
+            const searchParams = new URLSearchParams({
+                timeMin: dayBefore.toISOString(),
+                timeMax: dayAfter.toISOString(),
+                singleEvents: 'true',
+                maxResults: '50'
+            });
+
+            const response = await this.client.makeAPIRequest(`/calendars/primary/events?${searchParams}`);
+
+            if (!response.items || response.items.length === 0) {
+                console.log('   ⚠️ No events found in date range');
+                return null;
+            }
+
+            console.log(`   📝 Found ${response.items.length} events in date range, checking summaries...`);
+
+            // Find event with matching summary
+            for (const event of response.items) {
+                console.log(`      - Event: "${event.summary}"`);
+
+                // Exact match
+                if (event.summary === expectedSummary) {
+                    console.log(`   ✅ Found exact summary match: ${event.id}`);
+                    return event;
+                }
+
+                // Partial match (in case summary format changed)
+                if (event.summary && event.summary.includes(course) && event.summary.includes(title)) {
+                    console.log(`   ✅ Found partial summary match: ${event.id}`);
+                    return event;
+                }
+            }
+
+            console.log('   ⚠️ No matching event found by summary and date');
+            return null;
+
+        } catch (error) {
+            console.error('❌ Search by summary and date failed:', error);
             return null;
         }
     }

@@ -72,25 +72,35 @@ class OptionsSettings {
             if (response.success && response.authenticated && response.tokenValid) {
                 if (authStatus) {
                     authStatus.className = 'status success';
+                    authStatus.textContent = '';
 
-                    let statusHTML = '<div>✅ Connected to Google Calendar</div>';
+                    // Build status display with createElement (safe, no XSS risk)
+                    const mainDiv = document.createElement('div');
+                    mainDiv.textContent = '✅ Connected to Google Calendar';
+                    authStatus.appendChild(mainDiv);
 
                     // Add detailed authentication info
                     if (response.expiresAt) {
                         const expiryDate = new Date(response.expiresAt);
-                        statusHTML += `<small>Token expires: ${expiryDate.toLocaleString()}</small><br>`;
+                        const expirySmall = document.createElement('small');
+                        expirySmall.textContent = `Token expires: ${expiryDate.toLocaleString()}`;
+                        authStatus.appendChild(expirySmall);
+                        authStatus.appendChild(document.createElement('br'));
                     }
 
                     if (response.authMethod) {
                         const methodDisplay = response.authMethod === 'getAuthToken' ? 'Chrome Native (Fast)' : 'Universal';
-                        statusHTML += `<small>Method: ${methodDisplay}</small><br>`;
+                        const methodSmall = document.createElement('small');
+                        methodSmall.textContent = `Method: ${methodDisplay}`;
+                        authStatus.appendChild(methodSmall);
+                        authStatus.appendChild(document.createElement('br'));
                     }
 
                     if (response.browserInfo) {
-                        statusHTML += `<small>Browser: ${response.browserInfo.type}</small>`;
+                        const browserSmall = document.createElement('small');
+                        browserSmall.textContent = `Browser: ${response.browserInfo.type}`;
+                        authStatus.appendChild(browserSmall);
                     }
-
-                    authStatus.innerHTML = statusHTML;
                 }
                 if (authenticateBtn) {
                     authenticateBtn.style.display = 'none';
@@ -101,7 +111,10 @@ class OptionsSettings {
             } else {
                 if (authStatus) {
                     authStatus.className = 'status info';
-                    authStatus.innerHTML = '<div>🔒 Not connected to Google Calendar</div>';
+                    authStatus.textContent = '';
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = '🔒 Not connected to Google Calendar';
+                    authStatus.appendChild(messageDiv);
                 }
                 if (authenticateBtn) {
                     authenticateBtn.style.display = 'inline-block';
@@ -114,7 +127,10 @@ class OptionsSettings {
             console.error('❌ Auth status error:', error);
             if (authStatus) {
                 authStatus.className = 'status warning';
-                authStatus.innerHTML = '<div>⚠️ Error checking authentication status</div>';
+                authStatus.textContent = '';
+                const errorDiv = document.createElement('div');
+                errorDiv.textContent = '⚠️ Error checking authentication status';
+                authStatus.appendChild(errorDiv);
             }
         }
     }
@@ -135,51 +151,64 @@ class OptionsSettings {
                 // Update checkbox state
                 autoSyncCheckbox.checked = status.enabled;
 
-                // Remove any existing auto-sync status to prevent duplicates
-                if (authStatus.innerHTML) {
-                    // Remove lines containing auto-sync emojis (🔄 or ⏸️)
-                    const lines = authStatus.innerHTML.split('<br>');
-                    const filteredLines = lines.filter(line =>
-                        !line.includes('🔄') && !line.includes('⏸️')
-                    );
-                    authStatus.innerHTML = filteredLines.join('<br>');
+                // Remove any existing auto-sync status to prevent duplicates (DOM approach)
+                if (authStatus) {
+                    // Find and remove elements containing auto-sync emojis
+                    const childrenToRemove = [];
+                    Array.from(authStatus.childNodes).forEach(node => {
+                        if (node.textContent && (node.textContent.includes('🔄') || node.textContent.includes('⏸️'))) {
+                            childrenToRemove.push(node);
+                        }
+                    });
+                    childrenToRemove.forEach(node => node.remove());
                 }
 
-                // Show detailed status in the authentication section
-                let autoSyncInfo = '';
-                if (status.enabled) {
-                    // Format the interval (should be 24 hours)
-                    const intervalText = OptionsSettings.formatInterval(status.interval);
-                    autoSyncInfo += `<br><small>🔄 Auto-sync: Every ${intervalText} (Optimized)</small>`;
+                // Build auto-sync info with createElement (safe, no XSS risk)
+                if (authStatus && authStatus.childNodes.length > 0) {
+                    if (status.enabled) {
+                        // Format the interval (should be 24 hours)
+                        const intervalText = OptionsSettings.formatInterval(status.interval);
+                        authStatus.appendChild(document.createElement('br'));
+                        const autoSyncSmall = document.createElement('small');
+                        autoSyncSmall.textContent = `🔄 Auto-sync: Every ${intervalText} (Optimized)`;
+                        authStatus.appendChild(autoSyncSmall);
 
-                    if (status.lastSync) {
-                        const lastSync = new Date(status.lastSync);
-                        autoSyncInfo += `<br><small>Last sync: ${lastSync.toLocaleString()}</small>`;
+                        if (status.lastSync) {
+                            const lastSync = new Date(status.lastSync);
+                            authStatus.appendChild(document.createElement('br'));
+                            const lastSyncSmall = document.createElement('small');
+                            lastSyncSmall.textContent = `Last sync: ${lastSync.toLocaleString()}`;
+                            authStatus.appendChild(lastSyncSmall);
 
-                        if (status.lastResults) {
-                            const r = status.lastResults;
-                            autoSyncInfo += `<br><small>(${r.created} created, ${r.skipped} skipped, ${r.errors} errors)</small>`;
+                            if (status.lastResults) {
+                                const r = status.lastResults;
+                                authStatus.appendChild(document.createElement('br'));
+                                const resultsSmall = document.createElement('small');
+                                resultsSmall.textContent = `(${r.created} created, ${r.skipped} skipped, ${r.errors} errors)`;
+                                authStatus.appendChild(resultsSmall);
+                            }
                         }
-                    }
 
-                    if (status.nextSync) {
-                        const nextSync = new Date(status.nextSync);
-                        const hoursUntilNext = Math.round((nextSync - new Date()) / (1000 * 60 * 60));
-                        const minutesUntilNext = Math.round((nextSync - new Date()) / (1000 * 60));
+                        if (status.nextSync) {
+                            const nextSync = new Date(status.nextSync);
+                            const hoursUntilNext = Math.round((nextSync - new Date()) / (1000 * 60 * 60));
+                            const minutesUntilNext = Math.round((nextSync - new Date()) / (1000 * 60));
 
-                        if (hoursUntilNext >= 1) {
-                            autoSyncInfo += `<br><small>Next sync: in ${hoursUntilNext} hour${hoursUntilNext !== 1 ? 's' : ''} (${nextSync.toLocaleTimeString()})</small>`;
-                        } else {
-                            autoSyncInfo += `<br><small>Next sync: in ${minutesUntilNext} minutes (${nextSync.toLocaleTimeString()})</small>`;
+                            authStatus.appendChild(document.createElement('br'));
+                            const nextSyncSmall = document.createElement('small');
+                            if (hoursUntilNext >= 1) {
+                                nextSyncSmall.textContent = `Next sync: in ${hoursUntilNext} hour${hoursUntilNext !== 1 ? 's' : ''} (${nextSync.toLocaleTimeString()})`;
+                            } else {
+                                nextSyncSmall.textContent = `Next sync: in ${minutesUntilNext} minutes (${nextSync.toLocaleTimeString()})`;
+                            }
+                            authStatus.appendChild(nextSyncSmall);
                         }
+                    } else {
+                        authStatus.appendChild(document.createElement('br'));
+                        const disabledSmall = document.createElement('small');
+                        disabledSmall.textContent = '⏸️ Auto-sync disabled';
+                        authStatus.appendChild(disabledSmall);
                     }
-                } else {
-                    autoSyncInfo += '<br><small>⏸️ Auto-sync disabled</small>';
-                }
-
-                // Add to auth status display
-                if (authStatus.innerHTML) {
-                    authStatus.innerHTML += autoSyncInfo;
                 }
             }
         } catch (error) {
@@ -361,11 +390,15 @@ class OptionsSettings {
             // Update previous settings
             OptionsSettings.previousSettings.eventColorId = OptionsSettings.selectedEventColorId;
 
-            // Remove any existing warning first
-            if (authStatus && authStatus.innerHTML.includes('calendar-settings-warning')) {
-                const lines = authStatus.innerHTML.split('<br>');
-                const filteredLines = lines.filter(line => !line.includes('calendar-settings-warning'));
-                authStatus.innerHTML = filteredLines.join('<br>');
+            // Remove any existing warning first (DOM approach)
+            if (authStatus) {
+                const childrenToRemove = [];
+                Array.from(authStatus.childNodes).forEach(node => {
+                    if (node.className && node.className.includes('calendar-settings-warning')) {
+                        childrenToRemove.push(node);
+                    }
+                });
+                childrenToRemove.forEach(node => node.remove());
             }
 
             // Show appropriate success message based on auth status and what changed
@@ -374,9 +407,21 @@ class OptionsSettings {
                 saveSettingsBtn.textContent = '✅ Saved (Connect calendar to activate)';
                 saveSettingsBtn.className = 'button';
 
-                // Show info message in auth status only for calendar-specific settings
-                if (authStatus && !authStatus.innerHTML.includes('calendar-settings-warning')) {
-                    authStatus.innerHTML += `<br><small class="calendar-settings-warning" style="color: var(--warning);">ℹ️ Connect your Google Calendar to activate reminders and color preferences.</small>`;
+                // Show info message in auth status only for calendar-specific settings (DOM approach)
+                if (authStatus) {
+                    // Check if warning already exists
+                    const warningExists = Array.from(authStatus.childNodes).some(node =>
+                        node.className && node.className.includes('calendar-settings-warning')
+                    );
+
+                    if (!warningExists) {
+                        authStatus.appendChild(document.createElement('br'));
+                        const warningSmall = document.createElement('small');
+                        warningSmall.className = 'calendar-settings-warning';
+                        warningSmall.style.color = 'var(--warning)';
+                        warningSmall.textContent = 'ℹ️ Connect your Google Calendar to activate reminders and color preferences.';
+                        authStatus.appendChild(warningSmall);
+                    }
                 }
             } else {
                 saveSettingsBtn.textContent = '✅ Saved!';
@@ -533,8 +578,8 @@ class OptionsSettings {
 
         if (!customReminderList) return;
 
-        // Clear existing rows
-        customReminderList.innerHTML = '';
+        // Clear existing rows (safe, no XSS risk)
+        customReminderList.textContent = '';
 
         // Render each reminder
         OptionsSettings.customReminders.forEach((minutes, index) => {
@@ -571,22 +616,57 @@ class OptionsSettings {
             unit = 'minutes';
         }
 
-        row.innerHTML = `
-            <input type="number" min="1" value="${value}" data-index="${index}" class="reminder-value-input">
-            <select data-index="${index}" class="reminder-unit-select">
-                <option value="minutes" ${unit === 'minutes' ? 'selected' : ''}>minutes</option>
-                <option value="hours" ${unit === 'hours' ? 'selected' : ''}>hours</option>
-                <option value="days" ${unit === 'days' ? 'selected' : ''}>days</option>
-            </select>
-            <span class="reminder-text">before</span>
-            <button type="button" class="reminder-delete-btn" data-index="${index}">× delete</button>
-        `;
+        // Build row with createElement (safe, no XSS risk)
+
+        // Number input
+        const valueInput = document.createElement('input');
+        valueInput.type = 'number';
+        valueInput.min = '1';
+        valueInput.value = value;
+        valueInput.setAttribute('data-index', index);
+        valueInput.className = 'reminder-value-input';
+        row.appendChild(valueInput);
+
+        // Unit select
+        const unitSelect = document.createElement('select');
+        unitSelect.setAttribute('data-index', index);
+        unitSelect.className = 'reminder-unit-select';
+
+        const minutesOption = document.createElement('option');
+        minutesOption.value = 'minutes';
+        minutesOption.textContent = 'minutes';
+        if (unit === 'minutes') minutesOption.selected = true;
+        unitSelect.appendChild(minutesOption);
+
+        const hoursOption = document.createElement('option');
+        hoursOption.value = 'hours';
+        hoursOption.textContent = 'hours';
+        if (unit === 'hours') hoursOption.selected = true;
+        unitSelect.appendChild(hoursOption);
+
+        const daysOption = document.createElement('option');
+        daysOption.value = 'days';
+        daysOption.textContent = 'days';
+        if (unit === 'days') daysOption.selected = true;
+        unitSelect.appendChild(daysOption);
+
+        row.appendChild(unitSelect);
+
+        // "before" text
+        const beforeText = document.createElement('span');
+        beforeText.className = 'reminder-text';
+        beforeText.textContent = 'before';
+        row.appendChild(beforeText);
+
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'reminder-delete-btn';
+        deleteBtn.setAttribute('data-index', index);
+        deleteBtn.textContent = '× delete';
+        row.appendChild(deleteBtn);
 
         // Add event listeners
-        const valueInput = row.querySelector('.reminder-value-input');
-        const unitSelect = row.querySelector('.reminder-unit-select');
-        const deleteBtn = row.querySelector('.reminder-delete-btn');
-
         valueInput.addEventListener('change', () => {
             OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
         });
@@ -747,34 +827,48 @@ class OptionsSettings {
             // Create a scrollable dialog for better readability
             const newWindow = window.open('', '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
             if (newWindow) {
-                newWindow.document.write(`
-                    <html>
-                    <head>
-                        <title>Gradescope to Cal - Statistics</title>
-                        <style>
-                            body {
-                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                                padding: 20px;
-                                white-space: pre-wrap;
-                                line-height: 1.4;
-                                background: #f8f9fa;
-                            }
-                            .stats-container {
-                                background: white;
-                                padding: 20px;
-                                border-radius: 8px;
-                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="stats-container">
-                            ${statsMessage.replace(/\n/g, '<br>')}
-                        </div>
-                    </body>
-                    </html>
-                `);
-                newWindow.document.close();
+                // Build document structure safely with DOM manipulation (no document.write XSS risk)
+                const doc = newWindow.document;
+
+                // Create HTML structure
+                const html = doc.createElement('html');
+                const head = doc.createElement('head');
+                const body = doc.createElement('body');
+
+                // Set title
+                const title = doc.createElement('title');
+                title.textContent = 'Gradescope to Cal - Statistics';
+                head.appendChild(title);
+
+                // Add styles
+                const style = doc.createElement('style');
+                style.textContent = `
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        padding: 20px;
+                        white-space: pre-wrap;
+                        line-height: 1.4;
+                        background: #f8f9fa;
+                    }
+                    .stats-container {
+                        background: white;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                `;
+                head.appendChild(style);
+
+                // Create stats container
+                const container = doc.createElement('div');
+                container.className = 'stats-container';
+                container.textContent = statsMessage; // Safe - textContent auto-escapes
+                body.appendChild(container);
+
+                // Assemble document
+                html.appendChild(head);
+                html.appendChild(body);
+                doc.appendChild(html);
             } else {
                 // Fallback to alert if popup is blocked
                 alert(statsMessage);

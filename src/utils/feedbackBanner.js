@@ -102,20 +102,49 @@ class FeedbackBanner {
 
         this.container = containerElement;
 
-        // Create banner HTML
+        // Build banner with createElement (safe, no XSS risk)
         this.bannerElement = document.createElement('div');
         this.bannerElement.className = 'feedback-banner';
-        this.bannerElement.innerHTML = `
-            <button class="feedback-close" aria-label="Dismiss">×</button>
-            <div class="feedback-content">
-                <h4>📬 You've been using this for 2 weeks!</h4>
-                <p>Quick feedback? (30 seconds)</p>
-                <div class="feedback-actions">
-                    <button class="btn-primary feedback-share-btn">Share Feedback</button>
-                    <button class="btn-secondary feedback-dismiss-btn">Maybe Later</button>
-                </div>
-            </div>
-        `;
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'feedback-close';
+        closeBtn.setAttribute('aria-label', 'Dismiss');
+        closeBtn.textContent = '×';
+        this.bannerElement.appendChild(closeBtn);
+
+        // Content container
+        const content = document.createElement('div');
+        content.className = 'feedback-content';
+
+        // Heading
+        const heading = document.createElement('h4');
+        heading.textContent = '📬 You\'ve been using this for 2 weeks!';
+        content.appendChild(heading);
+
+        // Paragraph
+        const paragraph = document.createElement('p');
+        paragraph.textContent = 'Quick feedback? (30 seconds)';
+        content.appendChild(paragraph);
+
+        // Actions container
+        const actions = document.createElement('div');
+        actions.className = 'feedback-actions';
+
+        // Share Feedback button
+        const shareBtn = document.createElement('button');
+        shareBtn.className = 'btn-primary feedback-share-btn';
+        shareBtn.textContent = 'Share Feedback';
+        actions.appendChild(shareBtn);
+
+        // Maybe Later button
+        const dismissBtn = document.createElement('button');
+        dismissBtn.className = 'btn-secondary feedback-dismiss-btn';
+        dismissBtn.textContent = 'Maybe Later';
+        actions.appendChild(dismissBtn);
+
+        content.appendChild(actions);
+        this.bannerElement.appendChild(content);
 
         // Insert banner after container
         this.container.parentNode.insertBefore(this.bannerElement, this.container.nextSibling);

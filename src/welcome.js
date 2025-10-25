@@ -75,6 +75,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up theme
     initializeTheme();
 
+    // Browser-specific pin instructions
+    if (window.browserDetector && window.browserDetector.isFirefox()) {
+        console.log('🦊 Firefox detected - showing auto-pinned message');
+
+        // Hide Chrome pin instructions
+        const pinInstructions = document.getElementById('pin-instructions');
+        if (pinInstructions) {
+            pinInstructions.style.display = 'none';
+        }
+
+        // Show Firefox auto-pinned message
+        const firefoxMessage = document.getElementById('firefox-auto-pinned');
+        if (firefoxMessage) {
+            firefoxMessage.style.display = 'block';
+        }
+    } else {
+        console.log('🌐 Chrome/Chromium detected - showing pin instructions');
+        // Chrome instructions are shown by default
+    }
+
     // Theme toggle button
     const themeToggle = document.getElementById('themeToggle');
     themeToggle.addEventListener('click', toggleTheme);
