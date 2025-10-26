@@ -59,7 +59,7 @@ export default async function handler(
               <li>✅ Auto-sync to Google Calendar</li>
               <li>⏰ Never miss a Gradescope deadline</li>
               <li>🔒 Zero-server, privacy-first architecture</li>
-              <li>🎓 Used by 20+ Berkeley students</li>
+              <li>🎓 Used by 40+ Berkeley students</li>
             </ul>
           </div>
 
