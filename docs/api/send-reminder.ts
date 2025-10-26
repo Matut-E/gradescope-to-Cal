@@ -26,42 +26,55 @@ export default async function handler(
   }
 
   try {
-    // Send email via Resend
+    // Send email via Resend (NOTE: Email is handled ephemerally - never stored in database)
     const data = await resend.emails.send({
-      from: 'Gradescope to Cal <noreply@gs2cal.me>',
+      from: 'Gradescope to Cal <hello@gs2cal.me>',
       to: email,
       subject: 'Install Gradescope to Cal on Your Laptop',
       html: `
-        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #003262; font-weight: 600;">Install Gradescope to Cal</h2>
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
 
-          <p>Hi! You visited our site on mobile and wanted a reminder to install on your laptop.</p>
+          <!-- Branding header -->
+          <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #FDB515;">
+            <h1 style="color: #003262; font-size: 24px; margin: 0;">📅 Gradescope to Cal</h1>
+          </div>
 
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; font-weight: 600;">To install on your laptop:</p>
-            <ol style="margin: 0; padding-left: 20px;">
-              <li style="margin-bottom: 8px;">Open <strong>Chrome, Brave, or Edge</strong> on your <strong>laptop or desktop</strong></li>
-              <li style="margin-bottom: 8px;">Visit <a href="https://www.gs2cal.me" target="_blank" rel="noopener" style="color: #003262; font-weight: 600; text-decoration: underline;">https://www.gs2cal.me</a></li>
-              <li>Click "Add to Chrome" (takes 30 seconds)</li>
+          <!-- Main heading and intro -->
+          <h2 style="color: #003262; font-weight: 600; margin-top: 30px;">Install on Your Laptop</h2>
+          <p style="font-size: 16px; color: #333;">You visited our site on mobile. Here's your reminder:</p>
+
+          <!-- Step-by-step instructions -->
+          <div style="background: #f8f9fa; padding: 24px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #FDB515;">
+            <ol style="margin: 0; padding-left: 20px; line-height: 2;">
+              <li>Open <strong>Chrome, Brave, or Edge</strong> on your <strong>laptop or desktop</strong></li>
+              <li>Visit <a href="https://www.gs2cal.me" target="_blank" rel="noopener" style="color: #003262; text-decoration: none; font-weight: 600;">gs2cal.me</a></li>
+              <li>Click <strong>"Add to Chrome"</strong> (takes 30 seconds)</li>
             </ol>
           </div>
 
-          <div style="background: linear-gradient(135deg, #003262 0%, #005792 100%); padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p style="color: white; font-weight: 600; margin: 0 0 12px 0;">What you get:</p>
-            <ul style="color: white; margin: 0; padding-left: 20px; line-height: 1.8;">
-              <li>✓ Automatic sync to Google Calendar</li>
-              <li>✓ Never miss a Gradescope deadline</li>
-              <li>✓ Zero-server, open source, privacy-first</li>
-              <li>✓ Used by 20+ Berkeley students</li>
+          <!-- Benefits box -->
+          <div style="background: linear-gradient(135deg, #003262 0%, #005792 100%); padding: 24px; border-radius: 12px; margin: 24px 0;">
+            <p style="color: #FDB515; font-weight: 700; margin: 0 0 16px 0; font-size: 18px;">What You Get:</p>
+            <ul style="color: white; margin: 0; padding-left: 20px; line-height: 2; font-size: 15px;">
+              <li>✅ Auto-sync to Google Calendar</li>
+              <li>⏰ Never miss a Gradescope deadline</li>
+              <li>🔒 Zero-server, privacy-first architecture</li>
+              <li>🎓 Used by 20+ Berkeley students</li>
             </ul>
           </div>
 
-          <p style="color: #666; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-            <strong>Privacy promise:</strong> We sent you this one email and immediately deleted your address. No storage, no tracking, no spam. Ever.
-          </p>
+          <!-- Privacy statement -->
+          <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #0ea5e9; margin-top: 30px;">
+            <p style="margin: 0; color: #0c4a6e; font-size: 14px;">
+              <strong>🔒 Privacy Promise:</strong> This email was sent directly via API with <strong>zero database storage</strong>.
+              Your address is not saved anywhere. <a href="https://github.com/Matut-E/gradescope-to-Cal" target="_blank" rel="noopener" style="color: #0369a1; text-decoration: underline;">Verify our code →</a>
+            </p>
+          </div>
 
-          <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
-            Questions? Visit <a href="https://www.gs2cal.me" target="_blank" rel="noopener" style="color: #003262; text-decoration: underline;">https://www.gs2cal.me</a>
+          <!-- Footer -->
+          <p style="color: #999; font-size: 13px; text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            Questions? Visit <a href="https://www.gs2cal.me" target="_blank" rel="noopener" style="color: #003262; text-decoration: underline;">gs2cal.me</a> or check our
+            <a href="https://github.com/Matut-E/gradescope-to-Cal" target="_blank" rel="noopener" style="color: #003262; text-decoration: underline;">open source code</a>
           </p>
         </div>
       `
