@@ -63,12 +63,16 @@ export default async function handler(
             </ul>
           </div>
 
-          <!-- Privacy statement -->
+          <!-- Privacy & Legal Compliance Section -->
           <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #0ea5e9; margin-top: 30px;">
-            <p style="margin: 0; color: #0c4a6e; font-size: 14px;">
-              <strong>🔒 Privacy Promise:</strong> This email was sent directly via API with <strong>zero database storage</strong>.
-              Your address is not saved anywhere. <a href="https://github.com/Matut-E/gradescope-to-Cal" target="_blank" rel="noopener" style="color: #0369a1; text-decoration: underline;">Verify our code →</a>
+            <p style="margin: 0 0 12px 0; color: #0c4a6e; font-size: 14px;">
+              <strong>🔒 Privacy & Data Handling:</strong>
             </p>
+            <ul style="margin: 0; padding-left: 20px; color: #0c4a6e; font-size: 13px; line-height: 1.8;">
+              <li><strong>Your email address:</strong> We don't store it in any database. Sent directly through our email service provider (Resend) and deleted from their logs within 24 hours per their <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener" style="color: #0369a1; text-decoration: underline;">free plan policy</a>.</li>
+              <li><strong>Purpose:</strong> One-time reminder to install our extension on your laptop. No marketing, tracking, or further emails.</li>
+              <li><strong>Your rights:</strong> Your email is processed lawfully under legitimate interest (providing requested service). Contact hello@gs2cal.me for questions.</li>
+            </ul>
           </div>
 
           <!-- Footer -->
