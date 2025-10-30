@@ -30,22 +30,38 @@ class TokenManager {
                 'google_auth_method'
             ]);
 
+            // Log what we found in storage for diagnostics
+            const hasAccessToken = !!stored.google_access_token;
+            const hasRefreshToken = !!stored.google_refresh_token;
+            const hasExpiry = !!stored.google_token_expiry;
+            const authMethod = stored.google_auth_method || 'none';
+
+            console.log('🔍 TokenManager.initializeFromStorage() - Storage contents:');
+            console.log(`   - Access token: ${hasAccessToken ? '✓ found' : '✗ missing'}`);
+            console.log(`   - Refresh token: ${hasRefreshToken ? '✓ found' : '✗ missing'}`);
+            console.log(`   - Token expiry: ${hasExpiry ? '✓ found' : '✗ missing'}`);
+            console.log(`   - Auth method: ${authMethod}`);
+
             if (stored.google_access_token && stored.google_token_expiry) {
                 this.accessToken = stored.google_access_token;
                 this.refreshToken = stored.google_refresh_token;
                 this.tokenExpiry = stored.google_token_expiry;
                 this.authMethod = stored.google_auth_method;
 
-                console.log('🔄 Restored auth state from storage');
+                console.log('✅ Restored auth state from storage');
 
                 // Clear expired access tokens but keep refresh tokens
                 if (Date.now() >= this.tokenExpiry - 60000) {
-                    console.log('⚠️ Access token expired');
+                    console.log('⚠️ Access token expired (clearing from memory, refresh token retained)');
                     this.accessToken = null;
                 }
+            } else if (!hasAccessToken && !hasRefreshToken) {
+                console.log('ℹ️ No auth tokens found in storage (user not authenticated)');
+            } else {
+                console.warn('⚠️ Incomplete auth data in storage - may indicate corrupted state');
             }
         } catch (error) {
-            console.error('Error loading stored auth:', error);
+            console.error('❌ Error loading stored auth:', error);
         }
     }
 

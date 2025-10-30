@@ -136,6 +136,21 @@ class OptionsSettings {
     }
 
     /**
+     * Format sync type for display
+     * @param {string} syncType - Raw sync type ('manual', 'auto', 'smart', 'first_time')
+     * @returns {string} Formatted sync type with emoji
+     */
+    static formatSyncType(syncType) {
+        const syncTypeMap = {
+            'manual': '👆 Manual',
+            'auto': '⏰ Auto (24-hour)',
+            'smart': '🧠 Smart',
+            'first_time': '🎉 First-time'
+        };
+        return syncTypeMap[syncType] || '❓ Unknown';
+    }
+
+    /**
      * Auto-Sync Status Display - Updated for 24-hour sync
      */
     static async updateAutoSyncStatus() {
@@ -177,7 +192,13 @@ class OptionsSettings {
                             const lastSync = new Date(status.lastSync);
                             authStatus.appendChild(document.createElement('br'));
                             const lastSyncSmall = document.createElement('small');
-                            lastSyncSmall.textContent = `Last sync: ${lastSync.toLocaleString()}`;
+
+                            // Get sync type from storage
+                            const storage = await browser.storage.local.get(['lastSyncType']);
+                            const syncType = storage.lastSyncType;
+                            const syncTypeLabel = syncType ? ` (${OptionsSettings.formatSyncType(syncType)})` : '';
+
+                            lastSyncSmall.textContent = `Last sync: ${lastSync.toLocaleString()}${syncTypeLabel}`;
                             authStatus.appendChild(lastSyncSmall);
 
                             if (status.lastResults) {

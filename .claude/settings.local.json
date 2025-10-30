@@ -7,7 +7,8 @@
       "Bash(npm install)",
       "Bash(npm install:*)",
       "Bash(python:*)",
-      "Read(//c/Users/Matut/gtcExtension/**)"
+      "Read(//c/Users/Matut/gtcExtension/**)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []

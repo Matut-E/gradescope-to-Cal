@@ -124,15 +124,6 @@ console.log('   ✓ AutoSyncManager created');
 const smartSyncManager = new SmartSyncManager(CONFIG, calendarClient, calendarClient.eventCache);
 console.log('   ✓ SmartSyncManager created');
 console.log('');
-
-// CRITICAL: Initialize TokenManager from storage to prevent race conditions
-// This ensures auth tokens are loaded from storage BEFORE any popup opens
-// Fixes visual bug where popup shows "disconnected" after service worker wakes
-console.log('🔄 Initializing TokenManager from storage...');
-const storageInitPromise = tokenManager.initializeFromStorage().then(() => {
-    console.log('✅ TokenManager initialized from storage');
-});
-
 console.log('✅ All modules initialized and ready');
 
 // ============================================================================
@@ -214,14 +205,6 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return { success: true, message: 'Authentication successful' };
 
             case 'getAuthStatus':
-                // CRITICAL: Ensure storage is initialized before checking auth status
-                // Wait for initial storage load if still in progress
-                await storageInitPromise;
-
-                // Then reload from storage to get the most current state
-                // This prevents race conditions where popup checks auth before storage is loaded
-                await tokenManager.initializeFromStorage();
-
                 const authStatus = await authManager.getAuthStatus();
                 return {
                     success: true,
@@ -329,8 +312,7 @@ async function handleCalendarSync(assignments) {
 
         await browser.storage.local.set({
             last_auto_sync: new Date().toISOString(),
-            last_sync_results: results,
-            lastSyncType: 'manual'
+            last_sync_results: results
         });
 
         return { success: true, results };

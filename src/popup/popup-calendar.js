@@ -548,11 +548,17 @@ class CalendarManager {
                     if (status.lastSync) {
                         const lastSync = new Date(status.lastSync);
                         const results = status.lastResults;
+
+                        // Get sync type from storage
+                        const storage = await browser.storage.local.get(['lastSyncType']);
+                        const syncType = storage.lastSyncType;
+                        const syncTypeLabel = syncType ? ` - ${this.formatSyncType(syncType)}` : '';
+
                         let resultText = lastSync.toLocaleString();
                         if (results) {
                             resultText += ` (${results.created} created, ${results.skipped} skipped)`;
                         }
-                        lastSyncDiv.textContent = `Last sync: ${resultText}`;
+                        lastSyncDiv.textContent = `Last sync: ${resultText}${syncTypeLabel}`;
                     } else {
                         lastSyncDiv.textContent = 'Last sync: never';
                     }
@@ -799,6 +805,21 @@ class CalendarManager {
         } else {
             return `${minutes} min`;
         }
+    }
+
+    /**
+     * Format sync type for display
+     * @param {string} syncType - Raw sync type ('manual', 'auto', 'smart', 'first_time')
+     * @returns {string} Formatted sync type with emoji
+     */
+    formatSyncType(syncType) {
+        const syncTypeMap = {
+            'manual': '👆 Manual',
+            'auto': '⏰ Auto',
+            'smart': '🧠 Smart',
+            'first_time': '🎉 First-time'
+        };
+        return syncTypeMap[syncType] || '❓ Unknown';
     }
 }
 
