@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Gradescope to Cal",
-  "version": "1.8.7",
+  "version": "1.9.0",
   "description": "Automatically sync Gradescope assignments to Google Calendar (Firefox compatible)",
 
   "browser_specific_settings": {
@@ -26,6 +26,7 @@
     "scripts": [
       "lib/browser-polyfill.js",
       "utils/browserDetector.js",
+      "utils/icalGenerator.js",
       "auth/eventCache.js",
       "auth/tokenManager.js",
       "auth/authenticationManager.js",

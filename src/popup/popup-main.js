@@ -9,13 +9,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize all modules
     const themeManager = new ThemeManager();
     const calendarManager = new CalendarManager();
+    const icalExportManager = new IcalExportManager();
 
     // Expose instances globally for cross-module access
     window.calendarManagerInstance = calendarManager;
+    window.icalExportManagerInstance = icalExportManager;
 
     // Initialize each module
     await themeManager.initialize();
     calendarManager.initialize();
+    icalExportManager.initialize();
 
     // Initial data load
     await calendarManager.countStoredAssignments();
@@ -33,5 +36,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error checking feedback banner:', error);
     }
 
-    console.log('✅ Popup with Calendar Sync initialized');
+    console.log('✅ Popup with Calendar Sync and iCal Export initialized');
 });

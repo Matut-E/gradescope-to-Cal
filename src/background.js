@@ -54,6 +54,7 @@ if (typeof importScripts === 'function') {
     importScripts(
         'lib/browser-polyfill.js',
         'utils/browserDetector.js',
+        'utils/icalGenerator.js',
         'auth/eventCache.js',
         'auth/tokenManager.js',
         'auth/authenticationManager.js',
@@ -300,6 +301,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     return { success: false, error: 'Could not open popup - user gesture required' };
                 }
 
+            case 'generateIcal':
+                return await handleIcalGeneration(request.assignments);
+
             default:
                 return { success: false, error: 'Unknown action' };
         }
@@ -537,6 +541,50 @@ async function handleFirstTimeSync() {
         return {
             synced: false,
             reason: `Error: ${error.message}`,
+            error: error.message
+        };
+    }
+}
+
+// iCal generation helper - generates content and returns it to popup for download
+async function handleIcalGeneration(assignments) {
+    try {
+        console.log(`📥 Generating iCal content for ${assignments.length} assignments...`);
+
+        // Get user settings for event customization
+        const localSettings = await browser.storage.local.get([
+            'eventDisplayTime',
+            'reminderSchedule',
+            'customReminders',
+            'settings_create_reminders'
+        ]);
+
+        const settings = {
+            eventDisplayTime: localSettings.eventDisplayTime || 'deadline',
+            reminderSchedule: localSettings.reminderSchedule || 'double',
+            customReminders: localSettings.customReminders || [1440, 60],
+            settings_create_reminders: localSettings.settings_create_reminders !== false
+        };
+
+        console.log('🎨 Using settings:', settings);
+
+        // Generate iCalendar content
+        const icalContent = IcalGenerator.generate(assignments, settings);
+
+        console.log(`✅ iCal content generated successfully (${icalContent.length} characters)`);
+
+        // Return content to popup for download (can't use URL.createObjectURL in service worker)
+        return {
+            success: true,
+            message: 'iCal content generated successfully',
+            icalContent: icalContent,
+            assignmentCount: assignments.length
+        };
+
+    } catch (error) {
+        console.error('❌ iCal generation failed:', error);
+        return {
+            success: false,
             error: error.message
         };
     }

@@ -892,3 +892,92 @@ body {
         font-size: 13px;
     }
 }
+
+/* ============================================================================
+   iCal Export Section Styles
+   ============================================================================ */
+
+.ical-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.ical-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+[data-theme="dark"] .ical-warning {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.ical-warning .warning-icon {
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.ical-warning .warning-text {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #856404;
+}
+
+[data-theme="dark"] .ical-warning .warning-text {
+    color: var(--text-secondary);
+}
+
+.ical-warning strong {
+    font-weight: 600;
+    color: #856404;
+}
+
+[data-theme="dark"] .ical-warning strong {
+    color: var(--warning);
+}
+
+.ical-status {
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 12px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.ical-status.success {
+    background-color: var(--success-bg, #d4edda);
+    color: var(--success);
+    border: 1px solid var(--success-border, #c3e6cb);
+}
+
+.ical-status.info {
+    background-color: var(--info-bg, #d1ecf1);
+    color: var(--info);
+    border: 1px solid var(--info-border, #bee5eb);
+}
+
+.ical-status.warning {
+    background-color: var(--warning-bg, #fff3cd);
+    color: var(--warning);
+    border: 1px solid var(--warning-border, #ffeaa7);
+}
+
+.ical-status.error {
+    background-color: var(--danger-bg, #f8d7da);
+    color: var(--danger);
+    border: 1px solid var(--danger-border, #f5c6cb);
+}
+
+[data-theme="dark"] .ical-status {
+    backdrop-filter: blur(10px);
+}

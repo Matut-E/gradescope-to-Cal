@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Key characteristics**:
 - **Open source**: MIT licensed, publicly available
 - **Automatic sync**: First-time sync + manual sync + 24-hour auto-sync + smart sync on extraction
-- **Production version**: v1.8.5 on Chrome Web Store
+- **Production version**: v1.9.0 on Chrome Web Store
 - **Privacy-first**: Zero-server architecture, all processing in browser
 
 ## Core Features
@@ -30,6 +30,17 @@ This extension provides:
    - **Display Timing**: Show at actual deadline time or as all-day events
 6. **Smart Deduplication**: Uses extended properties to prevent duplicate events
 7. **Upcoming Assignments Only**: Filters out past assignments to keep your calendar clean
+8. **iCal Export**: One-time export for non-Google calendar applications
+   - Generates RFC 5545 compliant .ics files (passes iCal validators)
+   - **RFC 5545 compliance**: Uses UTC format for timed events (no VTIMEZONE components needed)
+   - **Title format**: Matches Google Calendar API format (`Course: Assignment`)
+   - **Enhanced link accessibility**: Assignment URL in LOCATION field for direct Outlook clicking
+   - **Multiple URL placements**: URL property (RFC 5545), LOCATION field (Outlook), and description text (all apps)
+   - Respects all user preferences (reminders, display timing, event colors)
+   - Includes full assignment details with proper newline formatting
+   - Date-stamped filenames for organization (e.g., `gradescope-assignments-2025-11-01.ics`)
+   - Compatible with Outlook, Apple Calendar, Google Calendar, and all standard calendar apps
+   - Stateless operation—no deduplication tracking (users warned about re-import duplicates)
 
 ## Architecture
 
@@ -472,6 +483,7 @@ The extension uses a **CSS variable-based theming system**:
 - `src/utils/pageDetector.js`: Gradescope page type detection
 - `src/utils/testFunctions.js`: Debug and testing utilities
 - `src/utils/pinBannerInjector.js`: Pin to toolbar reminder banner injection
+- `src/utils/icalGenerator.js`: RFC 5545 iCalendar format generation
 - `src/auth/`: Authentication modules (Chrome native + PKCE OAuth + smart sync)
   - `authenticationManager.js`: OAuth authentication
   - `tokenManager.js`: Token lifecycle management
@@ -482,6 +494,7 @@ The extension uses a **CSS variable-based theming system**:
 - `src/popup/`: Popup UI modules (calendar, settings, theme)
   - `popup-main.js`: Popup initialization and module coordination
   - `popup-calendar.js`: Calendar sync UI and controls
+  - `popup-ical.js`: iCal export UI module
   - `popup-storage.js`: Storage utilities for popup
   - `popup-tabs.js`: Tab navigation for popup interface
   - `popup-theme.js`: Dark mode toggle for popup
@@ -535,9 +548,29 @@ When making changes, test:
     - Timed events show correct deadline time
     - All-day events appear at top of calendar
     - All-day event reminders converted to day-of notifications
+14. **iCal Export**:
+    - Export generates valid .ics file
+    - **RFC 5545 validation**: File passes iCal validators with zero errors
+    - **UTC format**: Timed events use UTC (Z suffix), no VTIMEZONE components
+    - Imports successfully into Outlook, Apple Calendar, Google Calendar
+    - **Title format consistency**: Events use `Course: Assignment` format (matches Google Calendar API)
+    - **Description formatting**: Newlines render properly (not as literal `\n` characters)
+    - **Outlook link accessibility**: LOCATION field shows URL, directly clickable without opening event
+    - **Multiple URL placements**: Verify URL in LOCATION, URL property, and description
+    - Reminders match user's selected schedule
+    - Display timing (timed vs all-day) matches user preferences
+    - Warning message is clear and visible
+    - Export button shows correct assignment count
+    - Dark mode styling works correctly
 
 ## Version History
 
+- **v1.9.0**: iCal export feature for Outlook, Apple Calendar, and other calendar apps
+  - RFC 5545 compliant .ics file generation with UTC format
+  - Enhanced Outlook link accessibility (URL in LOCATION field)
+  - Title format consistency with Google Calendar API events
+  - Proper description newline formatting
+  - Respects all user preferences (reminders, display timing, colors)
 - **v1.8.0**: Modular architecture refactor, improved pin detection, smart sync on extraction
 - **v1.7.0**: Added dark mode support and theme system
 - **v1.6.0**: Enhanced auto-sync with 24-hour intervals
