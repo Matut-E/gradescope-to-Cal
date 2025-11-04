@@ -781,7 +781,7 @@
                             <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
                                 <span style="font-size: var(--text-h3); font-weight: var(--weight-bold); color: var(--california-gold);">v1.9.0</span>
                                 <span style="color: var(--gray-500);">•</span>
-                                <span style="color: var(--gray-400); font-size: var(--text-sm);">January 2025</span>
+                                <span style="color: var(--gray-400); font-size: var(--text-sm);">November 2025</span>
                             </div>
                             <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--gray-100);">iCal Export</h3>
                             <ul style="list-style: none; padding: 0; margin: 0; color: var(--gray-400); line-height: var(--leading-relaxed);">
@@ -807,7 +807,7 @@
                             <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
                                 <span style="font-size: var(--text-h3); font-weight: var(--weight-bold); color: var(--blue-400);">v1.8.0</span>
                                 <span style="color: var(--gray-500);">•</span>
-                                <span style="color: var(--gray-400); font-size: var(--text-sm);">December 2024</span>
+                                <span style="color: var(--gray-400); font-size: var(--text-sm);">October 2025</span>
                             </div>
                             <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--gray-100);">Smart Sync</h3>
                             <ul style="list-style: none; padding: 0; margin: 0; color: var(--gray-400); line-height: var(--leading-relaxed);">
@@ -833,7 +833,7 @@
                             <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
                                 <span style="font-size: var(--text-h3); font-weight: var(--weight-bold); color: var(--blue-400);">v1.7.0</span>
                                 <span style="color: var(--gray-500);">•</span>
-                                <span style="color: var(--gray-400); font-size: var(--text-sm);">November 2024</span>
+                                <span style="color: var(--gray-400); font-size: var(--text-sm);">October 2025</span>
                             </div>
                             <h3 style="font-size: var(--text-h3); margin-bottom: var(--space-3); color: var(--gray-100);">Dark Mode & Customization</h3>
                             <ul style="list-style: none; padding: 0; margin: 0; color: var(--gray-400); line-height: var(--leading-relaxed);">
@@ -1107,6 +1107,102 @@
                         <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
                             <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
                                 Yes! The extension includes an iCal export feature that generates RFC 5545 compliant .ics files. Simply click the "Export to iCal" button in the popup, and you can import the file into Outlook, Apple Calendar, or any other calendar application. The export respects all your customization settings (colors, reminders, display timing).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">When does the extension sync assignments?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                The extension syncs in four ways: (1) <strong>First-time sync</strong> when you connect your calendar, (2) <strong>Manual sync</strong> via the "Sync to Calendar" button, (3) <strong>24-hour auto-sync</strong> that runs in the background, and (4) <strong>Smart sync</strong> that instantly syncs new assignments when detected (with a 60-minute cooldown to prevent excessive API calls). You're always covered!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Do I need to keep Gradescope or my browser open?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Nope! Once you've extracted assignments and connected your calendar, the extension works in the background. The 24-hour auto-sync runs automatically even with your browser closed. Just visit Gradescope occasionally to let the extension detect new assignments.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">What happens to past assignments?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                The extension only syncs upcoming assignments (those due today or in the future). Past assignments are automatically filtered out to keep your calendar clean and focused on what matters now.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="setup" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Will this work on my phone/tablet?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Browser extensions only work on laptops/desktops. However, once assignments are synced to Google Calendar, they'll automatically appear on all your devices (phone, tablet, laptop) through Google Calendar's built-in sync. For non-Google calendars, use the iCal export feature to import assignments into your preferred calendar app.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="setup" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Does this work for all schools or just UC Berkeley?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                The extension works with <strong>any school</strong> that uses Gradescope! While it was created by a UC Berkeley student, it supports all universities, colleges, and institutions that use Gradescope for assignments. Just install and it'll work with your school's Gradescope automatically.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Does the extension have dark mode?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Yes! The extension includes full dark mode support. Toggle between light and dark themes using the 🌙 button in the top-right corner of the popup and options pages.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="privacy" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">What permissions does the extension need and why?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                The extension requires minimal permissions: <strong>Storage</strong> (to save your settings locally), <strong>Identity</strong> (to connect with Google Calendar OAuth), <strong>Alarms</strong> (for 24-hour auto-sync), and <strong>Scripting</strong> (to extract assignments from Gradescope pages). We only request calendar access to Google Calendar—nothing else. No tracking, no analytics, no unnecessary permissions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item" data-category="features" style="background: var(--glass-dark); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid rgba(0, 102, 204, 0.1); transition: all 0.3s;">
+                        <div class="faq-question" style="padding: var(--space-5); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: var(--text-h5); color: var(--gray-100); margin: 0;">Will this create duplicate events if I sync multiple times?</h3>
+                            <span class="faq-icon" style="color: var(--blue-500); font-size: 1.5rem; transition: transform 0.3s;">+</span>
+                        </div>
+                        <div class="faq-answer" style="padding: 0 var(--space-5); overflow: hidden; height: 0; opacity: 0;">
+                            <p style="color: var(--gray-400); padding-bottom: var(--space-5);">
+                                Nope! The extension uses smart deduplication with extended properties to track which assignments are already synced. You can sync as many times as you want without creating duplicates. However, <strong>iCal exports</strong> don't have deduplication tracking—re-importing the same .ics file will create duplicates in your calendar app.
                             </p>
                         </div>
                     </div>
