@@ -151,9 +151,9 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     }
 });
 
-// Message handler
-console.log('📝 Registering message handler...');
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+// Message handler helper function
+// Firefox compatibility: Separate async function to return Promise properly
+async function handleExtensionMessage(request, sender) {
     // Log every message received
     console.log('');
     console.log('📨 MESSAGE RECEIVED from', sender.tab ? `tab ${sender.tab.id}` : 'extension');
@@ -164,7 +164,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     console.log('');
 
-    const handleMessage = async () => {
+    try {
+        let result;
+
         switch (request.action) {
             case 'authenticate':
                 await authManager.authenticate();
@@ -255,7 +257,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return { success: true, status };
 
             case 'performBackgroundSync':
-                const result = await calendarClient.performBackgroundSync();
+                result = await calendarClient.performBackgroundSync();
                 return result;
 
             case 'checkForNewAssignments':
@@ -307,20 +309,30 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             default:
                 return { success: false, error: 'Unknown action' };
         }
-    };
+    } catch (error) {
+        console.error(`❌ Message handler error:`, error);
+        return { success: false, error: error.message };
+    }
+}
 
-    handleMessage()
-        .then(result => {
-            if (typeof result === 'object' && result !== null && !result.hasOwnProperty('success')) {
-                result = { success: true, data: result };
-            }
-            sendResponse(result);
+// Register message listener
+// Firefox Manifest V2 compatibility: Use sendResponse callback + return true
+console.log('📝 Registering message handler...');
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Handle message asynchronously and send response via callback
+    handleExtensionMessage(request, sender)
+        .then(response => {
+            console.log(`📤 Sending response for action '${request.action}':`, response);
+            sendResponse(response);
+            console.log(`✅ Response sent for action '${request.action}'`);
         })
         .catch(error => {
-            console.error(`❌ Message handler error:`, error);
+            console.error('❌ Unexpected error in message handler:', error);
             sendResponse({ success: false, error: error.message });
         });
 
+    // Return true to indicate we will send a response asynchronously
+    // This keeps the message port open in Firefox Manifest V2
     return true;
 });
 console.log('✅ Message handler registered and ready to receive messages');

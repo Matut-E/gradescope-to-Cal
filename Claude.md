@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Key characteristics**:
 - **Open source**: MIT licensed, publicly available
 - **Automatic sync**: First-time sync + manual sync + 24-hour auto-sync + smart sync on extraction
-- **Production version**: v1.9.0 on Chrome Web Store
+- **Production version**: v1.9.1 on Chrome Web Store
 - **Privacy-first**: Zero-server architecture, all processing in browser
 
 ## Core Features
@@ -297,6 +297,163 @@ testGradeExtraction() // Test basic extraction
 testEnhancedStorage() // Inspect stored data
 ```
 
+## Firefox & Chromium Compatibility
+
+**⚠️ CRITICAL**: This extension supports both Firefox and Chromium-based browsers (Chrome, Brave, Edge). ALL code changes MUST be tested on both platforms to prevent platform-specific bugs.
+
+### Critical Rule: Always Use `browser.*` Namespace
+
+**⚠️ MOST IMPORTANT**: Even with `browser-polyfill.js` loaded, you MUST explicitly use the `browser.*` namespace in ALL extension code, not `chrome.*`.
+
+**✅ CORRECT**:
+```js
+// In popups, content scripts, and background scripts
+const response = await browser.runtime.sendMessage({ action: 'doSomething' });
+const data = await browser.storage.local.get('key');
+```
+
+**❌ INCORRECT**:
+```js
+// This will fail in Firefox even with polyfill loaded
+const response = await chrome.runtime.sendMessage({ action: 'doSomething' });
+// Returns undefined in Firefox - the polyfill doesn't automatically wrap chrome.* calls
+```
+
+**Why**: The browser-polyfill only provides the `browser` global. It does NOT automatically wrap `chrome.*` API calls. If you use `chrome.runtime.sendMessage` in Firefox, it will use Firefox's native implementation which behaves differently than the polyfill's Promise-based version.
+
+**Real-world example that caused the bug**:
+```js
+// popup-ical.js (BEFORE - broken in Firefox)
+const response = await chrome.runtime.sendMessage({ action: 'generateIcal' });
+if (response.success) { ... }  // TypeError: response is undefined
+
+// popup-ical.js (AFTER - works in Firefox)
+const response = await browser.runtime.sendMessage({ action: 'generateIcal' });
+if (response && response.success) { ... }  // ✅ Works!
+```
+
+### Cross-Browser Message Passing
+
+**Complete Pattern** (both sender and receiver must be correct):
+
+**Sender (Popup/Content Script)**:
+```js
+// Use browser.runtime, NOT chrome.runtime
+const response = await browser.runtime.sendMessage({
+    action: 'generateIcal',
+    assignments: upcomingAssignments
+});
+
+// Add null safety check
+if (response && response.success && response.icalContent) {
+    // Handle success
+} else {
+    const errorMsg = response ? response.error : 'No response from background';
+    console.error('Request failed:', errorMsg);
+}
+```
+
+**Receiver (Background Script)**: Use the hybrid callback pattern for `browser.runtime.onMessage` listeners in Firefox Manifest V2:
+
+**✅ CORRECT (Hybrid callback pattern - works in both Firefox & Chrome)**:
+```js
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Handle message asynchronously via Promise, send response via callback
+    handleMessage(request)
+        .then(response => {
+            sendResponse(response);
+        })
+        .catch(error => {
+            sendResponse({ success: false, error: error.message });
+        });
+
+    // CRITICAL: Return true to keep message port open
+    // Firefox Manifest V2 requires this to prevent port closure
+    return true;
+});
+```
+
+**❌ INCORRECT (Promise return pattern)**:
+```js
+// This pattern works in Chrome but FAILS in Firefox Manifest V2 temporary extensions
+browser.runtime.onMessage.addListener((request, sender) => {
+    return (async () => {
+        const result = await handleMessage(request);
+        return { success: true, data: result };
+    })();
+    // Firefox closes the message port before Promise resolves
+});
+```
+
+**❌ INCORRECT (Missing return true)**:
+```js
+// Firefox will close the message port immediately, returning undefined
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    handleMessage(request).then(sendResponse);
+    // Missing: return true;
+});
+```
+
+### Why This Matters
+
+1. **Firefox Manifest V2 requires explicit async handling**: Returning `true` explicitly tells Firefox to keep the message port open for async responses
+2. **Message port closure issue**: Without `return true`, Firefox closes the message port before the Promise resolves, causing `response` to be `undefined` in the sender
+3. **Temporary extension quirk**: This issue is especially prevalent in Firefox temporary extensions loaded via about:debugging
+4. **Hybrid pattern is most reliable**: Using both `sendResponse` callback AND `return true` works across all browsers and manifest versions
+5. **browser-polyfill limitation**: On Firefox, the polyfill acts as a NO-OP since Firefox natively supports `browser.*` APIs, so the polyfill's Promise wrapper doesn't apply to background scripts
+
+### Platform-Specific Differences
+
+**Manifest versions**:
+- Chrome: Manifest V3 (service workers)
+- Firefox: Manifest V2 (background scripts with `persistent: false`)
+
+**Browser action API**:
+- Chrome: `chrome.action` (Manifest V3)
+- Firefox: `chrome.browserAction` (Manifest V2)
+
+**Polyfill usage**:
+- **CRITICAL**: Always use `browser.*` namespace, NEVER `chrome.*`
+- The polyfill does NOT automatically wrap `chrome.*` calls
+- Even with polyfill loaded, `chrome.runtime.sendMessage` will fail in Firefox
+- Use `browser.*` in ALL files: popups, content scripts, background scripts
+- This provides consistent Promise-based APIs across browsers
+
+### Testing Requirements
+
+**BEFORE pushing any changes**:
+1. Test on Chrome/Chromium (Windows/Mac/Linux)
+2. Test on Firefox (Windows/Mac/Linux)
+3. Verify message passing works correctly (check for `undefined` responses)
+4. Check browser console for platform-specific errors
+5. Test OAuth flows on both platforms (Chrome native vs PKCE)
+
+**Common Firefox-specific issues**:
+- **Message passing returns `undefined`** → Two-part fix required:
+  1. **In popup/sender**: Use `browser.runtime.sendMessage` (NOT `chrome.runtime.sendMessage`)
+  2. **In background script**: Use hybrid callback pattern with `return true`
+- **Polyfill not working**: Check if using `chrome.*` instead of `browser.*` - polyfill doesn't wrap `chrome.*`
+- **Temporary extension message port closes early** → Always return `true` from async message listeners
+- **`chrome.identity.launchWebAuthFlow`** → Ensure PKCE fallback works (Firefox doesn't support chrome.identity)
+- **Storage sync delays** → Use `await browser.storage.local.get()` with proper initialization checks
+- **Service worker differences** → Firefox Manifest V2 uses persistent background scripts, not service workers
+
+### Quick Test Checklist
+
+Run through these actions on **both Firefox and Chrome**:
+- [ ] Extract assignments from Gradescope
+- [ ] Authenticate with Google Calendar
+- [ ] Sync assignments to calendar
+- [ ] Export .ics file
+- [ ] Toggle auto-sync settings
+- [ ] Check popup UI updates correctly
+- [ ] Verify no console errors
+
+**If ANY feature returns `undefined` or fails silently in Firefox:**
+1. **First**: Check if code uses `chrome.*` instead of `browser.*` - this is the #1 cause
+2. **Second**: Verify background message listener uses `sendResponse` callback AND returns `true`
+3. **Third**: Check browser console for "message port closed" errors
+
 ## UI Design System: Light & Dark Mode
 
 **⚠️ CRITICAL**: All UI changes MUST support both light and dark modes. The extension includes a comprehensive dark mode theme that users can toggle.
@@ -565,6 +722,12 @@ When making changes, test:
 
 ## Version History
 
+- **v1.9.1**: Firefox compatibility fix for iCal export
+  - **CRITICAL FIX**: Changed popup to use `browser.runtime.sendMessage` instead of `chrome.runtime.sendMessage`
+  - Fixed background script to use hybrid callback pattern (sendResponse + return true)
+  - Added null safety checks for message responses in popup
+  - iCal export now works correctly on Firefox temporary extensions (about:debugging)
+  - Updated documentation with comprehensive Firefox compatibility guidelines
 - **v1.9.0**: iCal export feature for Outlook, Apple Calendar, and other calendar apps
   - RFC 5545 compliant .ics file generation with UTC format
   - Enhanced Outlook link accessibility (URL in LOCATION field)
