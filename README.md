@@ -2,7 +2,7 @@
 
 A privacy-first browser extension that automatically syncs UC Berkeley Gradescope assignments to Google Calendar.
 
-**Current Version: v1.9.0** — Available on Chrome Web Store & Firefox Add-ons
+**Current Version: v1.9.1** — Available on Chrome Web Store & Firefox Add-ons
 
 ## Features
 
