@@ -124,13 +124,15 @@
                         <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco"
                            class="btn btn-primary btn-magnetic"
                            data-browser="chrome"
-                           aria-label="Add Gradescope to Cal to Chrome">
+                           aria-label="Add Gradescope to Cal to Chrome"
+                           onclick="gtag('event', 'install_click', {'event_category': 'conversion', 'event_label': 'chrome_store_hero', 'value': 1});">
                             <span>Add to Chrome</span>
                         </a>
                         <a href="https://addons.mozilla.org/en-US/firefox/addon/gradescope-to-cal/"
                            class="btn btn-secondary btn-magnetic"
                            data-browser="firefox"
-                           aria-label="Add Gradescope to Cal to Firefox">
+                           aria-label="Add Gradescope to Cal to Firefox"
+                           onclick="gtag('event', 'install_click', {'event_category': 'conversion', 'event_label': 'firefox_store_hero', 'value': 1});">
                             <span>Add to Firefox</span>
                         </a>
                         <a href="https://github.com/Matut-E/gradescope-to-Cal"
@@ -1037,6 +1039,7 @@
                            class="btn btn-primary"
                            data-browser="chrome"
                            aria-label="Add Gradescope to Cal to Chrome"
+                           onclick="gtag('event', 'install_click', {'event_category': 'conversion', 'event_label': 'chrome_store_midpage', 'value': 1});"
                            style="display: inline-flex; align-items: center; gap: var(--space-2); padding: 1rem 2rem; border-radius: var(--radius-md); font-family: var(--font-body); font-size: 1.125rem; font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast) var(--ease-custom); position: relative; overflow: hidden; border: none; background: linear-gradient(135deg, var(--california-gold), #FFD700); color: var(--blue-900); box-shadow: var(--shadow-gold); text-decoration: none;">
                             <span style="position: relative; z-index: 1;">Add to Chrome — It's Free</span>
                         </a>
@@ -1044,6 +1047,7 @@
                            class="btn btn-secondary"
                            data-browser="firefox"
                            aria-label="Add Gradescope to Cal to Firefox"
+                           onclick="gtag('event', 'install_click', {'event_category': 'conversion', 'event_label': 'firefox_store_midpage', 'value': 1});"
                            style="display: inline-flex; align-items: center; gap: var(--space-2); padding: 1rem 2rem; border-radius: var(--radius-md); font-family: var(--font-body); font-size: 1.125rem; font-weight: var(--weight-semibold); cursor: pointer; transition: all var(--duration-fast) var(--ease-custom); position: relative; overflow: hidden; text-decoration: none;">
                             <span style="position: relative; z-index: 1;">Add to Firefox — It's Free</span>
                         </a>
@@ -1260,14 +1264,16 @@
                         <a href="https://chromewebstore.google.com/detail/gradescope-to-cal/bbepekfgnpdfclkpfoojmfclnbkkbbco"
                            class="cta-button"
                            data-browser="chrome"
-                           aria-label="Add Gradescope to Cal to Chrome - Free Extension">
+                           aria-label="Add Gradescope to Cal to Chrome - Free Extension"
+                           onclick="gtag('event', 'install_click', {'event_category': 'conversion', 'event_label': 'chrome_store_final', 'value': 1});">
                             <span>Add to Chrome — It's Free</span>
                             <div class="button-glow"></div>
                         </a>
                         <a href="https://addons.mozilla.org/en-US/firefox/addon/gradescope-to-cal/"
                            class="cta-button cta-button-secondary"
                            data-browser="firefox"
-                           aria-label="Add Gradescope to Cal to Firefox - Free Extension">
+                           aria-label="Add Gradescope to Cal to Firefox - Free Extension"
+                           onclick="gtag('event', 'install_click', {'event_category': 'conversion', 'event_label': 'firefox_store_final', 'value': 1});">
                             <span>Add to Firefox — It's Free</span>
                             <div class="button-glow"></div>
                         </a>
@@ -1385,6 +1391,12 @@
                         });
 
                         if (response.ok) {
+                            // Track email capture conversion
+                            gtag('event', 'email_capture', {
+                                'event_category': 'conversion',
+                                'event_label': 'mobile_reminder',
+                                'value': 1
+                            });
                             showToast('✅ Email sent! Check your inbox', 'success');
                             emailInput.value = '';
                         } else {
