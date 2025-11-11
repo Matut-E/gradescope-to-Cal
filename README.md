@@ -1,6 +1,6 @@
 # Gradescope to Cal
 
-A privacy-first browser extension that automatically syncs UC Berkeley Gradescope assignments to Google Calendar.
+A privacy-first browser extension that automatically syncs Gradescope assignments to Google Calendar.
 
 **Current Version: v1.9.1** — Available on Chrome Web Store & Firefox Add-ons
 
@@ -47,7 +47,7 @@ A privacy-first browser extension that automatically syncs UC Berkeley Gradescop
 - **No data collection**: We never see your assignments, grades, or personal information
 - **Direct API integration**: Your data goes directly from your browser to Google Calendar
 - **Minimal permissions**: Only accesses Gradescope and Google Calendar APIs
-- **Open source**: Full transparency - inspect the code yourself
+- **Open source**: Full transparency, you can inspect the code yourself
 
 ## Installation
 
@@ -142,7 +142,7 @@ Full privacy policy available at: [Privacy Policy](https://www.gs2cal.me/privacy
 
 - **Issues**: Report bugs via [GitHub Issues](../../issues)
 - **Email**: gradescope.to.cal@gmail.com
-- **Primary audience**: UC Berkeley students, usable by all Gradescope users worldwide
+- **Primary audience**: Gradescope users worldwide
 
 ## Development
 
