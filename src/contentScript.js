@@ -98,12 +98,12 @@ async function checkExistingAssignments(assignments) {
         for (const [key, value] of Object.entries(storage)) {
             if (key.startsWith('assignments_') && value.assignments) {
                 value.assignments.forEach(a => {
-                    if (a.id) existingIds.add(a.id);
+                    if (a.assignmentId) existingIds.add(a.assignmentId);
                 });
             }
         }
 
-        const newAssignments = assignments.filter(a => !existingIds.has(a.id));
+        const newAssignments = assignments.filter(a => !existingIds.has(a.assignmentId));
         return newAssignments;
     } catch (error) {
         console.error('Error checking existing assignments:', error);

@@ -73,7 +73,13 @@ A privacy-first browser extension that automatically syncs Gradescope assignment
 
 ## Version History
 
-### v1.9.0 (Current) - iCal Export
+### v1.9.2 (Current) - Bug Fixes
+- Fixed visual bug with extracted assignment count and fixed first stage of redundant deduplication logic
+
+### v1.9.1 - Firefox Compatibility
+- Fixed Firefox compatibility for iCal export (message passing bug fix)
+
+### v1.9.0 - iCal Export
 - iCal export feature for Outlook, Apple Calendar, and other calendar apps
 - RFC 5545 compliant .ics file generation with UTC format
 - Enhanced Outlook link accessibility (URL in LOCATION field)

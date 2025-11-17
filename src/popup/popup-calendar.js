@@ -279,10 +279,19 @@ class CalendarManager {
     async countStoredAssignments() {
         try {
             const assignments = await window.StorageUtils.getAllStoredAssignments();
-            const totalAssignments = assignments.length;
 
-            if (totalAssignments > 0) {
-                this.assignmentCountDiv.textContent = `${totalAssignments} unique assignments found`;
+            // Filter to only upcoming assignments (matches calendar sync behavior)
+            const now = new Date();
+            const upcomingAssignments = assignments.filter(assignment => {
+                if (!assignment.dueDate) return false;
+                const dueDate = new Date(assignment.dueDate);
+                return dueDate >= now;
+            });
+
+            const upcomingCount = upcomingAssignments.length;
+
+            if (upcomingCount > 0) {
+                this.assignmentCountDiv.textContent = `${upcomingCount} upcoming assignment${upcomingCount !== 1 ? 's' : ''} found`;
 
                 const storage = await browser.storage.local.get();
                 const hasAutodiscovered = Object.keys(storage).some(key =>
@@ -299,7 +308,7 @@ class CalendarManager {
                 await this.updateStatusBasedOnPage();
             }
 
-            return totalAssignments;
+            return upcomingCount;
         } catch (error) {
             console.error('Error counting assignments:', error);
             this.updateStatus('❌ Error accessing storage', 'warning');
