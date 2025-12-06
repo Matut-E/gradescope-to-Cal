@@ -2,5 +2,8 @@
 User-agent: *
 Allow: /
 
+# Block API endpoints from indexing
+Disallow: /api/
+
 # Sitemaps
-Sitemap: https://matut-e.github.io/gradescope-to-Cal/sitemap.xml
+Sitemap: https://gs2cal.me/sitemap.xml

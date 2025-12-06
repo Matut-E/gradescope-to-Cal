@@ -14,6 +14,10 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }
