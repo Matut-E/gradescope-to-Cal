@@ -3304,3 +3304,27 @@ details[open] .summary-icon {
     color: #FFD966;
     border-bottom-color: var(--california-gold);
 }
+
+/* Support Section Styling */
+.support-section {
+    background: linear-gradient(135deg, rgba(253, 181, 21, 0.05), rgba(0, 50, 98, 0.05));
+    border: 1px solid rgba(253, 181, 21, 0.15);
+}
+
+.support-section h2 {
+    color: var(--text-primary);
+}
+
+.support-section p {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .support-section {
+    background: linear-gradient(135deg, rgba(253, 181, 21, 0.08), rgba(0, 50, 98, 0.1));
+    border: 1px solid rgba(253, 181, 21, 0.2);
+}
+
+[data-theme="dark"] .support-section .info-box {
+    background: rgba(39, 39, 42, 0.5);
+    border-left-color: var(--california-gold);
+}
