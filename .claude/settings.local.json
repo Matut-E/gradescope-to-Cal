@@ -9,7 +9,12 @@
       "Bash(python:*)",
       "Read(//c/Users/Matut/gtcExtension/**)",
       "Bash(lsof:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(powershell:*)",
+      "Bash(for file in options-ui-builders.js options-weight-editor.js options-category-manager.js options-drop-policies.js options-advanced.js options-course-linking.js options-storage.js)",
+      "Bash(do cp \"C:/Users/Matut/gtcExtension/dev/src/options/$file\" \"C:/Users/Matut/gtcExtension/public/src/options/\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

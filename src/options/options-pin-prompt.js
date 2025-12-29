@@ -49,7 +49,7 @@ class PinPromptManager {
      */
     static async shouldShowPrompt() {
         try {
-            // Firefox auto-pins extensions, so never show prompt
+            // 0. Skip on Firefox - extensions are auto-pinned
             if (window.browserDetector && window.browserDetector.isFirefox()) {
                 console.log('[PinPrompt] Firefox detected - extensions auto-pinned, skipping prompt');
                 return false;
@@ -154,10 +154,12 @@ class PinPromptManager {
                 return null;
             }
 
-            // Count assignments and unique courses (use assignments field to match popup behavior)
-            // For calendar sync version, we only care about upcoming assignments, not all assignments
-            const assignmentCount = data.assignments.length;
-            const courses = new Set(data.assignments.map(a => a.course));
+            // Count assignments and unique courses
+            const assignmentCount = data.allAssignments ? data.allAssignments.length : data.assignments.length;
+            const courses = new Set(data.allAssignments ?
+                data.allAssignments.map(a => a.course) :
+                data.assignments.map(a => a.course)
+            );
 
             return {
                 assignmentCount,
@@ -186,10 +188,9 @@ class PinPromptManager {
             mainContent.insertAdjacentElement('afterbegin', container);
         }
 
-        // Build banner with createElement (safe, no XSS risk)
-        container.textContent = '';
-        const banner = this.createBannerElement(stats);
-        container.appendChild(banner);
+        // Generate banner HTML
+        const bannerHTML = this.createBannerHTML(stats);
+        container.innerHTML = bannerHTML;
 
         // Add event listeners
         this.attachEventListeners();
@@ -201,135 +202,62 @@ class PinPromptManager {
     }
 
     /**
-     * Create the banner DOM element
+     * Create the banner HTML
      * @param {Object} stats - Extraction statistics
-     * @returns {HTMLElement} Banner element
+     * @returns {string} HTML string
      */
-    static createBannerElement(stats) {
-        // Main banner container
-        const banner = document.createElement('div');
-        banner.className = 'pin-prompt-banner';
-        banner.setAttribute('role', 'region');
-        banner.setAttribute('aria-label', 'Pin extension to toolbar prompt');
+    static createBannerHTML(stats) {
+        return `
+            <div class="pin-prompt-banner" role="region" aria-label="Pin extension to toolbar prompt">
+                <button class="pin-prompt-close" aria-label="Close prompt" data-action="close">×</button>
 
-        // Close button
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'pin-prompt-close';
-        closeBtn.setAttribute('aria-label', 'Close prompt');
-        closeBtn.setAttribute('data-action', 'close');
-        closeBtn.textContent = '×';
-        banner.appendChild(closeBtn);
+                <div class="pin-prompt-content">
+                    <!-- Success Message -->
+                    <div class="pin-prompt-success">
+                        ✅ <strong>Successfully extracted ${stats.assignmentCount} assignment${stats.assignmentCount !== 1 ? 's' : ''} from ${stats.courseCount} course${stats.courseCount !== 1 ? 's' : ''}!</strong>
+                    </div>
 
-        // Content container
-        const content = document.createElement('div');
-        content.className = 'pin-prompt-content';
+                    <!-- Value Proposition -->
+                    <div class="pin-prompt-value">
+                        Pin this extension to your toolbar for instant access to calendar sync and grade tracking.
+                    </div>
 
-        // Success message
-        const successDiv = document.createElement('div');
-        successDiv.className = 'pin-prompt-success';
-        const successText = document.createTextNode('✅ ');
-        const successStrong = document.createElement('strong');
-        const assignmentText = stats.assignmentCount !== 1 ? 's' : '';
-        const courseText = stats.courseCount !== 1 ? 's' : '';
-        successStrong.textContent = `Successfully extracted ${stats.assignmentCount} assignment${assignmentText} from ${stats.courseCount} course${courseText}!`;
-        successDiv.appendChild(successText);
-        successDiv.appendChild(successStrong);
-        content.appendChild(successDiv);
+                    <!-- 3-Step Visual Guide -->
+                    <div class="pin-prompt-steps">
+                        <div class="pin-step">
+                            <div class="pin-step-icon">🧩</div>
+                            <div class="pin-step-text">
+                                <strong>Step 1:</strong> Click the puzzle piece icon in your toolbar
+                            </div>
+                        </div>
+                        <div class="pin-step-arrow">→</div>
+                        <div class="pin-step">
+                            <div class="pin-step-icon">🔍</div>
+                            <div class="pin-step-text">
+                                <strong>Step 2:</strong> Find "Gradescope to Cal" in the list
+                            </div>
+                        </div>
+                        <div class="pin-step-arrow">→</div>
+                        <div class="pin-step">
+                            <div class="pin-step-icon">📌</div>
+                            <div class="pin-step-text">
+                                <strong>Step 3:</strong> Click the pin icon next to it
+                            </div>
+                        </div>
+                    </div>
 
-        // Value proposition
-        const valueDiv = document.createElement('div');
-        valueDiv.className = 'pin-prompt-value';
-        valueDiv.textContent = 'Pin this extension to your toolbar for instant access to calendar sync.';
-        content.appendChild(valueDiv);
-
-        // Steps container
-        const stepsDiv = document.createElement('div');
-        stepsDiv.className = 'pin-prompt-steps';
-
-        // Step 1
-        const step1 = document.createElement('div');
-        step1.className = 'pin-step';
-        const step1Icon = document.createElement('div');
-        step1Icon.className = 'pin-step-icon';
-        step1Icon.textContent = '🧩';
-        const step1Text = document.createElement('div');
-        step1Text.className = 'pin-step-text';
-        const step1Strong = document.createElement('strong');
-        step1Strong.textContent = 'Step 1:';
-        step1Text.appendChild(step1Strong);
-        step1Text.appendChild(document.createTextNode(' Click the puzzle piece icon in your toolbar'));
-        step1.appendChild(step1Icon);
-        step1.appendChild(step1Text);
-        stepsDiv.appendChild(step1);
-
-        // Arrow 1
-        const arrow1 = document.createElement('div');
-        arrow1.className = 'pin-step-arrow';
-        arrow1.textContent = '→';
-        stepsDiv.appendChild(arrow1);
-
-        // Step 2
-        const step2 = document.createElement('div');
-        step2.className = 'pin-step';
-        const step2Icon = document.createElement('div');
-        step2Icon.className = 'pin-step-icon';
-        step2Icon.textContent = '🔍';
-        const step2Text = document.createElement('div');
-        step2Text.className = 'pin-step-text';
-        const step2Strong = document.createElement('strong');
-        step2Strong.textContent = 'Step 2:';
-        step2Text.appendChild(step2Strong);
-        step2Text.appendChild(document.createTextNode(' Find "Gradescope to Cal" in the list'));
-        step2.appendChild(step2Icon);
-        step2.appendChild(step2Text);
-        stepsDiv.appendChild(step2);
-
-        // Arrow 2
-        const arrow2 = document.createElement('div');
-        arrow2.className = 'pin-step-arrow';
-        arrow2.textContent = '→';
-        stepsDiv.appendChild(arrow2);
-
-        // Step 3
-        const step3 = document.createElement('div');
-        step3.className = 'pin-step';
-        const step3Icon = document.createElement('div');
-        step3Icon.className = 'pin-step-icon';
-        step3Icon.textContent = '📌';
-        const step3Text = document.createElement('div');
-        step3Text.className = 'pin-step-text';
-        const step3Strong = document.createElement('strong');
-        step3Strong.textContent = 'Step 3:';
-        step3Text.appendChild(step3Strong);
-        step3Text.appendChild(document.createTextNode(' Click the pin icon next to it'));
-        step3.appendChild(step3Icon);
-        step3.appendChild(step3Text);
-        stepsDiv.appendChild(step3);
-
-        content.appendChild(stepsDiv);
-
-        // Action buttons container
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'pin-prompt-actions';
-
-        // "Got it!" button
-        const gotItBtn = document.createElement('button');
-        gotItBtn.className = 'pin-prompt-btn pin-prompt-btn-primary';
-        gotItBtn.setAttribute('data-action', 'got-it');
-        gotItBtn.textContent = 'Got it!';
-        actionsDiv.appendChild(gotItBtn);
-
-        // "Remind me later" button
-        const remindLaterBtn = document.createElement('button');
-        remindLaterBtn.className = 'pin-prompt-btn pin-prompt-btn-secondary';
-        remindLaterBtn.setAttribute('data-action', 'remind-later');
-        remindLaterBtn.textContent = 'Remind me later';
-        actionsDiv.appendChild(remindLaterBtn);
-
-        content.appendChild(actionsDiv);
-        banner.appendChild(content);
-
-        return banner;
+                    <!-- Action Buttons -->
+                    <div class="pin-prompt-actions">
+                        <button class="pin-prompt-btn pin-prompt-btn-primary" data-action="got-it">
+                            Got it!
+                        </button>
+                        <button class="pin-prompt-btn pin-prompt-btn-secondary" data-action="remind-later">
+                            Remind me later
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     /**
@@ -479,20 +407,14 @@ class PinPromptManager {
         if (isPinned && !state.userHasPinned) {
             await this.markUserHasPinned();
 
-            // Create success toast with createElement (safe, no XSS risk)
+            // Create success toast
             const toast = document.createElement('div');
             toast.className = 'pin-success-toast';
-
-            const content = document.createElement('div');
-            content.className = 'pin-success-content';
-            content.appendChild(document.createTextNode('🎉 '));
-
-            const strong = document.createElement('strong');
-            strong.textContent = 'Extension pinned!';
-            content.appendChild(strong);
-
-            content.appendChild(document.createTextNode(' Access it anytime from your toolbar.'));
-            toast.appendChild(content);
+            toast.innerHTML = `
+                <div class="pin-success-content">
+                    🎉 <strong>Extension pinned!</strong> Access it anytime from your toolbar.
+                </div>
+            `;
 
             document.body.appendChild(toast);
 

@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "Gradescope to Cal",
+  "version": "1.6.0",
+  "description": "Automatically sync Gradescope assignments to Google Calendar with comprehensive grade calculator",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gradescope-to-cal@extension",
+      "strict_min_version": "109.0"
+    }
+  },
+
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "identity",
+    "alarms",
+    "notifications"
+  ],
+
+  "host_permissions": [
+    "*://*.gradescope.com/*",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
+  ],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.gradescope.com/*"
+      ],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gradescope to Cal",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "options_page": "options.html",
+
+  "web_accessible_resources": [
+    {
+      "resources": ["options.html", "courseConfigManager.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

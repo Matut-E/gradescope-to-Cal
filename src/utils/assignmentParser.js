@@ -80,10 +80,10 @@ class AssignmentParser {
     }
 
     /**
-     * Extract ALL assignments from a course for calendar sync
+     * Extract ALL assignments from a course for comprehensive grade data
      */
-    static async extractAllAssignmentsForCalendarSync(course) {
-        console.log(`📡 Extracting assignments from ${course.shortName} for calendar sync...`);
+    static async extractAllAssignmentsForGrades(course) {
+        console.log(`📡 Extracting ALL assignments from ${course.shortName} for grade calculation...`);
 
         try {
             let doc;
@@ -120,32 +120,70 @@ class AssignmentParser {
      * Parse assignment table from course page document
      */
     static parseAllAssignmentsFromDocument(doc, course) {
-        console.log(`📋 Parsing assignments from ${course.shortName}...`);
+        console.log(`📋 Parsing ALL assignments with categorization from ${course.shortName}...`);
 
         const assignments = [];
-        const table = doc.querySelector('table');
 
-        if (!table) {
-            console.log(`❌ No assignment table found for ${course.shortName}`);
+        // Check for multiple tables (Gradescope might have separate tables for different categories)
+        const allTables = doc.querySelectorAll('table');
+        console.log(`🔍 Found ${allTables.length} table(s) on page for ${course.shortName}`);
+
+        if (allTables.length === 0) {
+            console.log(`❌ No assignment tables found for ${course.shortName}`);
             return assignments;
         }
 
-        const rows = table.querySelectorAll('tbody tr');
-        console.log(`🔍 Found ${rows.length} rows in ${course.shortName}`);
+        // Process ALL tables (in case assignments are split across multiple tables)
+        allTables.forEach((table, tableIndex) => {
+            const rows = table.querySelectorAll('tbody tr');
+            console.log(`📋 Table ${tableIndex + 1}: ${rows.length} rows`);
 
-        rows.forEach((row, index) => {
-            try {
-                // Use basic assignment parsing (no categorization in public version)
-                const assignment = this.parseAssignmentFromRow(row, course);
-                if (assignment) {
-                    assignments.push(assignment);
+            rows.forEach((row, index) => {
+                try {
+                    // DEBUG: Log what we're trying to parse
+                    const firstCell = row.querySelector('th, td');
+                    const rowPreview = firstCell?.textContent?.trim() || '(empty)';
+                    console.log(`🔄 Table ${tableIndex + 1}, Row ${index + 1}: "${rowPreview}"`);
+
+                    // Use the categorization version
+                    const assignment = this.parseAssignmentFromRowWithCategories(row, course);
+                    if (assignment) {
+                        assignments.push(assignment);
+                        console.log(`  ✅ Parsed: "${assignment.title}" (${assignment.submissionStatus})`);
+                    } else {
+                        console.log(`  ❌ Skipped`);
+                    }
+                } catch (error) {
+                    console.log(`  ⚠️ Error:`, error.message);
                 }
-            } catch (error) {
-                console.log(`⚠️ Error parsing row ${index + 1} in ${course.shortName}:`, error);
-            }
+            });
         });
 
-        console.log(`✅ Extracted ${assignments.length} assignments from ${course.shortName}`);
+        // ENHANCED DEBUGGING: Show breakdown by submission status
+        const gradedCount = assignments.filter(a => a.isGraded).length;
+        const submittedCount = assignments.filter(a => a.isSubmitted && !a.isGraded).length;
+        const noSubmissionCount = assignments.filter(a => !a.isSubmitted && !a.isGraded).length;
+        const withMaxPoints = assignments.filter(a => a.maxPoints !== null).length;
+
+        console.log(`📊 ${course.shortName} Extraction Stats:`);
+        console.log(`  ✅ ${gradedCount} graded`);
+        console.log(`  📝 ${submittedCount} submitted (not graded)`);
+        console.log(`  ❌ ${noSubmissionCount} no submission`);
+        console.log(`  📏 ${withMaxPoints}/${assignments.length} have maxPoints`);
+
+        // Log sample "No Submission" assignment if any
+        const noSubExample = assignments.find(a => !a.isSubmitted && !a.isGraded);
+        if (noSubExample) {
+            console.log(`📝 Sample No Submission:`, {
+                title: noSubExample.title,
+                maxPoints: noSubExample.maxPoints,
+                isGraded: noSubExample.isGraded,
+                isSubmitted: noSubExample.isSubmitted,
+                category: noSubExample.category
+            });
+        }
+
+        console.log(`✅ Extracted ${assignments.length} categorized assignments from ${course.shortName}`);
         return assignments;
     }
 
@@ -160,17 +198,62 @@ class AssignmentParser {
             return null; // Header row
         }
 
-        const titleButton = row.querySelector('button.js-submitAssignment, button[data-assignment-id], a[href*="/assignments/"]');
+        // Try multiple selectors for different Gradescope layouts
+        let titleElement = row.querySelector('button.js-submitAssignment, button[data-assignment-id]');
 
-        if (!titleButton) {
+        // Fallback 1: Look for any link to /assignments/
+        if (!titleElement) {
+            titleElement = row.querySelector('a[href*="/assignments/"]');
+        }
+
+        // Fallback 2: Look for any button or link in the first column (common for "No Submission" rows)
+        if (!titleElement) {
+            const firstCell = row.querySelector('th, td');
+            if (firstCell) {
+                titleElement = firstCell.querySelector('button, a');
+            }
+        }
+
+        // Fallback 3: Look for any text in first cell (last resort)
+        if (!titleElement) {
+            const firstCell = row.querySelector('th, td');
+            if (firstCell && firstCell.textContent?.trim()) {
+                console.log(`⚠️ Using text-only extraction for row: ${firstCell.textContent.trim()}`);
+                // Create a pseudo-element with the text content
+                titleElement = { textContent: firstCell.textContent.trim() };
+            }
+        }
+
+        if (!titleElement) {
+            console.log(`❌ Could not find title element in row:`, row.innerHTML.substring(0, 100));
             return null;
         }
 
-        const title = titleButton.textContent?.trim();
-        const assignmentId = titleButton.getAttribute('data-assignment-id') ||
-                            titleButton.href?.match(/assignments\/(\d+)/)?.[1];
+        const title = titleElement.textContent?.trim();
+
+        // Try to extract assignment ID from various sources
+        let assignmentId = titleElement.getAttribute?.('data-assignment-id');
+
+        if (!assignmentId && titleElement.href) {
+            const match = titleElement.href.match(/assignments\/(\d+)/);
+            assignmentId = match?.[1];
+        }
+
+        // Fallback: Extract from onclick or other attributes
+        if (!assignmentId) {
+            const onclickMatch = titleElement.getAttribute?.('onclick')?.match(/(\d+)/);
+            assignmentId = onclickMatch?.[1];
+        }
+
+        // Fallback: Use title as ID if nothing else works (create hash)
+        if (!assignmentId && title) {
+            // Create a simple hash from title for consistent ID
+            assignmentId = 'pseudo_' + title.replace(/\s+/g, '_').toLowerCase();
+            console.log(`⚠️ Generated pseudo-ID for "${title}": ${assignmentId}`);
+        }
 
         if (!title || !assignmentId) {
+            console.log(`❌ Missing title or ID - Title: "${title}", ID: "${assignmentId}"`);
             return null;
         }
 
@@ -200,10 +283,40 @@ class AssignmentParser {
     }
 
     /**
+     * Parse assignment row with automatic categorization
+     */
+    static parseAssignmentFromRowWithCategories(row, course) {
+        const basicAssignment = this.parseAssignmentFromRow(row, course);
+
+        if (!basicAssignment) {
+            return null;
+        }
+
+        // Add automatic categorization
+        const categorization = AssignmentCategorizer.categorizeAssignment(
+            basicAssignment.title,
+            basicAssignment.course,
+            basicAssignment.url
+        );
+
+        return {
+            ...basicAssignment,
+            category: categorization.category,
+            categoryConfidence: categorization.confidence,
+            categoryInfo: AssignmentCategorizer.getCategoryInfo(categorization.category),
+            categorization: {
+                alternates: categorization.alternates,
+                reason: categorization.reason,
+                source: categorization.source
+            }
+        };
+    }
+
+    /**
      * Extract from individual course page
      */
     static extractFromCoursePage() {
-        console.log('📄 Extracting from individual course page...');
+        console.log('📄 Extracting from individual course page with categorization...');
 
         const courseId = window.location.pathname.match(/\/courses\/(\d+)/)?.[1];
         const courseNameEl = document.querySelector('h1, .course-title, .course-name');
@@ -220,7 +333,11 @@ class AssignmentParser {
         const allAssignments = this.parseAllAssignmentsFromDocument(document, course);
         const calendarAssignments = GradeExtractor.filterForCalendarSync(allAssignments);
 
-        console.log(`📊 Extraction stats: ${allAssignments.length} total, ${calendarAssignments.length} for calendar`);
+        console.log(`📊 Categorization stats:`, {
+            total: allAssignments.length,
+            categorized: allAssignments.filter(a => a.category && a.category !== 'other').length,
+            highConfidence: allAssignments.filter(a => a.categoryConfidence >= 0.8).length
+        });
 
         return { allAssignments, calendarAssignments };
     }
@@ -238,10 +355,10 @@ class AssignmentParser {
             return { allAssignments: [], calendarAssignments: [] };
         }
 
-        console.log(`📚 Found ${courses.length} courses, extracting assignments...`);
+        console.log(`📚 Found ${courses.length} courses, extracting ALL assignments...`);
 
-        // Extract assignments from ALL courses in parallel
-        const allAssignmentsPromises = courses.map(course => this.extractAllAssignmentsForCalendarSync(course));
+        // Extract ALL assignments from ALL courses in parallel
+        const allAssignmentsPromises = courses.map(course => this.extractAllAssignmentsForGrades(course));
         const courseAssignments = await Promise.all(allAssignmentsPromises);
 
         // Flatten all assignments

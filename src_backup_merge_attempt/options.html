@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Gradescope Calendar Sync - Settings</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="optionsThemeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="theme-icon theme-icon-moon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="theme-icon theme-icon-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+    </button>
+
+    <!-- Persistent Grade Disclaimer Banner -->
+    <div class="grade-disclaimer-banner">
+        ℹ️ Grade estimates help you plan and track progress. Always verify official grades on Gradescope or bCourses.
+    </div>
+
+    <div class="header">
+        <h1>Gradescope to Cal - Settings</h1>
+        <p>Automatically sync your Gradescope assignments to Google Calendar</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" role="tablist" aria-label="Settings navigation">
+        <button class="tab-button" data-tab="calendar" role="tab" aria-selected="false">
+            <span class="tab-icon">📅</span>
+            <span class="tab-label">Calendar Sync</span>
+        </button>
+        <button class="tab-button" data-tab="grades" role="tab" aria-selected="false">
+            <span class="tab-icon">📊</span>
+            <span class="tab-label">Grade Calculator</span>
+        </button>
+        <button class="tab-button" data-tab="data" role="tab" aria-selected="false">
+            <span class="tab-icon">🗄️</span>
+            <span class="tab-label">Data & Privacy</span>
+        </button>
+    </nav>
+
+    <!-- Tab Panel: Calendar Sync -->
+    <div class="tab-panel" data-tab-panel="calendar" style="display: none;">
+        <!-- Authentication Section -->
+        <div class="section">
+        <h2>🔑 Google Calendar Authentication</h2>
+        
+        <div id="authStatus" class="status info">
+            <div>Checking authentication status...</div>
+        </div>
+
+        <div id="authControls" style="text-align: center;">
+            <button id="authenticate" class="button success">
+                Connect Google Calendar
+            </button>
+            
+            <button id="disconnect" class="button danger" style="display: none;">
+                Disconnect
+            </button>
+        </div>
+
+        <div class="info-box">
+            <strong>Privacy Note:</strong> Your Google account authentication is stored locally in your browser. 
+            No data is sent to external servers - all processing happens locally in your browser extension.
+        </div>
+    </div>
+
+    <!-- Enhanced Auto-Sync Settings Section -->
+    <div class="section">
+        <h2>🔄 Smart Auto-Sync Settings</h2>
+        
+        <div class="enhanced-feature">
+            <h4>🎯 Optimized Daily Sync <span class="feature-badge">Enhanced</span></h4>
+            <p>Automatically syncs new assignments to your calendar once every 24 hours. This timing is optimized based on typical assignment posting patterns.</p>
+        </div>
+        
+        <div class="setting-item">
+            <div>
+                <label for="autoSync">Enable automatic background sync</label>
+                <div class="setting-description">
+                    Runs daily sync in the background - no manual intervention needed
+                </div>
+            </div>
+            <input type="checkbox" id="autoSync" checked>
+        </div>
+
+        <!-- Event Color Picker (Collapsible) -->
+        <details class="event-appearance-section">
+            <summary class="event-appearance-summary">
+                <div class="summary-content">
+                    <h4 style="margin: 0;">🎨 Event Appearance</h4>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
+                        Customize calendar event colors
+                    </p>
+                </div>
+                <div class="summary-icon">▼</div>
+            </summary>
+
+            <div class="event-appearance-content">
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                    Choose the color for assignment events in your Google Calendar
+                </p>
+
+                <div class="color-picker-grid" id="colorPickerGrid">
+                    <!-- Color 1: Lavender -->
+                    <div class="color-box" data-color-id="1" data-color-name="Lavender" style="background-color: #a4bdfc;" title="Lavender">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 2: Sage -->
+                    <div class="color-box" data-color-id="2" data-color-name="Sage" style="background-color: #7ae7bf;" title="Sage">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 3: Grape -->
+                    <div class="color-box" data-color-id="3" data-color-name="Grape" style="background-color: #dbadff;" title="Grape">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 4: Flamingo -->
+                    <div class="color-box" data-color-id="4" data-color-name="Flamingo" style="background-color: #ff887c;" title="Flamingo">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 5: Banana -->
+                    <div class="color-box" data-color-id="5" data-color-name="Banana" style="background-color: #fbd75b;" title="Banana">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 6: Tangerine -->
+                    <div class="color-box" data-color-id="6" data-color-name="Tangerine" style="background-color: #ffb878;" title="Tangerine">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 7: Peacock -->
+                    <div class="color-box" data-color-id="7" data-color-name="Peacock" style="background-color: #46d6db;" title="Peacock">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 8: Graphite -->
+                    <div class="color-box" data-color-id="8" data-color-name="Graphite" style="background-color: #e1e1e1;" title="Graphite">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 9: Blueberry (Default) -->
+                    <div class="color-box selected" data-color-id="9" data-color-name="Blueberry" style="background-color: #5484ed;" title="Blueberry (Default)">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 10: Basil -->
+                    <div class="color-box" data-color-id="10" data-color-name="Basil" style="background-color: #51b749;" title="Basil">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                    <!-- Color 11: Tomato -->
+                    <div class="color-box" data-color-id="11" data-color-name="Tomato" style="background-color: #dc2127;" title="Tomato">
+                        <span class="color-checkmark">✓</span>
+                    </div>
+                </div>
+
+                <div id="colorSelectionStatus" class="setting-description" style="text-align: center; margin-top: 10px; font-weight: 500;">
+                    Selected: <span id="selectedColorName">Blueberry</span>
+                </div>
+
+                <!-- Reminder Schedule Section -->
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h5 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                        🔔 Reminder Schedule
+                    </h5>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                        Choose when to receive notifications before assignment deadlines
+                    </p>
+
+                    <div class="reminder-options">
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="none">
+                            <div class="radio-content">
+                                <span class="radio-label">None</span>
+                                <span class="radio-helper-text">No reminders will be created</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="single">
+                            <div class="radio-content">
+                                <span class="radio-label">Single reminder</span>
+                                <span class="radio-helper-text">1 day before due date</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="double" checked>
+                            <div class="radio-content">
+                                <span class="radio-label">Double reminder</span>
+                                <span class="radio-badge">Default</span>
+                                <span class="radio-helper-text">1 day + 1 hour before due date</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="reminderSchedule" value="custom">
+                            <div class="radio-content">
+                                <span class="radio-label">Custom</span>
+                                <span class="radio-helper-text">Create up to 3 custom reminders</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Custom Reminder Builder -->
+                    <div id="customReminderBuilder" class="custom-reminder-builder" style="display: none;">
+                        <p style="font-size: 13px; color: var(--text-secondary); margin: 15px 0 10px 0;">
+                            Add custom reminder times:
+                        </p>
+                        <div class="custom-reminder-list" id="customReminderList">
+                            <!-- Dynamically populated reminder rows -->
+                        </div>
+                        <button type="button" id="addReminderBtn" class="add-reminder-btn">+ Add reminder</button>
+                        <p class="setting-description" style="margin-top: 8px;">Maximum 3 reminders</p>
+                    </div>
+                </div>
+
+                <!-- Assignment Display Timing Section -->
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                    <h5 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                        📅 Assignment Display Timing
+                    </h5>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                        Choose how assignments appear in your calendar
+                    </p>
+
+                    <div class="display-timing-options">
+                        <label class="radio-option">
+                            <input type="radio" name="eventDisplayTime" value="deadline" checked>
+                            <div class="radio-content">
+                                <span class="radio-label">Show at deadline time</span>
+                                <span class="radio-badge">Default</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="eventDisplayTime" value="allday">
+                            <div class="radio-content">
+                                <span class="radio-label">Show as all-day event</span>
+                                <span class="radio-helper-text warning-text">⚠️ Only supports day-of reminders, not time-specific alerts</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <button id="saveSettings" class="button">Save Settings</button>
+    </div>
+    </div>
+    <!-- End Tab Panel: Calendar Sync -->
+
+    <!-- Tab Panel: Grade Calculator -->
+    <div class="tab-panel" data-tab-panel="grades" style="display: none;">
+        <!-- Course Grade Configuration Section -->
+    <div class="section grade-config-section" style="padding: 0;">
+        <div class="grade-config-container">
+            <!-- Course Sidebar -->
+            <div class="course-sidebar">
+                <div class="sidebar-header">
+                    <h3>Your Courses</h3>
+                    <span class="course-count" id="courseCount">0 courses</span>
+                </div>
+
+                <div class="course-list" id="courseList">
+                    <!-- Dynamically populated course items -->
+                </div>
+            </div>
+
+            <!-- Configuration Main Panel -->
+            <div class="config-main-panel" id="courseConfigPanel" style="display: none;">
+
+            <!-- Course header -->
+            <div class="config-header">
+                <h2 class="config-course-name" id="configCourseName">Course Configuration</h2>
+                <div class="config-actions">
+                    <!-- Config sharing dropdown menu -->
+                    <div class="config-menu-container">
+                        <button class="button secondary config-menu-btn" id="configMenuBtn" aria-label="Share config options" title="Share config">
+                            ⋮
+                        </button>
+                        <div class="config-menu-dropdown" id="configMenuDropdown">
+                            <button class="config-menu-item" id="exportConfigHeader">
+                                📥 Export config
+                            </button>
+                            <button class="config-menu-item" id="importConfigHeader">
+                                📤 Import config
+                            </button>
+                            <button class="config-menu-item" id="copyConfigHeader">
+                                📋 Copy to clipboard
+                            </button>
+                        </div>
+                    </div>
+                    <button class="button secondary" id="resetConfig">Reset to Defaults</button>
+                </div>
+            </div>
+
+            <!-- Status message for config sharing -->
+            <div id="configShareStatusHeader" class="save-status" style="margin-top: -20px; margin-bottom: 20px; display: none;">
+                <!-- Status messages appear here -->
+            </div>
+
+            <!-- Hidden file input for import -->
+            <input type="file" id="importConfigFileHeader" accept=".json" style="display: none;">
+
+            <!-- Sub-Tab Navigation -->
+            <nav class="subtab-nav" role="tablist" aria-label="Configuration sections">
+                <button class="subtab-button" data-subtab="basic" role="tab" aria-selected="false">
+                    Basic Setup
+                </button>
+                <button class="subtab-button" data-subtab="drops" role="tab" aria-selected="false">
+                    Drop Policies
+                </button>
+                <button class="subtab-button" data-subtab="advanced" role="tab" aria-selected="false">
+                    Advanced
+                </button>
+            </nav>
+
+            <!-- Sub-Tab Panel: Basic Setup -->
+            <div data-subtab-panel="basic" style="display: none;">
+
+            <!-- Quick setup banner -->
+            <div class="quick-setup-banner" id="quickSetupBanner" style="display: none;">
+                <div class="banner-icon">💡</div>
+                <div class="banner-content">
+                    <h4 id="quickSetupTitle">Quick Setup</h4>
+                    <p id="quickSetupDescription">We found assignments with the following categorization:</p>
+                    <div class="auto-categories" id="autoCategoriesList">
+                        <!-- Dynamically populated -->
+                    </div>
+                    <p class="suggested-weights">Suggested weights:</p>
+                    <div class="weight-preview" id="weightPreview">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                <div class="banner-actions">
+                    <button class="button" id="applyQuickSetup">Use These Settings</button>
+                    <button class="button secondary" id="dismissQuickSetup">Start From Scratch</button>
+                </div>
+            </div>
+
+            <!-- Berkeley Template Suggestion -->
+            <div id="templateSuggestion" class="optimization-box" style="display: none;">
+                <h4>💡 Detected Berkeley Course</h4>
+                <p id="templateDescription"></p>
+                <button id="applyTemplateBtn" class="button">Apply Recommended Weights</button>
+                <button id="dismissTemplateBtn" class="button secondary" style="margin-left: 10px;">Dismiss</button>
+            </div>
+
+            <!-- Core configuration (always visible) -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h3>📊 Grading System</h3>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="radio" name="gradingSystem" value="percentage" checked>
+                        Percentage-based (recommended)
+                    </label>
+                    <div class="setting-description">
+                        Calculate grades using percentages (87/100 = 87%)
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="radio" name="gradingSystem" value="points">
+                        Points-based
+                    </label>
+                    <div class="setting-description">
+                        Calculate grades using raw point totals
+                    </div>
+                </div>
+
+                <!-- Total Points Input (only visible in points-based mode) -->
+                <div id="totalPointsContainer" class="setting-item" style="display: none; margin-top: 15px; padding: 15px; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border-color);">
+                    <div style="margin-bottom: 8px;">
+                        <label for="totalPointsInput" style="font-weight: 600; color: var(--text-primary); font-size: 14px;">
+                            Total Points for Class:
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" id="totalPointsInput" min="1" step="1" value="300" placeholder="e.g., 300"
+                               style="width: 120px; padding: 8px 12px; font-size: 14px; border: 2px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary); font-weight: 600;">
+                        <span style="font-weight: 600; color: var(--text-secondary);">pts</span>
+                    </div>
+                    <div class="setting-description" style="margin-top: 8px;">
+                        Total number of points available in the class (e.g., 300 pts total)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Validation Display -->
+            <div id="configValidation" class="info-box" style="display: none; margin-top: 15px; border-left: 4px solid #3182ce;">
+                <div id="validationErrors" style="color: #dc3545; margin-bottom: 10px;"></div>
+                <div id="validationWarnings" style="color: #0c5460;"></div>
+            </div>
+
+            <!-- Weight Configuration -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h3>⚖️ Category Weights</h3>
+                    <span class="section-help" id="weightSumHelpText">Weights must sum to 100%</span>
+                </div>
+
+                <div id="weightInputsContainer" class="weight-grid">
+                    <!-- Weight inputs will be dynamically generated here -->
+                </div>
+
+                <!-- Live Validation Display -->
+                <div class="weight-validation-bar">
+                    <div class="validation-progress">
+                        <div class="progress-fill" id="weightProgressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="validation-status invalid" id="weightValidation">
+                        Total: 0%
+                    </div>
+                </div>
+
+                <div style="margin-top: 10px; text-align: center;">
+                    <button id="evenDistributeBtn" class="button secondary" style="font-size: 12px; padding: 6px 12px;">
+                        Distribute Evenly
+                    </button>
+                </div>
+            </div>
+
+            </div>
+            <!-- End Sub-Tab Panel: Basic Setup -->
+
+            <!-- Sub-Tab Panel: Drop Policies -->
+            <div data-subtab-panel="drops" style="display: none;">
+
+            <!-- Drop Policies -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h3>🗑️ Drop Policies</h3>
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                    Automatically drop the lowest N assignments from each category.
+                </p>
+
+                <div id="dropPoliciesContainer">
+                    <!-- Drop policy toggles will be dynamically generated here -->
+                </div>
+            </div>
+
+            </div>
+            <!-- End Sub-Tab Panel: Drop Policies -->
+
+            <!-- Sub-Tab Panel: Advanced -->
+            <div data-subtab-panel="advanced" style="display: none;">
+
+            <!-- Advanced features -->
+            <div class="config-section advanced-section">
+                        <!-- Category Groups Section -->
+                        <div class="advanced-feature" id="categoryGroupingSection">
+                            <h4>📦 Category Groups</h4>
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                    Combine multiple categories under one weight (e.g., "Homework & Quizzes: 20%")
+                </p>
+
+                <div id="existingGroupsList" style="margin-bottom: 15px;">
+                    <!-- Dynamically populated with existing groups -->
+                </div>
+
+                <div id="createGroupSection" class="add-category-section">
+                    <div style="margin-bottom: 10px; font-weight: 600; color: #495057;">
+                        ➕ Create Category Group
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Group Name:</label>
+                        <input type="text" id="newGroupName" placeholder="e.g., Homework & Quizzes" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Categories to Include:</label>
+                        <div id="groupCategoryCheckboxes" class="checkbox-grid">
+                            <!-- Dynamically populated with checkboxes -->
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Total Group Weight:</label>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="number" id="newGroupWeight" value="20" min="0" max="100" step="1" style="width: 80px; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                <span id="newGroupWeightUnit" class="weight-symbol" style="font-weight: bold;">%</span>
+                            </div>
+                        </div>
+
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Distribution:</label>
+                            <select id="groupDistributionMethod" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                <option value="equal">Equal split</option>
+                                <option value="proportional">By assignment count</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="createGroupBtn" class="button secondary" style="width: 100%; margin-top: 10px;">
+                        Create Group
+                    </button>
+
+                    <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                        💡 Groups let you set one weight for multiple categories. Individual category weights will be calculated automatically.
+                    </div>
+                </div>
+                        </div>
+
+                        <!-- Clobber Policies Section -->
+                        <div class="advanced-feature" id="clobberPoliciesSection">
+                            <h4>🔄 Conditional Grade Policies</h4>
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                    Handle special grading rules like "if you miss Midterm 1, Midterm 2 counts for 40%" or "best 2 out of 3 midterms"
+                </p>
+
+                <div id="existingClobberPolicies" style="margin-bottom: 15px;">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <button id="showAddClobberPolicyBtn" class="button secondary" style="font-size: 13px; margin-bottom: 10px;">
+                    ➕ Add Conditional Policy
+                </button>
+
+                <div id="addClobberPolicyForm" class="add-category-section" style="display: none;">
+                    <div style="margin-bottom: 10px; font-weight: 600; color: #495057;">
+                        Create Conditional Policy
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Policy Name:</label>
+                        <input type="text" id="clobberPolicyName" placeholder="e.g., Midterm 1 Skip Rule" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Policy Type:</label>
+                        <select id="clobberPolicyType" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            <option value="">-- Select policy type --</option>
+                            <option value="redistribute">Redistribute Weight (if missing)</option>
+                            <option value="best_of">Best N Assignments</option>
+                            <option value="require_one">Require At Least One</option>
+                            <option value="z_score_clobber">Z-Score Exam Clobbering</option>
+                        </select>
+                        <div id="policyTypeDescription" class="policy-description" style="font-size: 11px; margin-top: 5px; padding: 8px; border-radius: 4px; display: none;"></div>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Source Category:</label>
+                        <select id="clobberSourceCategory" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            <option value="">-- Select category --</option>
+                        </select>
+                    </div>
+
+                    <!-- Redistribute-specific fields -->
+                    <div id="redistributeFields" style="display: none;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Condition:</label>
+                            <select id="redistributeCondition" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                <option value="no_submissions">No submissions</option>
+                                <option value="no_grades">No grades</option>
+                                <option value="all_zero">All zeros</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Redistribute To:</label>
+                            <div id="redistributeTargets" class="checkbox-column">
+                                <!-- Dynamically populated with checkboxes -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Best_of-specific fields -->
+                    <div id="bestOfFields" style="display: none;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Count Best:</label>
+                            <input type="number" id="bestOfCount" min="1" value="2" style="width: 100px; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            <span style="margin-left: 5px; font-size: 13px;">assignments</span>
+                        </div>
+                    </div>
+
+                    <!-- Require_one-specific fields -->
+                    <div id="requireOneFields" style="display: none;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">If Not Met, Redistribute To:</label>
+                            <div id="requireOneTargets" class="checkbox-column">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Failure Weight:</label>
+                            <input type="number" id="requireOneFailureWeight" min="0" max="100" value="0" style="width: 100px; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            <span style="margin-left: 5px;">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Z-Score Clobber-specific fields -->
+                    <div id="zScoreClobberFields" style="display: none;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Clobber Target Categories:</label>
+                            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                Select which exam categories can be replaced by the source exam's z-score
+                            </div>
+                            <div id="zScoreClobberTargets" class="checkbox-column">
+                                <!-- Dynamically populated with checkboxes -->
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Clobber Mode:</label>
+                            <select id="zScoreClobberMode" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                                <option value="full">Full (100% of z-score)</option>
+                                <option value="partial">Partial (scaled z-score)</option>
+                            </select>
+                        </div>
+
+                        <div id="zScoreClobberPercentageField" style="display: none; margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">Scaling Percentage:</label>
+                            <input type="number" id="zScoreClobberPercentage" min="1" max="100" value="90" style="width: 100px; padding: 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                            <span style="margin-left: 5px; font-size: 13px;">%</span>
+                            <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                                Example: 90% means use 0.9 × final z-score to calculate clobbered scores
+                            </div>
+                        </div>
+
+                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-top: 12px; font-size: 12px;">
+                            <strong>📊 Important:</strong> You must manually enter exam statistics (mean, standard deviation) for both source and target exams. This feature requires assignment-level exam stats that can be entered via the assignment review section.
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button id="createClobberPolicyBtn" class="button" style="flex: 1;">
+                            Create Policy
+                        </button>
+                        <button id="cancelClobberPolicyBtn" class="button secondary" style="flex: 1;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                        </div>
+
+                        <!-- Course Linking Section (Moved from standalone section) -->
+                        <div class="advanced-feature" id="courseLinkingFeature">
+                            <h4>🔗 Course Linking</h4>
+                            <p class="feature-description">
+                                Combine assignments from multiple Gradescope courses (e.g., "Math 53" + "Math 53-Yu") for unified grade calculation.
+                            </p>
+
+                            <!-- Existing Links Display -->
+                            <div id="existingLinksContainer" style="margin-bottom: 20px;">
+                                <h5 style="font-size: 14px; margin-bottom: 10px; color: var(--text-primary);">Existing Links</h5>
+                                <div id="existingLinksList">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+
+                            <!-- Create New Link Section -->
+                            <div style="margin-top: 15px;">
+                                <h5 style="font-size: 14px; margin-bottom: 10px; color: var(--text-primary);">Create New Link</h5>
+
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 13px; color: var(--text-primary);">
+                                        Primary Course:
+                                    </label>
+                                    <select id="linkPrimaryCourse" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                        <option value="">Select primary course...</option>
+                                    </select>
+                                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">
+                                        Main course where grades will be calculated
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 15px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 13px; color: var(--text-primary);">
+                                        Courses to Link:
+                                    </label>
+                                    <div id="linkCoursesCheckboxes" style="padding: 15px; background: var(--bg-secondary); border-radius: 4px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color);">
+                                        <!-- Dynamically populated with checkboxes -->
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">
+                                        Select courses to combine with the primary course
+                                    </div>
+                                </div>
+
+                                <div id="categoryRulesContainer" style="display: none; margin-top: 15px; padding: 15px; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border-color);">
+                                    <h5 style="font-size: 13px; margin-top: 0; color: var(--text-primary);">Category Rules</h5>
+                                    <div id="categoryRulesList">
+                                        <!-- Dynamically populated for each selected linked course -->
+                                    </div>
+                                </div>
+
+                                <button id="createLinkBtn" class="button" style="width: 100%; margin-top: 15px; padding: 10px;">
+                                    🔗 Create Course Link
+                                </button>
+                            </div>
+                        </div>
+            </div>
+            <!-- End advanced-section -->
+
+            <!-- Assignment Overrides -->
+            <div class="config-section">
+                <div class="section-header">
+                    <h3>🔍 Assignment Overrides</h3>
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+                    <span id="assignmentCount">0</span> assignments tracked •
+                    <span id="excludedCount">0</span> excluded from grades •
+                    <span id="reviewCount">0</span> need category review
+                </p>
+
+                <div id="assignmentReviewList" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Assignment review items will be dynamically generated here -->
+                </div>
+
+                <!-- Bulk Operations Section (Collapsible) -->
+                <details class="bulk-operations-section" style="margin-top: 20px;">
+                    <summary style="cursor: pointer; padding: 10px; background: var(--bg-secondary); border-radius: 4px; font-weight: 600; user-select: none; list-style: none; display: flex; align-items: center; justify-content: space-between;">
+                        <span>⚡ Bulk Operations <span style="font-size: 11px; color: var(--text-secondary); font-weight: normal; margin-left: 8px;">(Advanced)</span></span>
+                        <span style="font-size: 12px; color: var(--text-secondary); transition: transform 0.3s;">▼</span>
+                    </summary>
+
+                    <div style="padding: 15px; margin-top: 10px; background: var(--bg-tertiary); border-radius: 4px; border: 1px solid var(--border-color);">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500; color: var(--text-primary);">
+                                Exclude by Pattern:
+                            </label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="bulkExcludePattern" placeholder="e.g., Quiz A-*"
+                                       style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                                <button id="bulkExcludeBtn" class="button secondary">Exclude Matching</button>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 5px;">
+                                Use * as wildcard. Example: "Quiz A-*" excludes all Quiz A assignments
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button id="clearExclusionsBtn" class="button secondary" style="flex: 1;">
+                                Clear All Exclusions
+                            </button>
+                        </div>
+
+                        <div id="bulkOperationResult" style="margin-top: 10px; padding: 8px; border-radius: 4px; display: none; font-size: 12px;"></div>
+                    </div>
+                </details>
+            </div>
+
+            </div>
+            <!-- End Sub-Tab Panel: Advanced -->
+
+            <!-- Save action (sticky footer) -->
+            <div class="config-footer">
+                <button class="button success save-button" id="saveCourseConfig">
+                    <span class="button-text">Save Configuration</span>
+                    <span class="button-loader" style="display: none;">⏳</span>
+                </button>
+
+                <div class="save-status" id="saveStatus">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- View Raw Configuration (Collapsible) -->
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="button secondary" id="toggleConfigJSON" style="font-size: 12px; padding: 6px 12px;">
+                    View Raw Configuration (JSON)
+                </button>
+            </div>
+
+            <div id="currentConfigDisplay" class="info-box" style="margin-top: 15px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong>Current Configuration (JSON):</strong>
+                    <button class="button secondary" id="hideConfigJSON" style="font-size: 11px; padding: 4px 8px;">
+                        Hide
+                    </button>
+                </div>
+                <pre id="configJSON" style="font-size: 11px; margin: 0; white-space: pre-wrap; font-family: monospace; background: var(--bg-tertiary); color: var(--text-primary); padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;"></pre>
+            </div>
+
+            </div>
+            <!-- End config-main-panel -->
+        </div>
+        <!-- End grade-config-container -->
+    </div>
+    <!-- End section -->
+    </div>
+    <!-- End Tab Panel: Grade Calculator -->
+
+<!-- Tab Panel: Data & Privacy -->
+    <div class="tab-panel" data-tab-panel="data" style="display: none;">
+        <!-- Troubleshooting Section -->
+        <div class="section">
+        <details class="troubleshooting-section">
+            <summary class="troubleshooting-header">
+                <span style="font-size: 16px; font-weight: 600;">❓ Why doesn't my calculated grade match Gradescope?</span>
+            </summary>
+
+            <div class="troubleshooting-content">
+                <p style="margin-bottom: 15px;">
+                    <strong>Common reasons for differences:</strong>
+                </p>
+
+                <ol style="line-height: 1.8; padding-left: 20px;">
+                    <li><strong>Curves or adjustments</strong> - Professors often curve final grades after seeing full class distribution</li>
+                    <li><strong>Extra credit outside Gradescope</strong> - Participation points, iClicker, attendance, etc.</li>
+                    <li><strong>Rounding differences</strong> - We round at each step; professors might round only at the end</li>
+                    <li><strong>Misconfigured weights</strong> - Double-check your configured weights match the actual syllabus</li>
+                    <li><strong>Assignment categorization errors</strong> - Review assignments with low confidence in the review section</li>
+                    <li><strong>Drop policy differences</strong> - Make sure "drop lowest N" settings match course policy</li>
+                    <li><strong>Late penalties</strong> - Gradescope may apply penalties we don't account for</li>
+                </ol>
+
+                <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px;">
+                    <strong style="color: #2e7d32;">This is normal!</strong>
+                    <p style="margin: 8px 0 0 0; color: #1b5e20; font-size: 14px;">
+                        The calculator is a planning tool to help you track progress and set goals.
+                        Small differences (1-3%) from official grades are expected and don't indicate a problem.
+                    </p>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 13px; color: #666;">
+                    <strong>Still confused?</strong> Ask your GSI or professor how they calculate the final grade.
+                    You can then adjust your configuration to match their exact formula.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- Config Sharing Section -->
+    <div class="section" style="margin-top: 40px;">
+        <h2>📤 Share Configuration</h2>
+
+        <p>Export your course grade configuration to share with friends or back up your settings.</p>
+
+        <div class="info-box" style="margin-bottom: 20px;">
+            <strong>Where to find it:</strong> Go to the Grade Calculator tab, select a course, and click the three-dot menu (⋮) next to "Reset to Defaults" to export, import, or copy the configuration.
+        </div>
+
+        <div style="padding: 20px; background: var(--bg-tertiary); border-left: 4px solid var(--info); border-radius: 6px; margin-top: 20px;">
+            <p style="margin: 0; font-size: 14px; color: var(--text-primary);">
+                <strong>📍 New Location!</strong> Config sharing buttons have moved to each course's configuration page for a more intuitive workflow.
+            </p>
+        </div>
+    </div>
+
+    <!-- Data Management Section -->
+    <div class="section" style="margin-top: 40px;">
+        <h2>📊 Data Management</h2>
+
+        <p>Manage your locally stored assignment data and extension settings.</p>
+
+        <button id="clearAssignments" class="button">Clear Assignment Data</button>
+        <button id="clearAuth" class="button danger">Clear Authentication</button>
+        <button id="clearAll" class="button danger">Clear All Data</button>
+        <button id="showStats" class="button secondary">View Data Statistics</button>
+
+        <div class="info-box">
+            <strong>Data Storage:</strong> All your data is stored locally in your browser.
+            Assignment data includes: titles, due dates, course names, and Gradescope URLs.
+        </div>
+    </div>
+    </div>
+    <!-- End Tab Panel: Data & Privacy -->
+
+    <!-- Sticky Save Bar -->
+    <div class="sticky-save-bar" id="stickySaveBar">
+        <div class="sticky-save-bar-content">
+            <span class="sticky-save-bar-icon">⚠️</span>
+            <span class="sticky-save-bar-text">You have unsaved changes</span>
+            <div class="sticky-save-bar-actions">
+                <button class="button secondary" id="cancelChanges">Cancel</button>
+                <button class="button success" id="saveAllChanges">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grade Setup Disclaimer Modal -->
+    <div id="gradeSetupModal" class="setup-modal" style="display: none;">
+        <div class="setup-modal-overlay"></div>
+        <div class="setup-modal-content">
+            <div class="setup-modal-header">
+                <h2>📊 Grade Calculator Setup</h2>
+            </div>
+
+            <div class="setup-modal-body">
+                <p style="font-size: 15px; margin-bottom: 15px;">
+                    We'll help you track your grade by:
+                </p>
+
+                <ul style="margin: 15px 0; padding-left: 20px; line-height: 1.8;">
+                    <li>✓ Extracting grades from Gradescope (<span id="setupAssignmentCount">0</span> assignments)</li>
+                    <li>✓ Auto-categorizing assignments (review below)</li>
+                    <li>✓ Applying weights from your syllabus</li>
+                </ul>
+
+                <div class="setup-disclaimer">
+                    <div style="font-weight: 600; margin-bottom: 10px; font-size: 14px;">💡 Quick heads up:</div>
+                    <p style="margin-bottom: 10px; line-height: 1.6;">
+                        This estimates your grade for planning. Your professor's official calculations
+                        (curves, extra credit, rounding) may differ.
+                    </p>
+                    <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                        <li>Always verify official grades on <strong>your official course website</strong>.</li>
+                    </ul>
+                </div>
+
+                <div class="setup-modal-footer">
+                    <label class="setup-modal-checkbox">
+                        <input type="checkbox" id="dontShowSetupAgain">
+                        <span>Don't show this for <strong id="setupCourseName"></strong> again</span>
+                    </label>
+
+                    <button id="setupModalContinue" class="button" style="margin-top: 15px; width: 100%; padding: 12px; font-size: 15px;">
+                        Got it, let's configure →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Information -->
+    <div class="section">
+        <details class="privacy-collapsible-section">
+            <summary class="privacy-collapsible-summary">
+                <div class="summary-content">
+                    <h2 style="margin: 0;">🔒 Privacy & Security</h2>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-secondary);">
+                        Learn about our zero-server architecture and security practices
+                    </p>
+                </div>
+                <div class="summary-icon">▼</div>
+            </summary>
+            <div class="privacy-collapsible-content">
+                <p><strong>Zero-server architecture:</strong> This extension processes everything locally in your browser.
+                No assignment data, personal information, or authentication tokens are ever sent to external servers.</p>
+                <p><strong>Data collection:</strong> We collect zero user data. The extension only stores:</p>
+                <ul>
+                    <li>Assignment information you choose to extract from Gradescope</li>
+                    <li>Your Google Calendar authentication tokens (stored securely in browser)</li>
+                    <li>Your sync preferences and settings</li>
+                </ul>
+                <p><strong>Permissions explained:</strong> This extension only requests the minimum permissions needed:</p>
+                <ul>
+                    <li><code>storage</code> - Store your settings and extracted assignments locally</li>
+                    <li><code>identity</code> - Handle Google OAuth authentication securely</li>
+                    <li><code>alarms</code> - Schedule daily background sync operations</li>
+                    <li><code>scripting</code> - Extract assignment data from Gradescope pages you visit</li>
+                    <li><code>*.gradescope.com</code> - Access Gradescope pages for assignment extraction</li>
+                    <li><code>*.googleapis.com</code> - Direct communication with Google Calendar API</li>
+                </ul>
+                <div style="margin-top: 20px; padding: 15px; background: rgba(72, 187, 120, 0.1); border-radius: 6px;">
+                    <strong>🛡️ Enhanced Security Features:</strong>
+                    <ul style="margin: 10px 0;">
+                        <li>Dual OAuth client support for optimal browser compatibility</li>
+                        <li>Automatic token refresh and secure credential management</li>
+                        <li>Rate-limited API calls to respect service quotas</li>
+                        <li>Smart caching to minimize unnecessary network requests</li>
+                    </ul>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- Help & Feedback Section -->
+    <div class="section">
+        <h2>📧 Help & Feedback</h2>
+        <p>Questions? Bugs? Feature requests? I'd love to hear from you!</p>
+        <div class="info-box">
+            <strong>Email:</strong> <a href="mailto:gradescope.to.cal@gmail.com" class="contact-link">gradescope.to.cal@gmail.com</a><br>
+            <strong>GitHub Issues:</strong> <a href="https://github.com/Matut-E/gradescope-to-Cal/issues" target="_blank" class="contact-link">Report a bug or request a feature</a>
+        </div>
+    </div>
+
+    <!-- Support Section -->
+    <div class="section support-section">
+        <h2>☕ Support Development</h2>
+        <p>Like this extension? Consider buying me a coffee to support continued development!</p>
+        <div class="info-box">
+            <a href="https://buymeacoffee.com/gs2cal" target="_blank" class="contact-link">Buy me a coffee ☕</a>
+        </div>
+    </div>
+
+    <!-- Load WebExtension Polyfill for cross-browser compatibility -->
+    <script src="lib/browser-polyfill.js"></script>
+
+    <!-- Load browser detection utility -->
+    <script src="utils/browserDetector.js"></script>
+
+    <!-- Load feedback banner utility -->
+    <script src="utils/feedbackBanner.js"></script>
+
+    <!-- Config modules (must load before courseConfigManager) -->
+    <script src="config/gradeCalculator.js"></script>
+    <script src="config/categoryGroupManager.js"></script>
+    <script src="config/courseLinkingManager.js"></script>
+    <script src="config/clobberPolicyManager.js"></script>
+    <script src="config/validationManager.js"></script>
+    <script src="config/assignmentExclusionManager.js"></script>
+    <script src="courseConfigManager.js"></script>
+
+    <!-- Options page modules (modular architecture) -->
+    <script src="options/options-tabs.js"></script>
+    <script src="options/options-storage.js"></script>
+    <script src="options/options-ui-builders.js"></script>
+    <script src="options/options-weight-editor.js"></script>
+    <script src="options/options-category-manager.js"></script>
+    <script src="options/options-drop-policies.js"></script>
+    <script src="options/options-advanced.js"></script>
+    <script src="options/options-course-linking.js"></script>
+    <script src="options/options-settings.js"></script>
+    <script src="options/options-pin-prompt.js"></script>
+    <script src="options/options-main.js"></script>
+
+    <!-- Theme toggle module (extracted to comply with CSP) -->
+    <script src="options/options-theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+    </button>
+
+    <div class="header">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0;">Gradescope to Cal</h3>
+        <span class="feature-badge">Grade Calculator</span>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" data-tab="calendar">📅 Calendar</button>
+        <button class="tab-button" data-tab="grades">📊 Grades</button>
+    </div>
+
+    <!-- Calendar Tab Content -->
+    <div class="tab-content active" id="calendar-tab">
+        <div id="status" class="status info">
+            <div>🔍 Checking for assignments...</div>
+        </div>
+
+        <!-- Assignment Extraction Section -->
+        <div class="section">
+            <div class="section-title">Assignment Extraction</div>
+            
+            <button id="manualSync" class="button">
+                🔄 Extract Assignments Now
+            </button>
+
+            <button id="viewStorage" class="button secondary">
+                📊 View Extracted Data
+            </button>
+
+            <div id="assignmentCount" class="assignment-count">
+                No assignment data found yet
+            </div>
+        </div>
+
+        <!-- Google Calendar Integration Section -->
+        <div class="section">
+            <div class="section-title">Google Calendar Sync</div>
+            
+            <div id="authStatus" class="status info">
+                <div>🔍 Checking authentication...</div>
+            </div>
+
+            <button id="authenticate" class="button" style="display: none;">
+                🔐 Connect Google Calendar
+            </button>
+
+            <button id="calendarSync" class="button primary" disabled>
+                📅 Sync to Calendar
+            </button>
+        </div>
+    </div>
+
+    <!-- Grades Tab Content -->
+    <div class="tab-content" id="grades-tab">
+        <!-- Course Selector -->
+        <select id="courseSelector" class="course-selector">
+            <option value="">Select a course to view grades...</option>
+        </select>
+
+        <!-- Grade Overview -->
+        <div id="gradeOverview" class="grade-overview" style="display: none;">
+            <div class="grade-percentage" id="overallGrade">87.3%</div>
+            <div class="grade-subtitle" id="gradeSubtitle">Based on 8 of 12 assignments</div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div id="categoryList" class="category-list"></div>
+
+        <!-- Grade Actions -->
+        <div class="grade-actions">
+            <button class="grade-action-btn" id="predictGradeBtn">
+                🎯 What grade do I need?
+            </button>
+            <button class="grade-action-btn" id="configureWeightsBtn">
+                ⚖️ Configure weights
+            </button>
+        </div>
+
+        <!-- Grade Prediction Panel -->
+        <div class="prediction-panel" id="predictionPanel">
+            <div class="prediction-title">Grade Prediction</div>
+            <div class="prediction-input">
+                <label>Target grade:</label>
+                <input type="number" id="targetGrade" value="90" min="0" max="100">
+                <span>%</span>
+            </div>
+            <div class="prediction-result" id="predictionResult">
+                Calculate to see what you need on remaining assignments
+            </div>
+        </div>
+
+        <!-- No Grades Message -->
+        <div id="noGradesMessage" class="no-grades-message">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
+            <div style="font-weight: 600; margin-bottom: 5px;">No Grade Data Found</div>
+            <div style="font-size: 12px;">Extract assignments from Gradescope to see your grades</div>
+        </div>
+    </div>
+
+    <!-- Grade disclaimer footer (only shows in grades tab) -->
+    <div id="gradeDisclaimerFooter" class="tab-content" style="display: none;">
+        <div class="grade-disclaimer-footer">
+            Grade estimate · Verify on GS
+        </div>
+    </div>
+
+    <div class="footer">
+        Privacy-first • No servers • Local processing only
+    </div>
+
+    <a href="options.html" class="options-link" target="_blank">
+        ⚙️ Options
+    </a>
+
+    <!-- Load WebExtension Polyfill for cross-browser compatibility -->
+    <script src="lib/browser-polyfill.js"></script>
+
+    <!-- Load browser detection utility -->
+    <script src="utils/browserDetector.js"></script>
+
+    <!-- Config modules (must load before courseConfigManager) -->
+    <script src="config/gradeCalculator.js"></script>
+    <script src="config/categoryGroupManager.js"></script>
+    <script src="config/courseLinkingManager.js"></script>
+    <script src="config/clobberPolicyManager.js"></script>
+    <script src="config/validationManager.js"></script>
+    <script src="config/assignmentExclusionManager.js"></script>
+    <script src="courseConfigManager.js"></script>
+
+    <!-- Popup modules -->
+    <script src="utils/feedbackBanner.js"></script>
+    <script src="popup/popup-storage.js"></script>
+    <script src="popup/popup-theme.js"></script>
+    <script src="popup/popup-tabs.js"></script>
+    <script src="popup/popup-grades.js"></script>
+    <script src="popup/popup-calendar.js"></script>
+    <script src="popup/popup-ical.js"></script>
+    <script src="popup/popup-main.js"></script>
+</body>
+</html>

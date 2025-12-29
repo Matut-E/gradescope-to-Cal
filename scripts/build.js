@@ -31,7 +31,11 @@ const JUNK_FILES = [
     '.git',
     '.gitignore',
     'desktop.ini',
-    '.localized'
+    '.localized',
+    '.broken',
+    '.pre-fix',
+    'manifest-firefox.json',  // Platform manifests come from platform/ folder
+    'manifest-chrome.json'    // Platform manifests come from platform/ folder
 ];
 
 /**
@@ -51,6 +55,10 @@ function shouldExclude(filename) {
 async function copySourceFiles(targetDir) {
     console.log(`📦 Copying source files to ${path.basename(targetDir)}...`);
 
+    // Clean the target directory first to remove stale files
+    if (await fs.pathExists(targetDir)) {
+        await fs.remove(targetDir);
+    }
     await fs.ensureDir(targetDir);
 
     // Copy all files from src/ to target, filtering junk files
@@ -135,6 +143,11 @@ async function createRelease(platform) {
     const zipPath = path.join(BUILD_DIR, `${releaseName}.zip`);
 
     console.log(`📦 Creating versioned release: ${releaseName}`);
+
+    // Clean versioned directory first to remove stale files
+    if (await fs.pathExists(releaseDir)) {
+        await fs.remove(releaseDir);
+    }
 
     // Copy from working build directory to versioned directory
     const workingDir = path.join(BUILD_DIR, platform);

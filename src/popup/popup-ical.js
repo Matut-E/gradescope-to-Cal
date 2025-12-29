@@ -112,13 +112,12 @@ class IcalExportManager {
             }
 
             // Send message to background script to generate iCal content
-            // Use browser.runtime for Firefox compatibility
             const response = await browser.runtime.sendMessage({
                 action: 'generateIcal',
                 assignments: upcomingAssignments
             });
 
-            if (response && response.success && response.icalContent) {
+            if (response.success && response.icalContent) {
                 // Background generated the content, now handle download in popup context
                 // (URL.createObjectURL not available in service workers)
 
@@ -151,8 +150,7 @@ class IcalExportManager {
                 // Auto-dismiss success message after 3 seconds
                 setTimeout(() => this.hideStatus(), 3000);
             } else {
-                const errorMsg = response ? response.error : 'No response from background script';
-                this.showStatus(`❌ Export failed: ${errorMsg}`, 'error');
+                this.showStatus(`❌ Export failed: ${response.error}`, 'error');
             }
 
         } catch (error) {

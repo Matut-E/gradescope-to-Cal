@@ -24,11 +24,17 @@
 
     <div class="header">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0;">Gradescope to Cal</h3>
-        <span class="feature-badge">Calendar Sync</span>
+        <span class="feature-badge">Grade Calculator</span>
     </div>
 
-    <!-- Calendar Tab Content (no tabs needed, single page) -->
-    <div id="calendar-tab">
+    <!-- NEW: Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" data-tab="calendar">📅 Calendar</button>
+        <button class="tab-button" data-tab="grades">📊 Grades</button>
+    </div>
+
+    <!-- EXISTING: Calendar Tab Content -->
+    <div class="tab-content active" id="calendar-tab">
         <div id="status" class="status info">
             <div>🔍 Checking for assignments...</div>
         </div>
@@ -36,7 +42,7 @@
         <!-- Assignment Extraction Section -->
         <div class="section">
             <div class="section-title">Assignment Extraction</div>
-
+            
             <button id="manualSync" class="button">
                 🔄 Extract Assignments Now
             </button>
@@ -46,14 +52,14 @@
             </button>
 
             <div id="assignmentCount" class="assignment-count">
-                No assignment data found yet
+                No upcoming assignments found
             </div>
         </div>
 
         <!-- Google Calendar Integration Section -->
         <div class="section">
             <div class="section-title">Google Calendar Sync</div>
-
+            
             <div id="authStatus" class="status info">
                 <div>🔍 Checking authentication...</div>
             </div>
@@ -68,6 +74,60 @@
         </div>
     </div>
 
+    <!-- NEW: Grades Tab Content -->
+    <div class="tab-content" id="grades-tab">
+        <!-- Course Selector -->
+        <select id="courseSelector" class="course-selector">
+            <option value="">Select a course to view grades...</option>
+        </select>
+
+        <!-- Grade Overview -->
+        <div id="gradeOverview" class="grade-overview" style="display: none;">
+            <div class="grade-percentage" id="overallGrade">87.3%</div>
+            <div class="grade-subtitle" id="gradeSubtitle">Based on 8 of 12 assignments</div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div id="categoryList" class="category-list"></div>
+
+        <!-- Grade Actions -->
+        <div class="grade-actions">
+            <button class="grade-action-btn" id="predictGradeBtn">
+                🎯 What grade do I need?
+            </button>
+            <button class="grade-action-btn" id="configureWeightsBtn">
+                ⚖️ Configure weights
+            </button>
+        </div>
+
+        <!-- Grade Prediction Panel -->
+        <div class="prediction-panel" id="predictionPanel">
+            <div class="prediction-title">Grade Prediction</div>
+            <div class="prediction-input">
+                <label>Target grade:</label>
+                <input type="number" id="targetGrade" value="90" min="0" max="100">
+                <span>%</span>
+            </div>
+            <div class="prediction-result" id="predictionResult">
+                Calculate to see what you need on remaining assignments
+            </div>
+        </div>
+
+        <!-- No Grades Message -->
+        <div id="noGradesMessage" class="no-grades-message">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
+            <div style="font-weight: 600; margin-bottom: 5px;">No Grade Data Found</div>
+            <div style="font-size: 12px;">Extract assignments from Gradescope to see your grades</div>
+        </div>
+    </div>
+
+    <!-- NEW: Grade disclaimer footer (only shows in grades tab) -->
+    <div id="gradeDisclaimerFooter" class="tab-content" style="display: none;">
+        <div class="grade-disclaimer-footer">
+            Grade estimate · Verify on GS
+        </div>
+    </div>
+
     <div class="footer">
         Privacy-first • No servers • Local processing only
     </div>
@@ -76,16 +136,24 @@
         ⚙️ Options
     </a>
 
-    <!-- Load WebExtension Polyfill for cross-browser compatibility -->
+    <!-- Load polyfill first for Firefox compatibility -->
     <script src="lib/browser-polyfill.js"></script>
 
-    <!-- Load browser detection utility -->
-    <script src="utils/browserDetector.js"></script>
-
-    <!-- Load modules in dependency order (no grade modules) -->
-    <script src="utils/feedbackBanner.js"></script>
+    <!-- Load modules in dependency order -->
+    <!-- Config modules (must load before courseConfigManager) -->
+    <script src="config/gradeCalculator.js"></script>
+    <script src="config/categoryGroupManager.js"></script>
+    <script src="config/courseLinkingManager.js"></script>
+    <script src="config/clobberPolicyManager.js"></script>
+    <script src="config/templateManager.js"></script>
+    <script src="config/validationManager.js"></script>
+    <script src="config/assignmentExclusionManager.js"></script>
+    <script src="courseConfigManager.js"></script>
+    <!-- Popup modules (organized in popup/ subdirectory) -->
     <script src="popup/popup-storage.js"></script>
     <script src="popup/popup-theme.js"></script>
+    <script src="popup/popup-tabs.js"></script>
+    <script src="popup/popup-grades.js"></script>
     <script src="popup/popup-calendar.js"></script>
     <script src="popup/popup-ical.js"></script>
     <script src="popup/popup-main.js"></script>

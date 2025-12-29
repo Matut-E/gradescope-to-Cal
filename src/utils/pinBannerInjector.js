@@ -34,12 +34,6 @@ class PinBannerInjector {
      * Check if banner should be shown based on storage flags
      */
     async shouldShowBanner() {
-        // Firefox auto-pins extensions, so never show pin banner
-        if (window.browserDetector && window.browserDetector.isFirefox()) {
-            console.log('🦊 [PinBanner] Firefox detected - extensions auto-pinned, skipping banner');
-            return false;
-        }
-
         return new Promise((resolve) => {
             browser.storage.local.get(
                 ['dismissedExtractionBanner', 'reminderDismissedAt'],
@@ -72,12 +66,8 @@ class PinBannerInjector {
     createBanner(assignmentCount, courseCount) {
         const banner = document.createElement('div');
         banner.id = this.bannerId;
-
-        // Safe replacement for innerHTML - create style and content separately
-
-        // 1. Create and add styles using a <style> element
-        const style = document.createElement('style');
-        style.textContent = `
+        banner.innerHTML = `
+            <style>
                 #${this.bannerId} {
                     position: fixed;
                     top: 0;
@@ -240,115 +230,46 @@ class PinBannerInjector {
                         justify-content: center;
                     }
                 }
+            </style>
+
+            <button id="${this.bannerId}-close" title="Dismiss forever">✕</button>
+
+            <div id="${this.bannerId}-container">
+                <div id="${this.bannerId}-content">
+                    <div id="${this.bannerId}-title">
+                        <span>✅</span>
+                        <span>Found ${assignmentCount} assignment${assignmentCount !== 1 ? 's' : ''} from ${courseCount} course${courseCount !== 1 ? 's' : ''}!</span>
+                    </div>
+                    <div id="${this.bannerId}-subtitle">
+                        📌 Pin the extension to your toolbar for instant access to sync and grade calculator
+                    </div>
+                    <div id="${this.bannerId}-steps">
+                        <div id="${this.bannerId}-step">
+                            <span id="${this.bannerId}-step-icon">🧩</span>
+                            <span>Click puzzle icon</span>
+                        </div>
+                        <div id="${this.bannerId}-step">
+                            <span id="${this.bannerId}-step-icon">📍</span>
+                            <span>Find "Gradescope to Cal"</span>
+                        </div>
+                        <div id="${this.bannerId}-step">
+                            <span id="${this.bannerId}-step-icon">✨</span>
+                            <span>Click the pin</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="${this.bannerId}-actions">
+                    <button class="gtc-banner-btn gtc-banner-btn-primary" id="${this.bannerId}-open">
+                        <span>📂</span>
+                        <span>Open Extension</span>
+                    </button>
+                    <button class="gtc-banner-btn gtc-banner-btn-secondary" id="${this.bannerId}-later">
+                        <span>Remind Me Later</span>
+                    </button>
+                </div>
+            </div>
         `;
-        banner.appendChild(style);
-
-        // 2. Build HTML structure with createElement (safe, no XSS risk)
-
-        // Close button
-        const closeBtn = document.createElement('button');
-        closeBtn.id = `${this.bannerId}-close`;
-        closeBtn.title = 'Dismiss forever';
-        closeBtn.textContent = '✕';
-        banner.appendChild(closeBtn);
-
-        // Container
-        const container = document.createElement('div');
-        container.id = `${this.bannerId}-container`;
-
-        // Content section
-        const content = document.createElement('div');
-        content.id = `${this.bannerId}-content`;
-
-        // Title
-        const title = document.createElement('div');
-        title.id = `${this.bannerId}-title`;
-        const titleIcon = document.createElement('span');
-        titleIcon.textContent = '✅';
-        const titleText = document.createElement('span');
-        const assignmentText = assignmentCount !== 1 ? 's' : '';
-        const courseText = courseCount !== 1 ? 's' : '';
-        titleText.textContent = `Found ${assignmentCount} assignment${assignmentText} from ${courseCount} course${courseText}!`;
-        title.appendChild(titleIcon);
-        title.appendChild(titleText);
-        content.appendChild(title);
-
-        // Subtitle
-        const subtitle = document.createElement('div');
-        subtitle.id = `${this.bannerId}-subtitle`;
-        subtitle.textContent = '📌 Pin the extension to your toolbar for instant access to calendar sync';
-        content.appendChild(subtitle);
-
-        // Steps
-        const steps = document.createElement('div');
-        steps.id = `${this.bannerId}-steps`;
-
-        // Step 1
-        const step1 = document.createElement('div');
-        step1.id = `${this.bannerId}-step`;
-        const step1Icon = document.createElement('span');
-        step1Icon.id = `${this.bannerId}-step-icon`;
-        step1Icon.textContent = '🧩';
-        const step1Text = document.createElement('span');
-        step1Text.textContent = 'Click puzzle icon';
-        step1.appendChild(step1Icon);
-        step1.appendChild(step1Text);
-        steps.appendChild(step1);
-
-        // Step 2
-        const step2 = document.createElement('div');
-        step2.id = `${this.bannerId}-step`;
-        const step2Icon = document.createElement('span');
-        step2Icon.id = `${this.bannerId}-step-icon`;
-        step2Icon.textContent = '📍';
-        const step2Text = document.createElement('span');
-        step2Text.textContent = 'Find "Gradescope to Cal"';
-        step2.appendChild(step2Icon);
-        step2.appendChild(step2Text);
-        steps.appendChild(step2);
-
-        // Step 3
-        const step3 = document.createElement('div');
-        step3.id = `${this.bannerId}-step`;
-        const step3Icon = document.createElement('span');
-        step3Icon.id = `${this.bannerId}-step-icon`;
-        step3Icon.textContent = '✨';
-        const step3Text = document.createElement('span');
-        step3Text.textContent = 'Click the pin';
-        step3.appendChild(step3Icon);
-        step3.appendChild(step3Text);
-        steps.appendChild(step3);
-
-        content.appendChild(steps);
-        container.appendChild(content);
-
-        // Actions section
-        const actions = document.createElement('div');
-        actions.id = `${this.bannerId}-actions`;
-
-        // Open Extension button
-        const openBtn = document.createElement('button');
-        openBtn.className = 'gtc-banner-btn gtc-banner-btn-primary';
-        openBtn.id = `${this.bannerId}-open`;
-        const openIcon = document.createElement('span');
-        openIcon.textContent = '📂';
-        const openText = document.createElement('span');
-        openText.textContent = 'Open Extension';
-        openBtn.appendChild(openIcon);
-        openBtn.appendChild(openText);
-        actions.appendChild(openBtn);
-
-        // Remind Me Later button
-        const laterBtn = document.createElement('button');
-        laterBtn.className = 'gtc-banner-btn gtc-banner-btn-secondary';
-        laterBtn.id = `${this.bannerId}-later`;
-        const laterText = document.createElement('span');
-        laterText.textContent = 'Remind Me Later';
-        laterBtn.appendChild(laterText);
-        actions.appendChild(laterBtn);
-
-        container.appendChild(actions);
-        banner.appendChild(container);
 
         // Insert at the top of the page
         document.body.insertBefore(banner, document.body.firstChild);
@@ -387,7 +308,7 @@ class PinBannerInjector {
      * Open the extension popup
      */
     openExtension() {
-        // Send message to background to open popup (or try chrome.action)
+        // Send message to background to open popup (or try browser.action)
         browser.runtime.sendMessage({ action: 'openPopup' });
 
         // Hide banner

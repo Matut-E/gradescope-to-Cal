@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up theme
     initializeTheme();
 
-    // Browser-specific pin instructions
+    // Browser-specific pin instructions and buttons
     if (window.browserDetector && window.browserDetector.isFirefox()) {
         console.log('🦊 Firefox detected - showing auto-pinned message');
 
@@ -89,6 +89,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const firefoxMessage = document.getElementById('firefox-auto-pinned');
         if (firefoxMessage) {
             firefoxMessage.style.display = 'block';
+        }
+
+        // Update buttons for Firefox - single button since auto-pinned
+        const pinnedBtn = document.getElementById('pinnedBtn');
+        const skipBtn = document.getElementById('skipBtn');
+        if (pinnedBtn) {
+            pinnedBtn.innerHTML = '<span>🚀</span><span>Let\'s Go! Take Me to Gradescope</span>';
+        }
+        if (skipBtn) {
+            skipBtn.style.display = 'none';
         }
     } else {
         console.log('🌐 Chrome/Chromium detected - showing pin instructions');

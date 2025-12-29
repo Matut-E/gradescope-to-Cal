@@ -36,8 +36,14 @@ class TabManager {
         }
 
         // Load tab-specific data
-        if (tabName === 'grades' && window.gradeManagerInstance) {
-            window.gradeManagerInstance.loadGradeData();
+        if (tabName === 'grades') {
+            console.log('📊 Grades tab selected, checking gradeManagerInstance:', !!window.gradeManagerInstance);
+            if (window.gradeManagerInstance) {
+                console.log('📊 Calling loadGradeData...');
+                window.gradeManagerInstance.loadGradeData();
+            } else {
+                console.error('❌ gradeManagerInstance not available!');
+            }
         }
     }
 }

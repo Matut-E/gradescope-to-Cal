@@ -297,6 +297,10 @@ testGradeExtraction() // Test basic extraction
 testEnhancedStorage() // Inspect stored data
 ```
 
+### Claude Code Tips
+
+- **Use relative paths**: When you get `Error: File has been unexpectedly modified`, use relative paths instead of absolute paths when reading/writing files.
+
 ## Firefox & Chromium Compatibility
 
 **⚠️ CRITICAL**: This extension supports both Firefox and Chromium-based browsers (Chrome, Brave, Edge). ALL code changes MUST be tested on both platforms to prevent platform-specific bugs.

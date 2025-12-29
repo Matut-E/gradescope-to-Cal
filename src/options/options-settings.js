@@ -5,7 +5,7 @@
  * Extracted from options.js for better maintainability
  *
  * Dependencies (must be loaded before this module):
- * - chrome.runtime - Chrome messaging API
+ * - browser.runtime - Chrome messaging API
  * - browser.storage.local - Chrome local storage
  * - browser.storage.sync - Chrome sync storage
  *
@@ -33,14 +33,15 @@ class OptionsSettings {
 
     /**
      * Local state for custom reminders
-     * Stores custom reminder times in minutes
+     * Array of minutes before due date (only saved when user clicks "Save Settings")
      */
-    static customReminders = [1440, 60]; // Default to double preset
+    static customReminders = [1440, 60]; // Default to double preset (1 day + 1 hour)
 
     /**
      * Track previous settings to detect what changed
      */
     static previousSettings = {
+        createReminders: true,
         eventColorId: '9'
     };
 
@@ -62,45 +63,45 @@ class OptionsSettings {
      * Enhanced Authentication Status Display
      */
     static async checkAuthStatus() {
+        console.log('🔍 [OptionsSettings] checkAuthStatus() called');
+
         const authStatus = document.getElementById('authStatus');
         const authenticateBtn = document.getElementById('authenticate');
         const disconnectBtn = document.getElementById('disconnect');
 
+        console.log('🔍 [OptionsSettings] DOM elements found:', {
+            authStatus: !!authStatus,
+            authenticateBtn: !!authenticateBtn,
+            disconnectBtn: !!disconnectBtn
+        });
+
         try {
+            console.log('🔍 [OptionsSettings] Sending getAuthStatus message to background...');
             const response = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
+            console.log('🔍 [OptionsSettings] Received response:', response);
 
             if (response.success && response.authenticated && response.tokenValid) {
                 if (authStatus) {
                     authStatus.className = 'status success';
-                    authStatus.textContent = '';
 
-                    // Build status display with createElement (safe, no XSS risk)
-                    const mainDiv = document.createElement('div');
-                    mainDiv.textContent = '✅ Connected to Google Calendar';
-                    authStatus.appendChild(mainDiv);
+                    let statusHTML = '<div>✅ Connected to Google Calendar</div>';
 
                     // Add detailed authentication info
                     if (response.expiresAt) {
                         const expiryDate = new Date(response.expiresAt);
-                        const expirySmall = document.createElement('small');
-                        expirySmall.textContent = `Token expires: ${expiryDate.toLocaleString()}`;
-                        authStatus.appendChild(expirySmall);
-                        authStatus.appendChild(document.createElement('br'));
+                        statusHTML += `<small>Token expires: ${expiryDate.toLocaleString()}</small><br>`;
                     }
 
                     if (response.authMethod) {
                         const methodDisplay = response.authMethod === 'getAuthToken' ? 'Chrome Native (Fast)' : 'Universal';
-                        const methodSmall = document.createElement('small');
-                        methodSmall.textContent = `Method: ${methodDisplay}`;
-                        authStatus.appendChild(methodSmall);
-                        authStatus.appendChild(document.createElement('br'));
+                        statusHTML += `<small>Method: ${methodDisplay}</small><br>`;
                     }
 
                     if (response.browserInfo) {
-                        const browserSmall = document.createElement('small');
-                        browserSmall.textContent = `Browser: ${response.browserInfo.type}`;
-                        authStatus.appendChild(browserSmall);
+                        statusHTML += `<small>Browser: ${response.browserInfo.type}</small>`;
                     }
+
+                    authStatus.innerHTML = statusHTML;
                 }
                 if (authenticateBtn) {
                     authenticateBtn.style.display = 'none';
@@ -111,10 +112,7 @@ class OptionsSettings {
             } else {
                 if (authStatus) {
                     authStatus.className = 'status info';
-                    authStatus.textContent = '';
-                    const messageDiv = document.createElement('div');
-                    messageDiv.textContent = '🔒 Not connected to Google Calendar';
-                    authStatus.appendChild(messageDiv);
+                    authStatus.innerHTML = '<div>🔒 Not connected to Google Calendar</div>';
                 }
                 if (authenticateBtn) {
                     authenticateBtn.style.display = 'inline-block';
@@ -124,30 +122,14 @@ class OptionsSettings {
                 }
             }
         } catch (error) {
-            console.error('❌ Auth status error:', error);
+            console.error('❌ [OptionsSettings] Auth status error:', error);
             if (authStatus) {
                 authStatus.className = 'status warning';
-                authStatus.textContent = '';
-                const errorDiv = document.createElement('div');
-                errorDiv.textContent = '⚠️ Error checking authentication status';
-                authStatus.appendChild(errorDiv);
+                authStatus.innerHTML = '<div>⚠️ Error checking authentication status</div>';
             }
         }
-    }
 
-    /**
-     * Format sync type for display
-     * @param {string} syncType - Raw sync type ('manual', 'auto', 'smart', 'first_time')
-     * @returns {string} Formatted sync type with emoji
-     */
-    static formatSyncType(syncType) {
-        const syncTypeMap = {
-            'manual': '👆 Manual',
-            'auto': '⏰ Auto (24-hour)',
-            'smart': '🧠 Smart',
-            'first_time': '🎉 First-time'
-        };
-        return syncTypeMap[syncType] || '❓ Unknown';
+        console.log('🔍 [OptionsSettings] checkAuthStatus() completed');
     }
 
     /**
@@ -166,70 +148,51 @@ class OptionsSettings {
                 // Update checkbox state
                 autoSyncCheckbox.checked = status.enabled;
 
-                // Remove any existing auto-sync status to prevent duplicates (DOM approach)
-                if (authStatus) {
-                    // Find and remove elements containing auto-sync emojis
-                    const childrenToRemove = [];
-                    Array.from(authStatus.childNodes).forEach(node => {
-                        if (node.textContent && (node.textContent.includes('🔄') || node.textContent.includes('⏸️'))) {
-                            childrenToRemove.push(node);
-                        }
-                    });
-                    childrenToRemove.forEach(node => node.remove());
+                // Remove any existing auto-sync status to prevent duplicates
+                if (authStatus.innerHTML) {
+                    // Remove lines containing auto-sync emojis (🔄 or ⏸️)
+                    const lines = authStatus.innerHTML.split('<br>');
+                    const filteredLines = lines.filter(line =>
+                        !line.includes('🔄') && !line.includes('⏸️')
+                    );
+                    authStatus.innerHTML = filteredLines.join('<br>');
                 }
 
-                // Build auto-sync info with createElement (safe, no XSS risk)
-                if (authStatus && authStatus.childNodes.length > 0) {
-                    if (status.enabled) {
-                        // Format the interval (should be 24 hours)
-                        const intervalText = OptionsSettings.formatInterval(status.interval);
-                        authStatus.appendChild(document.createElement('br'));
-                        const autoSyncSmall = document.createElement('small');
-                        autoSyncSmall.textContent = `🔄 Auto-sync: Every ${intervalText} (Optimized)`;
-                        authStatus.appendChild(autoSyncSmall);
+                // Show detailed status in the authentication section
+                let autoSyncInfo = '';
+                if (status.enabled) {
+                    // Format the interval (should be 24 hours)
+                    const intervalText = OptionsSettings.formatInterval(status.interval);
+                    autoSyncInfo += `<br><small>🔄 Auto-sync: Every ${intervalText} (Optimized)</small>`;
 
-                        if (status.lastSync) {
-                            const lastSync = new Date(status.lastSync);
-                            authStatus.appendChild(document.createElement('br'));
-                            const lastSyncSmall = document.createElement('small');
+                    if (status.lastSync) {
+                        const lastSync = new Date(status.lastSync);
+                        autoSyncInfo += `<br><small>Last sync: ${lastSync.toLocaleString()}</small>`;
 
-                            // Get sync type from storage
-                            const storage = await browser.storage.local.get(['lastSyncType']);
-                            const syncType = storage.lastSyncType;
-                            const syncTypeLabel = syncType ? ` (${OptionsSettings.formatSyncType(syncType)})` : '';
-
-                            lastSyncSmall.textContent = `Last sync: ${lastSync.toLocaleString()}${syncTypeLabel}`;
-                            authStatus.appendChild(lastSyncSmall);
-
-                            if (status.lastResults) {
-                                const r = status.lastResults;
-                                authStatus.appendChild(document.createElement('br'));
-                                const resultsSmall = document.createElement('small');
-                                resultsSmall.textContent = `(${r.created} created, ${r.skipped} skipped, ${r.errors} errors)`;
-                                authStatus.appendChild(resultsSmall);
-                            }
+                        if (status.lastResults) {
+                            const r = status.lastResults;
+                            autoSyncInfo += `<br><small>(${r.created} created, ${r.skipped} skipped, ${r.errors} errors)</small>`;
                         }
-
-                        if (status.nextSync) {
-                            const nextSync = new Date(status.nextSync);
-                            const hoursUntilNext = Math.round((nextSync - new Date()) / (1000 * 60 * 60));
-                            const minutesUntilNext = Math.round((nextSync - new Date()) / (1000 * 60));
-
-                            authStatus.appendChild(document.createElement('br'));
-                            const nextSyncSmall = document.createElement('small');
-                            if (hoursUntilNext >= 1) {
-                                nextSyncSmall.textContent = `Next sync: in ${hoursUntilNext} hour${hoursUntilNext !== 1 ? 's' : ''} (${nextSync.toLocaleTimeString()})`;
-                            } else {
-                                nextSyncSmall.textContent = `Next sync: in ${minutesUntilNext} minutes (${nextSync.toLocaleTimeString()})`;
-                            }
-                            authStatus.appendChild(nextSyncSmall);
-                        }
-                    } else {
-                        authStatus.appendChild(document.createElement('br'));
-                        const disabledSmall = document.createElement('small');
-                        disabledSmall.textContent = '⏸️ Auto-sync disabled';
-                        authStatus.appendChild(disabledSmall);
                     }
+
+                    if (status.nextSync) {
+                        const nextSync = new Date(status.nextSync);
+                        const hoursUntilNext = Math.round((nextSync - new Date()) / (1000 * 60 * 60));
+                        const minutesUntilNext = Math.round((nextSync - new Date()) / (1000 * 60));
+
+                        if (hoursUntilNext >= 1) {
+                            autoSyncInfo += `<br><small>Next sync: in ${hoursUntilNext} hour${hoursUntilNext !== 1 ? 's' : ''} (${nextSync.toLocaleTimeString()})</small>`;
+                        } else {
+                            autoSyncInfo += `<br><small>Next sync: in ${minutesUntilNext} minutes (${nextSync.toLocaleTimeString()})</small>`;
+                        }
+                    }
+                } else {
+                    autoSyncInfo += '<br><small>⏸️ Auto-sync disabled</small>';
+                }
+
+                // Add to auth status display
+                if (authStatus.innerHTML) {
+                    authStatus.innerHTML += autoSyncInfo;
                 }
             }
         } catch (error) {
@@ -296,6 +259,159 @@ class OptionsSettings {
     }
 
     /**
+     * Toggle custom reminder builder visibility
+     * @param {boolean} show - Whether to show the builder
+     */
+    static toggleCustomReminderBuilder(show) {
+        const customReminderBuilder = document.getElementById('customReminderBuilder');
+        if (customReminderBuilder) {
+            customReminderBuilder.style.display = show ? 'block' : 'none';
+            if (show) {
+                OptionsSettings.renderCustomReminders();
+            }
+        }
+    }
+
+    /**
+     * Render custom reminder rows in the builder
+     */
+    static renderCustomReminders() {
+        const customReminderList = document.getElementById('customReminderList');
+        const addReminderBtn = document.getElementById('addReminderBtn');
+
+        if (!customReminderList) return;
+
+        // Clear existing rows
+        customReminderList.innerHTML = '';
+
+        // Render each reminder
+        OptionsSettings.customReminders.forEach((minutes, index) => {
+            const row = OptionsSettings.createCustomReminderRow(minutes, index);
+            customReminderList.appendChild(row);
+        });
+
+        // Update "Add reminder" button state
+        if (addReminderBtn) {
+            addReminderBtn.disabled = OptionsSettings.customReminders.length >= 3;
+        }
+    }
+
+    /**
+     * Create a custom reminder row element
+     * @param {number} minutes - Reminder time in minutes
+     * @param {number} index - Index in the customReminders array
+     * @returns {HTMLElement} The reminder row element
+     */
+    static createCustomReminderRow(minutes, index) {
+        const row = document.createElement('div');
+        row.className = 'custom-reminder-row';
+
+        // Convert minutes to appropriate unit for display
+        let value, unit;
+        if (minutes >= 1440 && minutes % 1440 === 0) {
+            value = minutes / 1440;
+            unit = 'days';
+        } else if (minutes >= 60 && minutes % 60 === 0) {
+            value = minutes / 60;
+            unit = 'hours';
+        } else {
+            value = minutes;
+            unit = 'minutes';
+        }
+
+        row.innerHTML = `
+            <input type="number" min="1" value="${value}" data-index="${index}" class="reminder-value-input">
+            <select data-index="${index}" class="reminder-unit-select">
+                <option value="minutes" ${unit === 'minutes' ? 'selected' : ''}>minutes</option>
+                <option value="hours" ${unit === 'hours' ? 'selected' : ''}>hours</option>
+                <option value="days" ${unit === 'days' ? 'selected' : ''}>days</option>
+            </select>
+            <span class="reminder-text">before</span>
+            <button type="button" class="reminder-delete-btn" data-index="${index}">× delete</button>
+        `;
+
+        // Add event listeners
+        const valueInput = row.querySelector('.reminder-value-input');
+        const unitSelect = row.querySelector('.reminder-unit-select');
+        const deleteBtn = row.querySelector('.reminder-delete-btn');
+
+        valueInput.addEventListener('change', () => {
+            OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
+        });
+
+        unitSelect.addEventListener('change', () => {
+            OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            OptionsSettings.deleteCustomReminder(index);
+        });
+
+        return row;
+    }
+
+    /**
+     * Add a new custom reminder
+     */
+    static addCustomReminder() {
+        if (OptionsSettings.customReminders.length >= 3) {
+            return;
+        }
+
+        // Add default reminder (1 day before)
+        OptionsSettings.customReminders.push(1440);
+        OptionsSettings.renderCustomReminders();
+    }
+
+    /**
+     * Delete a custom reminder
+     * @param {number} index - Index of the reminder to delete
+     */
+    static deleteCustomReminder(index) {
+        OptionsSettings.customReminders.splice(index, 1);
+        OptionsSettings.renderCustomReminders();
+    }
+
+    /**
+     * Update a custom reminder value
+     * @param {number} index - Index of the reminder
+     * @param {number} value - New value
+     * @param {string} unit - Unit (minutes, hours, days)
+     */
+    static updateCustomReminder(index, value, unit) {
+        let minutes = value;
+
+        // Convert to minutes based on unit
+        if (unit === 'hours') {
+            minutes = value * 60;
+        } else if (unit === 'days') {
+            minutes = value * 1440;
+        }
+
+        OptionsSettings.customReminders[index] = minutes;
+    }
+
+    /**
+     * Handle reminder schedule radio button changes
+     */
+    static handleReminderScheduleChange() {
+        const selectedRadio = document.querySelector('input[name="reminderSchedule"]:checked');
+        if (!selectedRadio) return;
+
+        const value = selectedRadio.value;
+
+        // Show/hide custom reminder builder
+        OptionsSettings.toggleCustomReminderBuilder(value === 'custom');
+
+        // Pre-populate custom reminders based on selection
+        if (value === 'custom' && OptionsSettings.customReminders.length === 0) {
+            // Start with double preset if empty
+            OptionsSettings.customReminders = [1440, 60];
+            OptionsSettings.renderCustomReminders();
+        }
+    }
+
+    /**
      * Load Settings from Storage - Updated for new structure
      */
     static async loadSettings() {
@@ -305,9 +421,9 @@ class OptionsSettings {
             const settings = await browser.storage.local.get([
                 'settings_auto_sync',
                 'settings_auto_discovery',
-                'reminderSchedule',
-                'customReminders',
-                'eventDisplayTime'
+                'reminderSchedule',        // NEW
+                'customReminders',         // NEW
+                'eventDisplayTime'         // NEW
             ]);
 
             // Load color preference from sync storage
@@ -328,7 +444,7 @@ class OptionsSettings {
                 reminderRadio.checked = true;
             }
 
-            // Load custom reminders (default: [1440, 60] for double preset)
+            // Load custom reminders (default: [1440, 60])
             const customReminders = settings.customReminders || [1440, 60];
             OptionsSettings.customReminders = customReminders;
 
@@ -347,6 +463,10 @@ class OptionsSettings {
 
             // Update color picker UI
             OptionsSettings.updateColorPickerUI(eventColorId);
+
+            console.log('🔔 Loaded reminder schedule:', reminderSchedule);
+            console.log('🔔 Loaded custom reminders:', customReminders);
+            console.log('📅 Loaded event display timing:', eventDisplayTime);
 
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -377,15 +497,15 @@ class OptionsSettings {
 
             const settings = {
                 settings_auto_sync: autoSyncCheckbox.checked,
-                settings_create_reminders: true, // Always enabled (controlled via reminderSchedule now)
+                settings_create_reminders: true, // Keep for backward compatibility only
                 // Advanced settings are always enabled (hardcoded)
                 settings_auto_discovery: true,
                 // Store the last save timestamp
                 settings_last_updated: new Date().toISOString(),
                 // New settings for reminder schedule and display timing
-                reminderSchedule: reminderSchedule,
-                customReminders: OptionsSettings.customReminders,
-                eventDisplayTime: eventDisplayTime
+                reminderSchedule: reminderSchedule,              // NEW
+                customReminders: OptionsSettings.customReminders, // NEW
+                eventDisplayTime: eventDisplayTime                // NEW
             };
 
             await browser.storage.local.set(settings);
@@ -411,15 +531,11 @@ class OptionsSettings {
             // Update previous settings
             OptionsSettings.previousSettings.eventColorId = OptionsSettings.selectedEventColorId;
 
-            // Remove any existing warning first (DOM approach)
-            if (authStatus) {
-                const childrenToRemove = [];
-                Array.from(authStatus.childNodes).forEach(node => {
-                    if (node.className && node.className.includes('calendar-settings-warning')) {
-                        childrenToRemove.push(node);
-                    }
-                });
-                childrenToRemove.forEach(node => node.remove());
+            // Remove any existing warning first
+            if (authStatus && authStatus.innerHTML.includes('calendar-settings-warning')) {
+                const lines = authStatus.innerHTML.split('<br>');
+                const filteredLines = lines.filter(line => !line.includes('calendar-settings-warning'));
+                authStatus.innerHTML = filteredLines.join('<br>');
             }
 
             // Show appropriate success message based on auth status and what changed
@@ -428,21 +544,9 @@ class OptionsSettings {
                 saveSettingsBtn.textContent = '✅ Saved (Connect calendar to activate)';
                 saveSettingsBtn.className = 'button';
 
-                // Show info message in auth status only for calendar-specific settings (DOM approach)
-                if (authStatus) {
-                    // Check if warning already exists
-                    const warningExists = Array.from(authStatus.childNodes).some(node =>
-                        node.className && node.className.includes('calendar-settings-warning')
-                    );
-
-                    if (!warningExists) {
-                        authStatus.appendChild(document.createElement('br'));
-                        const warningSmall = document.createElement('small');
-                        warningSmall.className = 'calendar-settings-warning';
-                        warningSmall.style.color = 'var(--warning)';
-                        warningSmall.textContent = 'ℹ️ Connect your Google Calendar to activate reminders and color preferences.';
-                        authStatus.appendChild(warningSmall);
-                    }
+                // Show info message in auth status only for calendar-specific settings
+                if (authStatus && !authStatus.innerHTML.includes('calendar-settings-warning')) {
+                    authStatus.innerHTML += `<br><small class="calendar-settings-warning" style="color: var(--warning);">ℹ️ Connect your Google Calendar to activate reminders and color preferences.</small>`;
                 }
             } else {
                 saveSettingsBtn.textContent = '✅ Saved!';
@@ -476,10 +580,12 @@ class OptionsSettings {
      * Authenticate with Google
      */
     static async authenticateWithGoogle() {
+        console.log('🔐 [OptionsSettings] authenticateWithGoogle() called');
+
         const authenticateBtn = document.getElementById('authenticate');
 
         if (!authenticateBtn) {
-            console.error('❌ Authenticate button not found!');
+            console.error('❌ [OptionsSettings] Authenticate button not found!');
             return;
         }
 
@@ -487,17 +593,20 @@ class OptionsSettings {
         authenticateBtn.textContent = 'Connecting...';
 
         try {
+            console.log('🔐 [OptionsSettings] Sending authenticate message to background...');
             const response = await browser.runtime.sendMessage({ action: 'authenticate' });
+            console.log('🔐 [OptionsSettings] Received response:', response);
 
             if (response.success) {
+                console.log('✅ [OptionsSettings] Authentication successful, refreshing status...');
                 await OptionsSettings.checkAuthStatus();
                 await OptionsSettings.updateAutoSyncStatus();
             } else {
-                console.error('Authentication failed:', response.error);
+                console.error('❌ [OptionsSettings] Authentication failed:', response.error);
                 alert('Authentication failed: ' + response.error);
             }
         } catch (error) {
-            console.error('Authentication error:', error);
+            console.error('❌ [OptionsSettings] Authentication error:', error);
             alert('Authentication error: ' + error.message);
         } finally {
             authenticateBtn.disabled = false;
@@ -573,194 +682,6 @@ class OptionsSettings {
             } catch (error) {
                 alert('Error clearing data: ' + error.message);
             }
-        }
-    }
-
-    /**
-     * Toggle custom reminder builder visibility
-     * @param {boolean} show - Whether to show the builder
-     */
-    static toggleCustomReminderBuilder(show) {
-        const customReminderBuilder = document.getElementById('customReminderBuilder');
-        if (customReminderBuilder) {
-            customReminderBuilder.style.display = show ? 'block' : 'none';
-            if (show) {
-                OptionsSettings.renderCustomReminders();
-            }
-        }
-    }
-
-    /**
-     * Render custom reminder rows in the builder
-     */
-    static renderCustomReminders() {
-        const customReminderList = document.getElementById('customReminderList');
-        const addReminderBtn = document.getElementById('addReminderBtn');
-
-        if (!customReminderList) return;
-
-        // Clear existing rows (safe, no XSS risk)
-        customReminderList.textContent = '';
-
-        // Render each reminder
-        OptionsSettings.customReminders.forEach((minutes, index) => {
-            const row = OptionsSettings.createCustomReminderRow(minutes, index);
-            customReminderList.appendChild(row);
-        });
-
-        // Update "Add reminder" button state
-        if (addReminderBtn) {
-            addReminderBtn.disabled = OptionsSettings.customReminders.length >= 3;
-        }
-    }
-
-    /**
-     * Create a custom reminder row element
-     * @param {number} minutes - Reminder time in minutes
-     * @param {number} index - Index in the customReminders array
-     * @returns {HTMLElement} The reminder row element
-     */
-    static createCustomReminderRow(minutes, index) {
-        const row = document.createElement('div');
-        row.className = 'custom-reminder-row';
-
-        // Convert minutes to appropriate unit for display
-        let value, unit;
-        if (minutes >= 1440 && minutes % 1440 === 0) {
-            value = minutes / 1440;
-            unit = 'days';
-        } else if (minutes >= 60 && minutes % 60 === 0) {
-            value = minutes / 60;
-            unit = 'hours';
-        } else {
-            value = minutes;
-            unit = 'minutes';
-        }
-
-        // Build row with createElement (safe, no XSS risk)
-
-        // Number input
-        const valueInput = document.createElement('input');
-        valueInput.type = 'number';
-        valueInput.min = '1';
-        valueInput.value = value;
-        valueInput.setAttribute('data-index', index);
-        valueInput.className = 'reminder-value-input';
-        row.appendChild(valueInput);
-
-        // Unit select
-        const unitSelect = document.createElement('select');
-        unitSelect.setAttribute('data-index', index);
-        unitSelect.className = 'reminder-unit-select';
-
-        const minutesOption = document.createElement('option');
-        minutesOption.value = 'minutes';
-        minutesOption.textContent = 'minutes';
-        if (unit === 'minutes') minutesOption.selected = true;
-        unitSelect.appendChild(minutesOption);
-
-        const hoursOption = document.createElement('option');
-        hoursOption.value = 'hours';
-        hoursOption.textContent = 'hours';
-        if (unit === 'hours') hoursOption.selected = true;
-        unitSelect.appendChild(hoursOption);
-
-        const daysOption = document.createElement('option');
-        daysOption.value = 'days';
-        daysOption.textContent = 'days';
-        if (unit === 'days') daysOption.selected = true;
-        unitSelect.appendChild(daysOption);
-
-        row.appendChild(unitSelect);
-
-        // "before" text
-        const beforeText = document.createElement('span');
-        beforeText.className = 'reminder-text';
-        beforeText.textContent = 'before';
-        row.appendChild(beforeText);
-
-        // Delete button
-        const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.className = 'reminder-delete-btn';
-        deleteBtn.setAttribute('data-index', index);
-        deleteBtn.textContent = '× delete';
-        row.appendChild(deleteBtn);
-
-        // Add event listeners
-        valueInput.addEventListener('change', () => {
-            OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
-        });
-
-        unitSelect.addEventListener('change', () => {
-            OptionsSettings.updateCustomReminder(index, parseInt(valueInput.value), unitSelect.value);
-        });
-
-        deleteBtn.addEventListener('click', () => {
-            OptionsSettings.deleteCustomReminder(index);
-        });
-
-        return row;
-    }
-
-    /**
-     * Add a new custom reminder
-     */
-    static addCustomReminder() {
-        if (OptionsSettings.customReminders.length >= 3) {
-            return;
-        }
-
-        // Add default reminder (1 day before)
-        OptionsSettings.customReminders.push(1440);
-        OptionsSettings.renderCustomReminders();
-    }
-
-    /**
-     * Delete a custom reminder
-     * @param {number} index - Index of the reminder to delete
-     */
-    static deleteCustomReminder(index) {
-        OptionsSettings.customReminders.splice(index, 1);
-        OptionsSettings.renderCustomReminders();
-    }
-
-    /**
-     * Update a custom reminder value
-     * @param {number} index - Index of the reminder
-     * @param {number} value - New value
-     * @param {string} unit - Unit (minutes, hours, days)
-     */
-    static updateCustomReminder(index, value, unit) {
-        let minutes = value;
-
-        // Convert to minutes based on unit
-        if (unit === 'hours') {
-            minutes = value * 60;
-        } else if (unit === 'days') {
-            minutes = value * 1440;
-        }
-
-        OptionsSettings.customReminders[index] = minutes;
-    }
-
-    /**
-     * Handle reminder schedule radio button changes
-     */
-    static handleReminderScheduleChange() {
-        const selectedRadio = document.querySelector('input[name="reminderSchedule"]:checked');
-        if (!selectedRadio) return;
-
-        const value = selectedRadio.value;
-
-        // Show/hide custom reminder builder
-        OptionsSettings.toggleCustomReminderBuilder(value === 'custom');
-
-        // Pre-populate custom reminders based on selection
-        if (value === 'custom' && OptionsSettings.customReminders.length === 0) {
-            // Start with double preset if empty
-            OptionsSettings.customReminders = [1440, 60];
-            OptionsSettings.renderCustomReminders();
         }
     }
 
@@ -848,48 +769,34 @@ class OptionsSettings {
             // Create a scrollable dialog for better readability
             const newWindow = window.open('', '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
             if (newWindow) {
-                // Build document structure safely with DOM manipulation (no document.write XSS risk)
-                const doc = newWindow.document;
-
-                // Create HTML structure
-                const html = doc.createElement('html');
-                const head = doc.createElement('head');
-                const body = doc.createElement('body');
-
-                // Set title
-                const title = doc.createElement('title');
-                title.textContent = 'Gradescope to Cal - Statistics';
-                head.appendChild(title);
-
-                // Add styles
-                const style = doc.createElement('style');
-                style.textContent = `
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                        padding: 20px;
-                        white-space: pre-wrap;
-                        line-height: 1.4;
-                        background: #f8f9fa;
-                    }
-                    .stats-container {
-                        background: white;
-                        padding: 20px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    }
-                `;
-                head.appendChild(style);
-
-                // Create stats container
-                const container = doc.createElement('div');
-                container.className = 'stats-container';
-                container.textContent = statsMessage; // Safe - textContent auto-escapes
-                body.appendChild(container);
-
-                // Assemble document
-                html.appendChild(head);
-                html.appendChild(body);
-                doc.appendChild(html);
+                newWindow.document.write(`
+                    <html>
+                    <head>
+                        <title>Gradescope to Cal - Statistics</title>
+                        <style>
+                            body {
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                padding: 20px;
+                                white-space: pre-wrap;
+                                line-height: 1.4;
+                                background: #f8f9fa;
+                            }
+                            .stats-container {
+                                background: white;
+                                padding: 20px;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="stats-container">
+                            ${statsMessage.replace(/\n/g, '<br>')}
+                        </div>
+                    </body>
+                    </html>
+                `);
+                newWindow.document.close();
             } else {
                 // Fallback to alert if popup is blocked
                 alert(statsMessage);
@@ -901,9 +808,397 @@ class OptionsSettings {
     }
 
     /**
+     * Show config sharing status message
+     * @param {string} message - Message to display
+     * @param {string} type - Message type ('success' or 'error')
+     */
+    static showConfigShareMessage(message, type) {
+        // Try to find the header status div first (per-course menu)
+        let statusDiv = document.getElementById('configShareStatusHeader');
+
+        // Fallback to Data & Privacy tab status div
+        if (!statusDiv || statusDiv.offsetParent === null) {
+            statusDiv = document.getElementById('configShareStatus');
+        }
+
+        if (!statusDiv) return;
+
+        statusDiv.textContent = message;
+        statusDiv.className = `save-status ${type}`;
+        statusDiv.style.display = 'block';
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            statusDiv.textContent = '';
+            statusDiv.className = 'save-status';
+            statusDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    /**
+     * Validate configuration structure
+     * @param {Object} config - Configuration object to validate
+     * @returns {Object} Validation result with {valid: boolean, error: string}
+     */
+    static validateConfigStructure(config) {
+        // Required fields
+        if (!config.system) {
+            return { valid: false, error: 'Missing "system" field' };
+        }
+
+        if (!['simple', 'weighted', 'percentage', 'points'].includes(config.system)) {
+            return { valid: false, error: 'Invalid system type. Must be "simple", "weighted", "percentage", or "points"' };
+        }
+
+        if (config.system === 'weighted' || config.system === 'percentage' || config.system === 'points') {
+            if (!config.weights || typeof config.weights !== 'object') {
+                return { valid: false, error: 'Missing or invalid "weights" field' };
+            }
+        }
+
+        // Optional fields should have correct types if present
+        if (config.dropPolicies && typeof config.dropPolicies !== 'object') {
+            return { valid: false, error: 'Invalid "dropPolicies" field' };
+        }
+
+        if (config.manualOverrides && typeof config.manualOverrides !== 'object') {
+            return { valid: false, error: 'Invalid "manualOverrides" field' };
+        }
+
+        if (config.categoryGroups && typeof config.categoryGroups !== 'object') {
+            return { valid: false, error: 'Invalid "categoryGroups" field' };
+        }
+
+        if (config.clobberPolicies && !Array.isArray(config.clobberPolicies)) {
+            return { valid: false, error: 'Invalid "clobberPolicies" field' };
+        }
+
+        return { valid: true };
+    }
+
+    /**
+     * Export current course configuration as JSON file
+     * @param {string} courseName - Name of the course to export
+     */
+    static async exportConfig(courseName) {
+        try {
+            const result = await browser.storage.local.get('courseConfigs');
+            const config = result.courseConfigs?.[courseName];
+
+            if (!config) {
+                OptionsSettings.showConfigShareMessage('No configuration found for this course', 'error');
+                return;
+            }
+
+            // Create pretty JSON
+            const jsonStr = JSON.stringify(config, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            // Trigger download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${courseName.replace(/\s+/g, '_')}_gradescope_config.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            OptionsSettings.showConfigShareMessage('Config exported successfully!', 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            OptionsSettings.showConfigShareMessage('Failed to export config: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Import configuration from JSON file
+     * @param {string} courseName - Name of the course to apply the config to
+     */
+    static async importConfig(courseName) {
+        // Try header file input first (per-course menu), then fallback to Data & Privacy tab
+        let fileInput = document.getElementById('importConfigFileHeader');
+        if (!fileInput || fileInput.offsetParent === null) {
+            fileInput = document.getElementById('importConfigFile');
+        }
+
+        if (!fileInput) {
+            console.error('File input not found');
+            return;
+        }
+
+        fileInput.onchange = async (e) => {
+            try {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const text = await file.text();
+                const importedConfig = JSON.parse(text);
+
+                // Validate structure
+                const validation = OptionsSettings.validateConfigStructure(importedConfig);
+                if (!validation.valid) {
+                    OptionsSettings.showConfigShareMessage('Invalid config: ' + validation.error, 'error');
+                    return;
+                }
+
+                // Apply to current course
+                const result = await browser.storage.local.get('courseConfigs');
+                const courseConfigs = result.courseConfigs || {};
+
+                courseConfigs[courseName] = {
+                    ...importedConfig,
+                    lastModified: new Date().toISOString()
+                };
+
+                await browser.storage.local.set({ courseConfigs });
+
+                OptionsSettings.showConfigShareMessage('Config imported successfully! Reloading...', 'success');
+
+                // Refresh the UI to show imported settings
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+
+            } catch (error) {
+                console.error('Import error:', error);
+                if (error instanceof SyntaxError) {
+                    OptionsSettings.showConfigShareMessage('Invalid JSON file', 'error');
+                } else {
+                    OptionsSettings.showConfigShareMessage('Failed to import: ' + error.message, 'error');
+                }
+            } finally {
+                // Reset file input
+                fileInput.value = '';
+            }
+        };
+
+        fileInput.click();
+    }
+
+    /**
+     * Copy configuration to clipboard
+     * @param {string} courseName - Name of the course to copy
+     */
+    static async copyConfig(courseName) {
+        try {
+            const result = await browser.storage.local.get('courseConfigs');
+            const config = result.courseConfigs?.[courseName];
+
+            if (!config) {
+                OptionsSettings.showConfigShareMessage('No configuration found for this course', 'error');
+                return;
+            }
+
+            const jsonStr = JSON.stringify(config, null, 2);
+            await navigator.clipboard.writeText(jsonStr);
+
+            OptionsSettings.showConfigShareMessage('Config copied to clipboard! Share it with friends 🎉', 'success');
+        } catch (error) {
+            console.error('Copy error:', error);
+            OptionsSettings.showConfigShareMessage('Failed to copy config: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Initialize config menu dropdown (three-dot menu in course header)
+     */
+    static initializeConfigMenu() {
+        const menuBtn = document.getElementById('configMenuBtn');
+        const menuDropdown = document.getElementById('configMenuDropdown');
+        const exportConfigHeader = document.getElementById('exportConfigHeader');
+        const importConfigHeader = document.getElementById('importConfigHeader');
+        const copyConfigHeader = document.getElementById('copyConfigHeader');
+
+        if (!menuBtn || !menuDropdown) {
+            console.warn('⚠️ Config menu elements not found');
+            return;
+        }
+
+        // Toggle dropdown on button click
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menuDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
+                menuDropdown.classList.remove('show');
+            }
+        });
+
+        // Export config button (per-course)
+        if (exportConfigHeader) {
+            exportConfigHeader.addEventListener('click', () => {
+                const courseName = window.currentConfigCourse;
+                if (courseName) {
+                    OptionsSettings.exportConfig(courseName);
+                    menuDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Import config button (per-course)
+        if (importConfigHeader) {
+            importConfigHeader.addEventListener('click', () => {
+                const courseName = window.currentConfigCourse;
+                if (courseName) {
+                    OptionsSettings.importConfig(courseName);
+                    menuDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        // Copy to clipboard button (per-course)
+        if (copyConfigHeader) {
+            copyConfigHeader.addEventListener('click', () => {
+                const courseName = window.currentConfigCourse;
+                if (courseName) {
+                    OptionsSettings.copyConfig(courseName);
+                    menuDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        console.log('✅ Config menu dropdown initialized');
+    }
+
+    /**
+     * Load and display background polling status
+     */
+    static async updateBackgroundPollingStatus() {
+        const statusDiv = document.getElementById('backgroundPollingStatus');
+        const sessionWarning = document.getElementById('sessionExpiredWarning');
+        const checkbox = document.getElementById('backgroundPolling');
+
+        if (!statusDiv) return;
+
+        try {
+            const response = await browser.runtime.sendMessage({ action: 'getBackgroundPollingStatus' });
+
+            if (!response.success) {
+                statusDiv.className = 'status warning';
+                statusDiv.innerHTML = '<div>Unable to get background polling status</div>';
+                return;
+            }
+
+            const status = response.status;
+
+            // Update checkbox
+            if (checkbox) {
+                checkbox.checked = status.enabled;
+            }
+
+            // Show/hide session expired warning
+            if (sessionWarning) {
+                sessionWarning.style.display = status.sessionExpired ? 'block' : 'none';
+            }
+
+            // Build status display
+            let statusHTML = '';
+
+            if (status.enabled) {
+                statusDiv.className = 'status success';
+                statusHTML = '<div>✅ Background polling is active</div>';
+
+                if (status.enrolledCoursesCount > 0) {
+                    statusHTML += `<small>Monitoring ${status.enrolledCoursesCount} course${status.enrolledCoursesCount !== 1 ? 's' : ''}</small><br>`;
+                } else {
+                    statusHTML += '<small>⚠️ No courses detected yet. Visit Gradescope to detect your courses.</small><br>';
+                }
+
+                if (status.lastPoll) {
+                    const lastPoll = new Date(status.lastPoll);
+                    statusHTML += `<small>Last poll: ${lastPoll.toLocaleString()}</small><br>`;
+                    if (status.lastPollCount !== undefined) {
+                        statusHTML += `<small>Found ${status.lastPollCount} assignment${status.lastPollCount !== 1 ? 's' : ''}</small><br>`;
+                    }
+                }
+
+                if (status.nextPoll) {
+                    const nextPoll = new Date(status.nextPoll);
+                    const minutesUntil = Math.round((nextPoll - new Date()) / (1000 * 60));
+                    statusHTML += `<small>Next poll: in ${minutesUntil} minute${minutesUntil !== 1 ? 's' : ''}</small>`;
+                }
+
+                if (status.sessionExpired) {
+                    statusDiv.className = 'status warning';
+                    statusHTML = '<div>⚠️ Gradescope session expired</div>';
+                    statusHTML += '<small>Background polling paused. Visit Gradescope to restore.</small>';
+                }
+
+            } else if (status.autoDisabled) {
+                statusDiv.className = 'status warning';
+                statusHTML = '<div>⚠️ Background polling was automatically disabled</div>';
+                statusHTML += `<small>Reason: ${status.autoDisabledReason || 'Too many failures'}</small><br>`;
+                statusHTML += '<small>Enable it again to retry.</small>';
+            } else if (!status.enabled) {
+                statusDiv.className = 'status info';
+                statusHTML = '<div>Background polling is disabled</div>';
+                statusHTML += '<small>Enable it to check for new assignments automatically</small>';
+            } else {
+                // Enabled but no courses yet
+                statusDiv.className = 'status info';
+                statusHTML = '<div>📡 Background polling is ready</div>';
+                statusHTML += '<small>Visit Gradescope to detect your enrolled courses and start automatic sync.</small>';
+            }
+
+            statusDiv.innerHTML = statusHTML;
+
+        } catch (error) {
+            console.error('Error getting background polling status:', error);
+            statusDiv.className = 'status warning';
+            statusDiv.innerHTML = '<div>Error checking status</div>';
+        }
+    }
+
+    /**
+     * Handle background polling checkbox toggle
+     */
+    static async handleBackgroundPollingToggle() {
+        const checkbox = document.getElementById('backgroundPolling');
+        const statusDiv = document.getElementById('backgroundPollingStatus');
+
+        if (!checkbox) return;
+
+        const isEnabled = checkbox.checked;
+
+        try {
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = `<div>${isEnabled ? 'Enabling' : 'Disabling'} background polling...</div>`;
+
+            const action = isEnabled ? 'enableBackgroundPolling' : 'disableBackgroundPolling';
+            const response = await browser.runtime.sendMessage({ action });
+
+            if (response.success) {
+                // Refresh status display
+                await OptionsSettings.updateBackgroundPollingStatus();
+            } else {
+                // Revert checkbox on failure
+                checkbox.checked = !isEnabled;
+
+                statusDiv.className = 'status warning';
+                if (response.reason === 'no_courses') {
+                    statusDiv.innerHTML = '<div>⚠️ No courses detected</div><small>Please visit Gradescope first to detect your enrolled courses.</small>';
+                } else {
+                    statusDiv.innerHTML = `<div>Failed to ${isEnabled ? 'enable' : 'disable'} polling</div><small>${response.error || response.message}</small>`;
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling background polling:', error);
+            checkbox.checked = !isEnabled;
+            statusDiv.className = 'status warning';
+            statusDiv.innerHTML = '<div>Error toggling polling</div>';
+        }
+    }
+
+    /**
      * Setup all event listeners for settings page
      */
     static setupEventListeners() {
+        console.log('🎧 [OptionsSettings] Setting up event listeners...');
+
         const authenticateBtn = document.getElementById('authenticate');
         const disconnectBtn = document.getElementById('disconnect');
         const clearAssignmentsBtn = document.getElementById('clearAssignments');
@@ -912,9 +1207,22 @@ class OptionsSettings {
         const saveSettingsBtn = document.getElementById('saveSettings');
         const showStatsBtn = document.getElementById('showStats');
 
+        console.log('🎧 [OptionsSettings] Found buttons:', {
+            authenticateBtn: !!authenticateBtn,
+            disconnectBtn: !!disconnectBtn,
+            clearAssignmentsBtn: !!clearAssignmentsBtn,
+            clearAuthBtn: !!clearAuthBtn,
+            clearAllBtn: !!clearAllBtn,
+            saveSettingsBtn: !!saveSettingsBtn,
+            showStatsBtn: !!showStatsBtn
+        });
+
         // Add null checks before attaching event listeners
         if (authenticateBtn) {
             authenticateBtn.addEventListener('click', OptionsSettings.authenticateWithGoogle);
+            console.log('✅ [OptionsSettings] Attached event listener to authenticate button');
+        } else {
+            console.warn('⚠️ [OptionsSettings] Authenticate button not found!');
         }
         if (disconnectBtn) {
             disconnectBtn.addEventListener('click', OptionsSettings.disconnectFromGoogle);
@@ -935,17 +1243,34 @@ class OptionsSettings {
             showStatsBtn.addEventListener('click', OptionsSettings.showDataStatistics);
         }
 
-        // Event listeners for reminder schedule radio buttons
+        // Reminder schedule radio buttons
         const reminderScheduleRadios = document.querySelectorAll('input[name="reminderSchedule"]');
         reminderScheduleRadios.forEach(radio => {
             radio.addEventListener('change', OptionsSettings.handleReminderScheduleChange);
         });
+        console.log('🔔 [OptionsSettings] Attached event listeners to', reminderScheduleRadios.length, 'reminder schedule radio buttons');
 
-        // Event listener for "Add reminder" button
+        // Add reminder button
         const addReminderBtn = document.getElementById('addReminderBtn');
         if (addReminderBtn) {
             addReminderBtn.addEventListener('click', OptionsSettings.addCustomReminder);
+            console.log('➕ [OptionsSettings] Attached event listener to add reminder button');
         }
+
+        // Background polling checkbox
+        const backgroundPollingCheckbox = document.getElementById('backgroundPolling');
+        if (backgroundPollingCheckbox) {
+            backgroundPollingCheckbox.addEventListener('change', OptionsSettings.handleBackgroundPollingToggle);
+            console.log('📡 [OptionsSettings] Attached event listener to background polling checkbox');
+        }
+
+        // Note: Config sharing buttons (export/import/copy) are now in the per-course
+        // dropdown menu in the Grade Calculator tab, initialized via initializeConfigMenu()
+
+        console.log('✅ [OptionsSettings] Event listeners setup complete');
+
+        // Note: Checkboxes no longer auto-save - user must click "Save Settings" button
+        // This prevents confusing UI behavior and gives users explicit control
     }
 }
 

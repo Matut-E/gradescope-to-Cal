@@ -10,7 +10,7 @@
             --bg-secondary: #f8f9fa;
             --text-primary: #212529;
             --text-secondary: #6c757d;
-            --berkeley-blue: #003262;
+            --primary-blue: #003262;
             --california-gold: #FDB515;
             --border-color: #dee2e6;
             --shadow: rgba(0, 0, 0, 0.1);
@@ -75,7 +75,7 @@
         h1 {
             font-size: 32px;
             font-weight: 700;
-            color: var(--berkeley-blue);
+            color: var(--primary-blue);
             margin-bottom: 12px;
         }
 
@@ -238,7 +238,7 @@
         }
 
         .btn-primary {
-            background: var(--berkeley-blue);
+            background: var(--primary-blue);
             color: white;
         }
 
@@ -355,7 +355,7 @@
             <h1>Welcome to Gradescope to Cal!</h1>
             <p class="subtitle">
                 Automatically sync your Gradescope assignments to Google Calendar<br>
-                Never miss a deadline again!
+                and calculate your grades in real-time.
             </p>
         </div>
 
@@ -368,10 +368,10 @@
                 </div>
             </div>
             <div class="feature-item">
-                <div class="feature-icon">🔄</div>
+                <div class="feature-icon">🧮</div>
                 <div class="feature-text">
-                    <div class="feature-title">Automatic Background Sync</div>
-                    <div class="feature-desc">Syncs every 24 hours automatically - always stay up to date</div>
+                    <div class="feature-title">Grade Tracking</div>
+                    <div class="feature-desc">View your grades and track assignment progress at a glance</div>
                 </div>
             </div>
             <div class="feature-item">
@@ -446,12 +446,9 @@
         </div>
     </div>
 
-    <!-- Load WebExtension Polyfill for cross-browser compatibility -->
+    <!-- Load polyfill first for Firefox compatibility -->
     <script src="lib/browser-polyfill.js"></script>
-
-    <!-- Load browser detection utility -->
     <script src="utils/browserDetector.js"></script>
-
     <script src="welcome.js"></script>
 </body>
 </html>

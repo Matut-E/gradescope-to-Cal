@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "Gradescope to Cal",
+  "version": "2.0.0",
+  "description": "Automatically sync Gradescope assignments to Google Calendar with comprehensive grade calculator",
+
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "identity",
+    "alarms",
+    "notifications"
+  ],
+
+  "host_permissions": [
+    "*://*.gradescope.com/*",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.gradescope.com/*"
+      ],
+      "js": [
+        "assignmentCategorizer.js",
+        "utils/dateParser.js",
+        "utils/gradeExtractor.js",
+        "utils/assignmentParser.js",
+        "utils/pageDetector.js",
+        "utils/testFunctions.js",
+        "utils/pinBannerInjector.js",
+        "contentScript.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gradescope to Cal",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "options_page": "options.html",
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "options.html",
+        "courseConfigManager.js",
+        "config/gradeCalculator.js",
+        "config/categoryGroupManager.js",
+        "config/courseLinkingManager.js",
+        "config/clobberPolicyManager.js",
+        "config/templateManager.js",
+        "config/validationManager.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  
+  "oauth2": {
+  "client_id": "589515007396-0frm2bh6mhobpqiuec8p2dlb2gs10gla.apps.googleusercontent.com",
+  "scopes": [
+    "https://www.googleapis.com/auth/calendar"
+  ]
+}
+}

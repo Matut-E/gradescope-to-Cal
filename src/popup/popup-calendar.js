@@ -43,37 +43,24 @@ class CalendarManager {
 
     updateStatus(message, type = 'info') {
         this.statusDiv.className = `status ${type}`;
-        // Safe replacement for innerHTML
-        this.statusDiv.textContent = '';
-        const messageDiv = document.createElement('div');
-        messageDiv.textContent = message;
-        this.statusDiv.appendChild(messageDiv);
+        this.statusDiv.innerHTML = `<div>${message}</div>`;
     }
 
     updateAuthStatus(status) {
         if (status.authenticated && status.tokenValid) {
             this.authStatusDiv.className = 'status success';
-            this.authStatusDiv.textContent = '';
-            const messageDiv = document.createElement('div');
-            messageDiv.textContent = '✅ Google Calendar connected';
-            this.authStatusDiv.appendChild(messageDiv);
+            this.authStatusDiv.innerHTML = '<div>✅ Google Calendar connected</div>';
             this.authenticateBtn.style.display = 'none';
             this.calendarSyncBtn.disabled = false;
         } else if (status.authenticated && !status.tokenValid) {
             this.authStatusDiv.className = 'status warning';
-            this.authStatusDiv.textContent = '';
-            const messageDiv = document.createElement('div');
-            messageDiv.textContent = '⚠️ Authentication expired';
-            this.authStatusDiv.appendChild(messageDiv);
+            this.authStatusDiv.innerHTML = '<div>⚠️ Authentication expired</div>';
             this.authenticateBtn.style.display = 'block';
             this.authenticateBtn.textContent = '🔄 Refresh Authentication';
             this.calendarSyncBtn.disabled = true;
         } else {
             this.authStatusDiv.className = 'status info';
-            this.authStatusDiv.textContent = '';
-            const messageDiv = document.createElement('div');
-            messageDiv.textContent = '🔍 Google Calendar not connected';
-            this.authStatusDiv.appendChild(messageDiv);
+            this.authStatusDiv.innerHTML = '<div>🔍 Google Calendar not connected</div>';
             this.authenticateBtn.style.display = 'block';
             this.authenticateBtn.textContent = '🔗 Connect Google Calendar';
             this.calendarSyncBtn.disabled = true;
@@ -81,17 +68,21 @@ class CalendarManager {
     }
 
     async updateStatusBasedOnPage() {
-        const tabs = await browser.tabs.query({active: true, currentWindow: true});
-        if (tabs[0] && tabs[0].url) {
-            const url = tabs[0].url;
+        try {
+            const tabs = await browser.tabs.query({active: true, currentWindow: true});
+            if (tabs[0] && tabs[0].url) {
+                const url = tabs[0].url;
 
-            if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
-                this.updateStatus('🏠 Perfect! Dashboard detected - ready for extraction', 'success');
-            } else if (url.includes('gradescope.com')) {
-                this.updateStatus('📍 On Gradescope - ready for extraction', 'info');
-            } else {
-                this.updateStatus('🎯 Ready to go to Gradescope', 'info');
+                if (url.includes('gradescope.com') && (url.endsWith('/') || url.includes('/account'))) {
+                    this.updateStatus('🏠 Perfect! Dashboard detected - ready for extraction', 'success');
+                } else if (url.includes('gradescope.com')) {
+                    this.updateStatus('📍 On Gradescope - ready for extraction', 'info');
+                } else {
+                    this.updateStatus('🎯 Ready to go to Gradescope', 'info');
+                }
             }
+        } catch (error) {
+            console.error('Error checking current page:', error);
         }
     }
 
@@ -164,37 +155,12 @@ class CalendarManager {
                         `✅ Google Calendar connected! ${results.created} assignments synced immediately. Auto-sync enabled.`,
                         'success'
                     );
-
-                    // Firefox fix: Poll for storage updates instead of single delayed refresh
-                    // In Firefox, storage writes are async and timing varies
-                    console.log('🔄 First-time sync detected, polling for storage updates...');
-
-                    let pollCount = 0;
-                    const maxPolls = 20; // 20 polls × 100ms = 2 seconds max
-                    const pollInterval = setInterval(async () => {
-                        pollCount++;
-                        const count = await this.countStoredAssignments();
-
-                        // Stop polling if assignments found or max polls reached
-                        if (count > 0 || pollCount >= maxPolls) {
-                            clearInterval(pollInterval);
-                            const elapsed = pollCount * 100;
-                            console.log(`✅ Popup refreshed after ${elapsed}ms (${pollCount} polls)`);
-
-                            if (count === 0 && pollCount >= maxPolls) {
-                                console.warn('⚠️ Max polls reached without finding assignments');
-                            }
-                        }
-                    }, 100); // Poll every 100ms
                 } else {
                     this.updateStatus('✅ Google Calendar connected! Auto-sync enabled.', 'success');
                 }
-
-                // Refresh all status displays
                 await this.checkAuthStatus();
                 await this.updateAutoSyncStatus();
-                await this.countStoredAssignments(); // Immediate refresh
-
+                await this.countStoredAssignments();
             } else {
                 console.error('Authentication failed:', response.error);
                 this.updateStatus(`❌ Authentication failed: ${response.error}`, 'warning');
@@ -227,23 +193,6 @@ class CalendarManager {
             if (assignments.length === 0) {
                 this.updateStatus('❌ No assignments found. Visit Gradescope dashboard or course pages first.', 'warning');
                 return;
-            }
-
-            // Force cache refresh before sync to ensure we have latest event data
-            // This is crucial for detecting duplicates, especially in Firefox
-            console.log('🔄 Forcing cache refresh before sync...');
-            this.updateStatus('🔄 Refreshing calendar cache...', 'info');
-
-            try {
-                const cacheRefresh = await browser.runtime.sendMessage({ action: 'forceCacheRefresh' });
-                if (cacheRefresh.success) {
-                    console.log('✅ Cache refreshed successfully');
-                } else {
-                    console.warn('⚠️ Cache refresh failed, continuing with sync anyway');
-                }
-            } catch (cacheError) {
-                console.warn('⚠️ Cache refresh error:', cacheError);
-                // Continue with sync even if cache refresh fails
             }
 
             this.updateStatus(`🔄 Creating ${assignments.length} calendar events...`, 'info');
@@ -279,19 +228,10 @@ class CalendarManager {
     async countStoredAssignments() {
         try {
             const assignments = await window.StorageUtils.getAllStoredAssignments();
+            const totalAssignments = assignments.length;
 
-            // Filter to only upcoming assignments (matches calendar sync behavior)
-            const now = new Date();
-            const upcomingAssignments = assignments.filter(assignment => {
-                if (!assignment.dueDate) return false;
-                const dueDate = new Date(assignment.dueDate);
-                return dueDate >= now;
-            });
-
-            const upcomingCount = upcomingAssignments.length;
-
-            if (upcomingCount > 0) {
-                this.assignmentCountDiv.textContent = `${upcomingCount} upcoming assignment${upcomingCount !== 1 ? 's' : ''} found`;
+            if (totalAssignments > 0) {
+                this.assignmentCountDiv.textContent = `${totalAssignments} unique assignments found`;
 
                 const storage = await browser.storage.local.get();
                 const hasAutodiscovered = Object.keys(storage).some(key =>
@@ -304,11 +244,11 @@ class CalendarManager {
                     this.updateStatus('📅 Assignment data found!', 'success');
                 }
             } else {
-                this.assignmentCountDiv.textContent = 'No assignment data found yet';
-                await this.updateStatusBasedOnPage();
+                this.assignmentCountDiv.textContent = 'No upcoming assignments found';
+                this.updateStatusBasedOnPage();
             }
 
-            return upcomingCount;
+            return totalAssignments;
         } catch (error) {
             console.error('Error counting assignments:', error);
             this.updateStatus('❌ Error accessing storage', 'warning');
@@ -320,19 +260,25 @@ class CalendarManager {
         try {
             this.manualSyncBtn.disabled = true;
             this.manualSyncBtn.textContent = '🔄 Extracting...';
-            this.updateStatus('🔄 Extracting assignments from current page...', 'info');
+            this.isWaitingForExtraction = true;
 
             const [tab] = await browser.tabs.query({active: true, currentWindow: true});
 
             if (!tab.url.includes('gradescope.com')) {
                 this.updateStatus('❌ Please navigate to Gradescope first', 'warning');
+                this.isWaitingForExtraction = false;
+                this.manualSyncBtn.disabled = false;
+                this.manualSyncBtn.textContent = '🔄 Extract Assignments Now';
                 return;
             }
 
+            // Show initial status based on page type
             if (tab.url.includes('gradescope.com') && (tab.url.endsWith('/') || tab.url.includes('/account'))) {
-                this.updateStatus('🏠 Dashboard detected - starting full auto-discovery...', 'info');
+                this.updateStatus('🏠 Dashboard detected - starting extraction...', 'info');
             } else if (tab.url.includes('/courses/')) {
-                this.updateStatus('🔄 Course page detected - extracting assignments...', 'info');
+                this.updateStatus('📋 Course page detected - extracting...', 'info');
+            } else {
+                this.updateStatus('🔄 Starting extraction...', 'info');
             }
 
             try {
@@ -346,40 +292,32 @@ class CalendarManager {
                 });
             }
 
-            let progressCount = 0;
-            const progressMessages = [
-                '🔄 Scanning Gradescope page structure...',
-                '📚 Detecting courses and semesters...',
-                '📋 Extracting assignment details...',
-                '💾 Saving assignment data...'
-            ];
-
-            const progressInterval = setInterval(() => {
-                if (progressCount < progressMessages.length) {
-                    this.updateStatus(progressMessages[progressCount], 'info');
-                    progressCount++;
-                }
-            }, 1500);
-
+            // Set a timeout fallback in case progress events don't come through
             setTimeout(async () => {
-                clearInterval(progressInterval);
+                if (this.isWaitingForExtraction) {
+                    this.isWaitingForExtraction = false;
+                    const newCount = await this.countStoredAssignments();
 
-                const newCount = await this.countStoredAssignments();
+                    const autoSyncStatus = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
+                    const authStatus = await this.checkAuthStatus();
 
-                const autoSyncStatus = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
-                const authStatus = await this.checkAuthStatus();
+                    if (autoSyncStatus.success && autoSyncStatus.status.enabled && authStatus && newCount > 0) {
+                        this.updateStatus('ℹ️ Assignments extracted! Auto-sync will handle calendar updates.', 'info');
+                    } else if (newCount > 0) {
+                        this.updateStatus('✅ Extraction complete! Ready for calendar sync.', 'success');
+                    } else {
+                        this.updateStatus('📭 No upcoming assignments found', 'info');
+                    }
 
-                if (autoSyncStatus.success && autoSyncStatus.status.enabled && authStatus && newCount > 0) {
-                    this.updateStatus('ℹ️ Assignments extracted! Auto-sync will handle calendar updates automatically.', 'info');
-                } else if (newCount > 0) {
-                    this.updateStatus('✅ Extraction complete! Ready for calendar sync.', 'success');
+                    this.manualSyncBtn.disabled = false;
+                    this.manualSyncBtn.textContent = '🔄 Extract Assignments Now';
                 }
-            }, 3600);
+            }, 15000); // 15 second timeout fallback
 
         } catch (error) {
             console.error('Manual sync error:', error);
             this.updateStatus('❌ Error during extraction', 'warning');
-        } finally {
+            this.isWaitingForExtraction = false;
             this.manualSyncBtn.disabled = false;
             this.manualSyncBtn.textContent = '🔄 Extract Assignments Now';
         }
@@ -409,8 +347,6 @@ class CalendarManager {
 
     async viewStoredData() {
         try {
-            console.log('📊 Opening storage viewer page...');
-
             const assignments = await window.StorageUtils.getAllStoredAssignments();
 
             if (assignments.length === 0) {
@@ -418,17 +354,50 @@ class CalendarManager {
                 return;
             }
 
-            // Use browser.tabs.create() for proper cross-browser support
-            // This opens the storage-viewer.html page which loads data dynamically
-            const url = browser.runtime.getURL('storage-viewer.html');
-            console.log('   - Opening URL:', url);
+            let output = '📅 EXTRACTED ASSIGNMENT DATA:\n\n';
 
-            await browser.tabs.create({ url: url });
-            console.log('   ✅ Storage viewer page opened');
+            assignments.forEach((assignment, index) => {
+                output += `${index + 1}. ${assignment.title}\n`;
+                output += `   Course: ${assignment.course}\n`;
+
+                let dueDateDisplay = 'No due date';
+                if (assignment.dueDate) {
+                    try {
+                        const dateObj = new Date(assignment.dueDate);
+                        if (!isNaN(dateObj.getTime())) {
+                            dueDateDisplay = dateObj.toLocaleDateString();
+                        }
+                    } catch (e) {
+                        dueDateDisplay = 'Date parsing error';
+                    }
+                }
+
+                output += `   Due: ${dueDateDisplay}\n`;
+                output += `   URL: ${assignment.url}\n`;
+                output += `   ID: ${assignment.assignmentId}\n`;
+
+                if (assignment.autoDiscovered) {
+                    output += `   📡 Auto-discovered from dashboard\n`;
+                }
+
+                output += `\n`;
+            });
+
+            output += '\n🔍 Note: Assignments appear as events in your calendar for better visibility.';
+
+            const newWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+            newWindow.document.write(`
+                <html>
+                <head><title>Extracted Assignment Data</title></head>
+                <body style="font-family: monospace; padding: 20px; white-space: pre-wrap;">
+                    ${output.replace(/\n/g, '<br>')}
+                </body>
+                </html>
+            `);
 
         } catch (error) {
-            console.error('❌ Error opening storage viewer:', error);
-            alert('Error opening data viewer: ' + error.message);
+            console.error('Error viewing storage:', error);
+            alert('Error accessing stored data: ' + error.message);
         }
     }
 
@@ -439,52 +408,24 @@ class CalendarManager {
     createAutoSyncSection() {
         const autoSyncSection = document.createElement('div');
         autoSyncSection.className = 'section';
+        autoSyncSection.innerHTML = `
+            <div class="section-title">Automatic Sync</div>
 
-        // Create section title
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'section-title';
-        titleDiv.textContent = 'Automatic Sync';
-        autoSyncSection.appendChild(titleDiv);
+            <div id="autoSyncStatus" class="status info">
+                <div>⏳ Checking auto-sync status...</div>
+            </div>
 
-        // Create status div
-        const statusDiv = document.createElement('div');
-        statusDiv.id = 'autoSyncStatus';
-        statusDiv.className = 'status info';
-        const statusMessage = document.createElement('div');
-        statusMessage.textContent = '⏳ Checking auto-sync status...';
-        statusDiv.appendChild(statusMessage);
-        autoSyncSection.appendChild(statusDiv);
+            <button id="toggleAutoSync" class="button secondary">
+                ⚙️ Configure Auto-Sync
+            </button>
 
-        // Create toggle button
-        const toggleBtn = document.createElement('button');
-        toggleBtn.id = 'toggleAutoSync';
-        toggleBtn.className = 'button secondary';
-        toggleBtn.textContent = '⚙️ Configure Auto-Sync';
-        autoSyncSection.appendChild(toggleBtn);
-
-        // Create details section
-        const detailsDiv = document.createElement('div');
-        detailsDiv.id = 'autoSyncDetails';
-        detailsDiv.className = 'auto-sync-details';
-        detailsDiv.style.display = 'none';
-
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'auto-sync-info';
-
-        const nextSyncSmall = document.createElement('small');
-        nextSyncSmall.id = 'nextSyncTime';
-        nextSyncSmall.textContent = 'Next sync: calculating...';
-        infoDiv.appendChild(nextSyncSmall);
-
-        infoDiv.appendChild(document.createElement('br'));
-
-        const lastSyncSmall = document.createElement('small');
-        lastSyncSmall.id = 'lastSyncTime';
-        lastSyncSmall.textContent = 'Last sync: never';
-        infoDiv.appendChild(lastSyncSmall);
-
-        detailsDiv.appendChild(infoDiv);
-        autoSyncSection.appendChild(detailsDiv);
+            <div id="autoSyncDetails" class="auto-sync-details" style="display: none;">
+                <div class="auto-sync-info">
+                    <small id="nextSyncTime">Next sync: calculating...</small><br>
+                    <small id="lastSyncTime">Last sync: never</small>
+                </div>
+            </div>
+        `;
 
         const calendarSection = this.authStatusDiv.closest('.section');
         const nextSection = calendarSection.nextElementSibling;
@@ -500,45 +441,19 @@ class CalendarManager {
 
     async updateAutoSyncStatus() {
         try {
-            // Check authentication status first - auto-sync requires authentication
-            const authStatus = await browser.runtime.sendMessage({ action: 'getAuthStatus' });
-            const isAuthenticated = authStatus.success && authStatus.authenticated && authStatus.tokenValid;
-
-            const autoSyncStatusDiv = document.getElementById('autoSyncStatus');
-            const toggleBtn = document.getElementById('toggleAutoSync');
-            const detailsDiv = document.getElementById('autoSyncDetails');
-            const nextSyncDiv = document.getElementById('nextSyncTime');
-            const lastSyncDiv = document.getElementById('lastSyncTime');
-
-            // If not authenticated, disable auto-sync controls
-            if (!isAuthenticated) {
-                autoSyncStatusDiv.className = 'status info';
-                autoSyncStatusDiv.textContent = '';
-                const messageDiv = document.createElement('div');
-                messageDiv.textContent = '🔒 Connect Google Calendar to enable auto-sync';
-                autoSyncStatusDiv.appendChild(messageDiv);
-                toggleBtn.disabled = true;
-                toggleBtn.textContent = '🔒 Auto-Sync (Connect Calendar First)';
-                toggleBtn.className = 'button secondary';
-                detailsDiv.style.display = 'none';
-                return;
-            }
-
-            // User is authenticated - proceed with normal auto-sync status check
             const response = await browser.runtime.sendMessage({ action: 'getAutoSyncStatus' });
 
             if (response.success) {
                 const status = response.status;
-
-                // Re-enable button now that we're authenticated
-                toggleBtn.disabled = false;
+                const autoSyncStatusDiv = document.getElementById('autoSyncStatus');
+                const toggleBtn = document.getElementById('toggleAutoSync');
+                const detailsDiv = document.getElementById('autoSyncDetails');
+                const nextSyncDiv = document.getElementById('nextSyncTime');
+                const lastSyncDiv = document.getElementById('lastSyncTime');
 
                 if (status.enabled) {
                     autoSyncStatusDiv.className = 'status success';
-                    autoSyncStatusDiv.textContent = '';
-                    const messageDiv = document.createElement('div');
-                    messageDiv.textContent = `🔄 Auto-sync enabled (every ${this.formatInterval(status.interval)})`;
-                    autoSyncStatusDiv.appendChild(messageDiv);
+                    autoSyncStatusDiv.innerHTML = `<div>🔄 Auto-sync enabled (every ${this.formatInterval(status.interval)})</div>`;
                     toggleBtn.textContent = '🛑 Disable Auto-Sync';
                     toggleBtn.className = 'button secondary';
 
@@ -557,17 +472,11 @@ class CalendarManager {
                     if (status.lastSync) {
                         const lastSync = new Date(status.lastSync);
                         const results = status.lastResults;
-
-                        // Get sync type from storage
-                        const storage = await browser.storage.local.get(['lastSyncType']);
-                        const syncType = storage.lastSyncType;
-                        const syncTypeLabel = syncType ? ` - ${this.formatSyncType(syncType)}` : '';
-
                         let resultText = lastSync.toLocaleString();
                         if (results) {
                             resultText += ` (${results.created} created, ${results.skipped} skipped)`;
                         }
-                        lastSyncDiv.textContent = `Last sync: ${resultText}${syncTypeLabel}`;
+                        lastSyncDiv.textContent = `Last sync: ${resultText}`;
                     } else {
                         lastSyncDiv.textContent = 'Last sync: never';
                     }
@@ -575,21 +484,13 @@ class CalendarManager {
                     if (status.lastError) {
                         const errorTime = new Date(status.lastError.timestamp);
                         if (errorTime > new Date(status.lastSync || 0)) {
-                            // Safe replacement for innerHTML +=
-                            lastSyncDiv.appendChild(document.createElement('br'));
-                            const errorSpan = document.createElement('span');
-                            errorSpan.style.color = '#dc3545';
-                            errorSpan.textContent = `Last error: ${status.lastError.error}`;
-                            lastSyncDiv.appendChild(errorSpan);
+                            lastSyncDiv.innerHTML += `<br><span style="color: #dc3545;">Last error: ${status.lastError.error}</span>`;
                         }
                     }
 
                 } else {
                     autoSyncStatusDiv.className = 'status info';
-                    autoSyncStatusDiv.textContent = '';
-                    const messageDiv = document.createElement('div');
-                    messageDiv.textContent = '⏸️ Auto-sync disabled';
-                    autoSyncStatusDiv.appendChild(messageDiv);
+                    autoSyncStatusDiv.innerHTML = '<div>⏸️ Auto-sync disabled</div>';
                     toggleBtn.textContent = '▶️ Enable Auto-Sync';
                     toggleBtn.className = 'button';
                     detailsDiv.style.display = 'none';
@@ -648,18 +549,54 @@ class CalendarManager {
     setupStorageListener() {
         browser.storage.onChanged.addListener((changes, namespace) => {
             if (namespace === 'local') {
+                // Handle extraction progress updates
+                if (changes.extraction_progress) {
+                    const progress = changes.extraction_progress.newValue;
+                    if (progress && this.isWaitingForExtraction) {
+                        this.handleExtractionProgress(progress);
+                    }
+                }
+
                 const hasAssignmentChanges = Object.keys(changes).some(key =>
                     key.startsWith('assignments_')
                 );
 
                 if (hasAssignmentChanges) {
                     console.log('📡 Assignment data changed, updating popup...');
-                    this.stopProgressAnimation();
                     this.countStoredAssignments();
                     this.showUpdateIndicator();
                 }
             }
         });
+    }
+
+    handleExtractionProgress(progress) {
+        // Update status with real progress message
+        if (progress.stage === 'complete' || progress.stage === 'error') {
+            // Extraction finished
+            this.isWaitingForExtraction = false;
+            this.manualSyncBtn.disabled = false;
+            this.manualSyncBtn.textContent = '🔄 Extract Assignments Now';
+
+            if (progress.status === 'success') {
+                this.updateStatus(progress.message, 'success');
+            } else if (progress.status === 'empty') {
+                this.updateStatus(progress.message, 'info');
+            } else {
+                this.updateStatus(progress.message, 'warning');
+            }
+
+            // Update assignment count
+            this.countStoredAssignments();
+        } else if (progress.stage === 'not_applicable') {
+            this.isWaitingForExtraction = false;
+            this.manualSyncBtn.disabled = false;
+            this.manualSyncBtn.textContent = '🔄 Extract Assignments Now';
+            this.updateStatus(progress.message, 'warning');
+        } else {
+            // In-progress update
+            this.updateStatus(progress.message, 'info');
+        }
     }
 
     showUpdateIndicator() {
@@ -677,8 +614,14 @@ class CalendarManager {
             const isOnGradescope = tab?.url?.includes('gradescope.com');
 
             if (isOnGradescope && !await this.hasRecentAssignmentData()) {
-                this.updateStatus('🔍 Scanning Gradescope page...', 'info');
-                this.startProgressAnimation();
+                // Show a static message - real progress comes from extraction events
+                if (tab.url.includes('/account') || tab.url.endsWith('/')) {
+                    this.updateStatus('🏠 Dashboard ready - click Extract to scan', 'info');
+                } else if (tab.url.includes('/courses/')) {
+                    this.updateStatus('📋 Course page ready - click Extract to scan', 'info');
+                } else {
+                    this.updateStatus('🔍 Ready to extract assignments', 'info');
+                }
             }
         } catch (error) {
             console.error('Error checking Gradescope status:', error);
@@ -696,37 +639,6 @@ class CalendarManager {
             const data = storage[key];
             return data.extractedAt && new Date(data.extractedAt).getTime() > thirtySecondsAgo;
         });
-    }
-
-    startProgressAnimation() {
-        const progressSteps = [
-            '🔍 Scanning Gradescope page...',
-            '📚 Detecting current semester...',
-            '🔎 Finding course cards...',
-            '📋 Extracting assignments...',
-            '🔄 Processing course data...',
-            '✨ Almost done...'
-        ];
-
-        let currentStep = 0;
-
-        const progressInterval = setInterval(() => {
-            if (currentStep < progressSteps.length) {
-                this.updateStatus(progressSteps[currentStep], 'info');
-                currentStep++;
-            } else {
-                currentStep = 0;
-            }
-        }, 1500);
-
-        window.extractionProgressInterval = progressInterval;
-    }
-
-    stopProgressAnimation() {
-        if (window.extractionProgressInterval) {
-            clearInterval(window.extractionProgressInterval);
-            window.extractionProgressInterval = null;
-        }
     }
 
     async checkFirstTimeSetup() {
@@ -758,23 +670,14 @@ class CalendarManager {
         const helpDiv = document.createElement('div');
         helpDiv.className = 'quick-setup-banner';
 
-        // Build help content safely
-        const strong = document.createElement('strong');
-        strong.textContent = '🚀 Quick Setup:';
-        helpDiv.appendChild(strong);
+        helpDiv.innerHTML = `
+            <strong>🚀 Quick Setup:</strong><br>
+            Click the blue button below to visit Gradescope, then reopen this popup!
 
-        helpDiv.appendChild(document.createElement('br'));
-
-        const text = document.createTextNode('Click the blue button below to visit Gradescope, then reopen this popup!');
-        helpDiv.appendChild(text);
-
-        const tipDiv = document.createElement('div');
-        tipDiv.className = 'quick-setup-tip';
-        tipDiv.textContent = '💡 ';
-        const tipEm = document.createElement('em');
-        tipEm.textContent = 'Works best from the main dashboard page';
-        tipDiv.appendChild(tipEm);
-        helpDiv.appendChild(tipDiv);
+            <div class="quick-setup-tip">
+                💡 <em>Works best from the main dashboard page</em>
+            </div>
+        `;
 
         this.statusDiv.parentNode.insertBefore(helpDiv, this.statusDiv.nextSibling);
 
@@ -814,21 +717,6 @@ class CalendarManager {
         } else {
             return `${minutes} min`;
         }
-    }
-
-    /**
-     * Format sync type for display
-     * @param {string} syncType - Raw sync type ('manual', 'auto', 'smart', 'first_time')
-     * @returns {string} Formatted sync type with emoji
-     */
-    formatSyncType(syncType) {
-        const syncTypeMap = {
-            'manual': '👆 Manual',
-            'auto': '⏰ Auto',
-            'smart': '🧠 Smart',
-            'first_time': '🎉 First-time'
-        };
-        return syncTypeMap[syncType] || '❓ Unknown';
     }
 }
 

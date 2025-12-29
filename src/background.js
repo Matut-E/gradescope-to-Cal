@@ -28,8 +28,10 @@ const CONFIG = {
 
     // Chrome Extension clients - mapped by extension ID
     CHROME_EXTENSION_CLIENTS: {
-        // Development version (unpacked extension)
+        // Development version (unpacked extension - original)
         'daelaebdndkaepjmcffbijdffmmbmnlh': '589515007396-h3m48dfo08d16b0t4d2l0bkindklukru.apps.googleusercontent.com',
+        // Development version (unpacked extension - current)
+        'fihhegbokkbnoodajajabnmdkgedjmag': '589515007396-h3m48dfo08d16b0t4d2l0bkindklukru.apps.googleusercontent.com',
         // Chrome Web Store version
         'bbepekfgnpdfclkpfoojmfclnbkkbbco': '589515007396-0frm2bh6mhobpqiuec8p2dlb2gs10gla.apps.googleusercontent.com'
     },
@@ -60,7 +62,9 @@ if (typeof importScripts === 'function') {
         'auth/authenticationManager.js',
         'auth/calendarAPIClient.js',
         'auth/autoSyncManager.js',
-        'auth/smartSyncManager.js'
+        'auth/onboardingManager.js',
+        'auth/smartSyncManager.js',
+        'auth/backgroundPollingManager.js'
     );
     console.log('✅ Chrome: Modules loaded via importScripts');
 } else {
@@ -79,62 +83,39 @@ console.log('   - Timestamp:', new Date().toISOString());
 console.log('   - Extension ID:', browser.runtime.id);
 console.log('   - Chrome Client ID:', CONFIG.CHROME_EXTENSION_CLIENTS[browser.runtime.id] || 'not configured');
 console.log('   - Web Client ID:', CONFIG.WEB_CLIENT_ID);
-console.log('   - Browser:', typeof browser.runtime.getBrowserInfo !== 'undefined' ? 'Firefox' : 'Chrome-based');
 console.log('');
 
 // Log browser detection results
 browserDetector.logDetection();
 
 // ============================================================================
-// CROSS-BROWSER COMPATIBILITY HELPERS
-// ============================================================================
-
-/**
- * Get the correct browser action API
- * Chrome MV3: browser.action
- * Firefox MV2: browser.browserAction
- */
-function getBrowserAction() {
-    // Chrome MV3 uses browser.action
-    if (typeof browser.action !== 'undefined') {
-        return browser.action;
-    }
-    // Firefox MV2 uses browser.browserAction
-    if (typeof browser.browserAction !== 'undefined') {
-        return browser.browserAction;
-    }
-    // Fallback (shouldn't happen)
-    console.error('❌ Neither browser.action nor browser.browserAction is available!');
-    return null;
-}
-
-// ============================================================================
 // INITIALIZE INSTANCES
 // ============================================================================
 
 // Create module instances
-console.log('🔧 Creating module instances...');
 const tokenManager = new TokenManager(CONFIG);
-console.log('   ✓ TokenManager created');
 const authManager = new AuthenticationManager(CONFIG, tokenManager);
-console.log('   ✓ AuthenticationManager created');
 const calendarClient = new CalendarAPIClient(CONFIG, tokenManager, authManager);
-console.log('   ✓ CalendarAPIClient created');
 const autoSyncManager = new AutoSyncManager(CONFIG);
-console.log('   ✓ AutoSyncManager created');
+const onboardingManager = new OnboardingManager();
 const smartSyncManager = new SmartSyncManager(CONFIG, calendarClient, calendarClient.eventCache);
-console.log('   ✓ SmartSyncManager created');
-console.log('');
+const backgroundPollingManager = new BackgroundPollingManager(CONFIG, calendarClient, smartSyncManager, authManager);
 
-// CRITICAL: Initialize TokenManager from storage to prevent race conditions
-// This ensures auth tokens are loaded from storage BEFORE any popup opens
-// Fixes visual bug where popup shows "disconnected" after service worker wakes
-console.log('🔄 Initializing TokenManager from storage...');
-const storageInitPromise = tokenManager.initializeFromStorage().then(() => {
-    console.log('✅ TokenManager initialized from storage');
+console.log('✅ Module instances created');
+
+// ============================================================================
+// CRITICAL: INSTALL LISTENER MUST BE AT TOP LEVEL
+// ============================================================================
+
+// Register install listener IMMEDIATELY (before onInstalled event fires)
+browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'install') {
+        console.log('🎉 Extension installed! Opening welcome page...');
+        browser.tabs.create({ url: browser.runtime.getURL('welcome.html') });
+    } else if (details.reason === 'update') {
+        console.log('🔄 Extension updated to version', browser.runtime.getManifest().version);
+    }
 });
-
-console.log('✅ All modules initialized and ready');
 
 // ============================================================================
 // EXTENSION EVENT HANDLERS
@@ -145,63 +126,21 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === CONFIG.ALARM_NAME) {
         console.log('⏰ Auto-sync alarm triggered');
         await calendarClient.performBackgroundSync();
-    } else if (alarm.name === 'checkPinStatus') {
-        // Check if should show badge reminder to pin extension
-        await checkAndShowPinBadge();
+    } else if (alarm.name === onboardingManager.PIN_CHECK_ALARM) {
+        await onboardingManager.handlePinCheckAlarm();
+    } else if (alarm.name === backgroundPollingManager.POLL_ALARM_NAME) {
+        console.log('🔄 Background poll alarm triggered');
+        await backgroundPollingManager.handlePollAlarm();
     }
 });
 
-// Message handler helper function
-// Firefox compatibility: Separate async function to return Promise properly
-async function handleExtensionMessage(request, sender) {
-    // Log every message received
-    console.log('');
-    console.log('📨 MESSAGE RECEIVED from', sender.tab ? `tab ${sender.tab.id}` : 'extension');
-    console.log('   - Action:', request.action);
-    console.log('   - Timestamp:', new Date().toISOString());
-    if (request.action === 'checkForNewAssignments') {
-        console.log('   - Assignments count:', request.assignments?.length || 0);
-    }
-    console.log('');
-
-    try {
-        let result;
-
+// Message handler
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    const handleMessage = async () => {
         switch (request.action) {
             case 'authenticate':
                 await authManager.authenticate();
                 await autoSyncManager.setupAutoSync();
-
-                // Post-authentication diagnostics: Verify storage state
-                const postAuthStorage = await browser.storage.local.get([
-                    'google_access_token',
-                    'google_refresh_token',
-                    'google_token_expiry',
-                    'google_auth_method'
-                ]);
-
-                console.log('');
-                console.log('╔════════════════════════════════════════════════════════════════════════╗');
-                console.log('║  ✅ AUTHENTICATION COMPLETE - Final Storage State                     ║');
-                console.log('╚════════════════════════════════════════════════════════════════════════╝');
-                console.log('');
-                console.log('📊 browser.storage.local contents:');
-                console.log('   - google_access_token:', !!postAuthStorage.google_access_token ? '✓ STORED' : '✗ MISSING');
-                console.log('   - google_refresh_token:', !!postAuthStorage.google_refresh_token ? '✓ STORED' : '✗ MISSING');
-                console.log('   - google_token_expiry:', postAuthStorage.google_token_expiry ? `✓ STORED (${new Date(postAuthStorage.google_token_expiry).toISOString()})` : '✗ MISSING');
-                console.log('   - google_auth_method:', postAuthStorage.google_auth_method || '✗ MISSING');
-                console.log('');
-
-                if (!postAuthStorage.google_refresh_token) {
-                    console.warn('⚠️ WARNING: No refresh token in storage!');
-                    console.warn('   You will need to re-authenticate when the access token expires (in ~1 hour).');
-                    console.warn('');
-                    console.warn('   To get a refresh token:');
-                    console.warn('   1. Revoke app access: https://myaccount.google.com/permissions');
-                    console.warn('   2. Clear authentication in extension');
-                    console.warn('   3. Reconnect to Google Calendar');
-                    console.warn('');
-                }
 
                 // First-time sync: If assignments already extracted, sync immediately
                 const firstTimeSyncResult = await handleFirstTimeSync();
@@ -217,14 +156,6 @@ async function handleExtensionMessage(request, sender) {
                 return { success: true, message: 'Authentication successful' };
 
             case 'getAuthStatus':
-                // CRITICAL: Ensure storage is initialized before checking auth status
-                // Wait for initial storage load if still in progress
-                await storageInitPromise;
-
-                // Then reload from storage to get the most current state
-                // This prevents race conditions where popup checks auth before storage is loaded
-                await tokenManager.initializeFromStorage();
-
                 const authStatus = await authManager.getAuthStatus();
                 return {
                     success: true,
@@ -257,7 +188,7 @@ async function handleExtensionMessage(request, sender) {
                 return { success: true, status };
 
             case 'performBackgroundSync':
-                result = await calendarClient.performBackgroundSync();
+                const result = await calendarClient.performBackgroundSync();
                 return result;
 
             case 'checkForNewAssignments':
@@ -276,67 +207,51 @@ async function handleExtensionMessage(request, sender) {
                 return { success: true, message: 'Cache refresh complete' };
 
             case 'checkPinStatus':
-                const pinStatus = await checkIfPinned();
-                // Clear badge immediately if extension is pinned
-                if (pinStatus) {
-                    const action = getBrowserAction();
-                    if (action) {
-                        await action.setBadgeText({ text: '' });
-                        console.log('✅ Pin status checked - extension is pinned, badge cleared');
-                    }
-                }
+                const pinStatus = await onboardingManager.checkIfPinned();
                 return { success: true, isPinned: pinStatus };
 
             case 'openPopup':
-                // Attempt to open the extension popup programmatically
-                // Note: This may not work in all contexts, but we try
-                try {
-                    const action = getBrowserAction();
-                    if (action && action.openPopup) {
-                        await action.openPopup();
-                        return { success: true, message: 'Popup opened' };
-                    } else {
-                        return { success: false, error: 'openPopup API not available' };
-                    }
-                } catch (error) {
-                    // Popup couldn't be opened (likely user gesture required)
-                    return { success: false, error: 'Could not open popup - user gesture required' };
-                }
+                return await onboardingManager.openPopup();
 
             case 'generateIcal':
                 return await handleIcalGeneration(request.assignments);
 
+            // Background polling actions
+            case 'enableBackgroundPolling':
+                return await backgroundPollingManager.enablePolling();
+
+            case 'disableBackgroundPolling':
+                return await backgroundPollingManager.disablePolling();
+
+            case 'getBackgroundPollingStatus':
+                const pollingStatus = await backgroundPollingManager.getStatus();
+                return { success: true, status: pollingStatus };
+
+            case 'storeEnrolledCourses':
+                return await backgroundPollingManager.storeEnrolledCourses(request.courses);
+
+            case 'triggerBackgroundPoll':
+                return await backgroundPollingManager.handlePollAlarm();
+
             default:
                 return { success: false, error: 'Unknown action' };
         }
-    } catch (error) {
-        console.error(`❌ Message handler error:`, error);
-        return { success: false, error: error.message };
-    }
-}
+    };
 
-// Register message listener
-// Firefox Manifest V2 compatibility: Use sendResponse callback + return true
-console.log('📝 Registering message handler...');
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // Handle message asynchronously and send response via callback
-    handleExtensionMessage(request, sender)
-        .then(response => {
-            console.log(`📤 Sending response for action '${request.action}':`, response);
-            sendResponse(response);
-            console.log(`✅ Response sent for action '${request.action}'`);
+    handleMessage()
+        .then(result => {
+            if (typeof result === 'object' && result !== null && !result.hasOwnProperty('success')) {
+                result = { success: true, data: result };
+            }
+            sendResponse(result);
         })
         .catch(error => {
-            console.error('❌ Unexpected error in message handler:', error);
+            console.error(`❌ Message handler error:`, error);
             sendResponse({ success: false, error: error.message });
         });
 
-    // Return true to indicate we will send a response asynchronously
-    // This keeps the message port open in Firefox Manifest V2
     return true;
 });
-console.log('✅ Message handler registered and ready to receive messages');
-console.log('');
 
 // Calendar sync helper
 async function handleCalendarSync(assignments) {
@@ -345,8 +260,7 @@ async function handleCalendarSync(assignments) {
 
         await browser.storage.local.set({
             last_auto_sync: new Date().toISOString(),
-            last_sync_results: results,
-            lastSyncType: 'manual'
+            last_sync_results: results
         });
 
         return { success: true, results };
@@ -428,57 +342,29 @@ async function handleCheckForNewAssignments(assignments) {
 // First-time sync helper - syncs immediately after first authentication if assignments exist
 async function handleFirstTimeSync() {
     try {
-        console.log('');
-        console.log('╔════════════════════════════════════════════════════════════════════════╗');
-        console.log('║  🔍 FIRST-TIME SYNC CHECK                                              ║');
-        console.log('╚════════════════════════════════════════════════════════════════════════╝');
-        console.log('');
-
         // Check if this is first-time authentication (no previous sync)
-        const storage = await browser.storage.local.get(['last_auto_sync', 'lastSyncType']);
+        const storage = await browser.storage.local.get(['last_auto_sync']);
         const hasExistingSync = storage.last_auto_sync;
 
-        console.log('📊 Storage check:');
-        console.log('   - last_auto_sync:', hasExistingSync || 'NOT SET');
-        console.log('   - lastSyncType:', storage.lastSyncType || 'NOT SET');
-
         if (hasExistingSync) {
-            console.log('');
             console.log('⏭️ Not first-time authentication, skipping first-time sync');
-            console.log('   (last sync was:', hasExistingSync, ')');
-            console.log('');
-            console.log('💡 TIP: To test first-time sync, clear storage:');
-            console.log('   browser.storage.local.remove([\'last_auto_sync\', \'lastSyncType\'])');
-            console.log('');
             return { synced: false, reason: 'Not first-time authentication' };
         }
 
-        console.log('✅ First-time authentication detected! (no previous sync found)');
-        console.log('');
+        console.log('🎉 First-time authentication detected! Checking for existing assignments...');
 
         // Check if assignments have already been extracted
-        console.log('🔍 Searching for extracted assignments in storage...');
         const allStorage = await browser.storage.local.get(null);
         const assignmentKeys = Object.keys(allStorage).filter(key =>
             key.startsWith('assignments_') && allStorage[key].assignments
         );
 
-        console.log(`   - Found ${assignmentKeys.length} assignment storage keys:`);
-        assignmentKeys.forEach(key => {
-            console.log(`      • ${key}: ${allStorage[key].assignments?.length || 0} assignments`);
-        });
-
         if (assignmentKeys.length === 0) {
-            console.log('');
             console.log('📭 No assignments extracted yet, skipping first-time sync');
-            console.log('   User needs to extract assignments first (click "Extract Assignments Now")');
-            console.log('');
             return { synced: false, reason: 'No assignments extracted yet' };
         }
 
         // Collect all assignments from storage
-        console.log('');
-        console.log('📦 Collecting all assignments from storage...');
         const allAssignments = [];
         for (const key of assignmentKeys) {
             const data = allStorage[key];
@@ -486,34 +372,23 @@ async function handleFirstTimeSync() {
                 allAssignments.push(...data.assignments);
             }
         }
-        console.log(`   ✓ Collected ${allAssignments.length} total assignments`);
 
         // Deduplicate by assignmentId
         const uniqueAssignments = Array.from(
             new Map(allAssignments.map(a => [a.assignmentId, a])).values()
         );
-        console.log(`   ✓ ${uniqueAssignments.length} unique assignments (after deduplication)`);
 
         // Filter for calendar-eligible assignments (upcoming, not submitted)
         const calendarEligible = uniqueAssignments.filter(a =>
             a.dueDate && !a.isSubmitted
         );
-        console.log(`   ✓ ${calendarEligible.length} calendar-eligible assignments (upcoming + not submitted)`);
 
         if (calendarEligible.length === 0) {
-            console.log('');
             console.log('📭 No calendar-eligible assignments found, skipping first-time sync');
-            console.log('   All assignments may be:');
-            console.log('   - Already submitted');
-            console.log('   - Missing due dates');
-            console.log('   - Past due date');
-            console.log('');
             return { synced: false, reason: 'No calendar-eligible assignments' };
         }
 
-        console.log('');
-        console.log(`🚀 Starting first-time sync for ${calendarEligible.length} assignments!`);
-        console.log('');
+        console.log(`🚀 First-time sync: Found ${calendarEligible.length} assignments to sync!`);
 
         // Perform the sync
         const results = await calendarClient.syncAssignments(calendarEligible);
@@ -525,16 +400,7 @@ async function handleFirstTimeSync() {
             lastSyncType: 'first_time'
         });
 
-        console.log('');
-        console.log('╔════════════════════════════════════════════════════════════════════════╗');
-        console.log('║  ✅ FIRST-TIME SYNC COMPLETE                                           ║');
-        console.log('╚════════════════════════════════════════════════════════════════════════╝');
-        console.log('');
-        console.log('📊 Results:');
-        console.log(`   - Created: ${results.created} events`);
-        console.log(`   - Skipped: ${results.skipped} events`);
-        console.log(`   - Failed: ${results.failed} events`);
-        console.log('');
+        console.log(`✅ First-time sync complete: ${results.created} created, ${results.skipped} skipped`);
 
         return {
             synced: true,
@@ -544,12 +410,7 @@ async function handleFirstTimeSync() {
         };
 
     } catch (error) {
-        console.error('');
         console.error('❌ Error in handleFirstTimeSync:', error);
-        console.error('   Error type:', error.name);
-        console.error('   Error message:', error.message);
-        console.error('   Stack:', error.stack);
-        console.error('');
         return {
             synced: false,
             reason: `Error: ${error.message}`,
@@ -611,165 +472,25 @@ browser.runtime.onStartup.addListener(async () => {
         await autoSyncManager.setupAutoSync();
         console.log('✅ Auto-sync enabled on startup');
     }
+
+    // Re-initialize background polling if it was enabled
+    await backgroundPollingManager.initialize();
 });
 
 // ============================================================================
-// ONBOARDING: WELCOME PAGE & PIN REMINDERS
+// INITIALIZATION
 // ============================================================================
-
-// Extension installation handler - show welcome page
-browser.runtime.onInstalled.addListener(async (details) => {
-    if (details.reason === 'install') {
-        console.log('🎉 Extension installed! Opening welcome page...');
-        browser.tabs.create({ url: browser.runtime.getURL('welcome.html') });
-
-        // Set install date for feedback prompt system (only on first install)
-        const data = await browser.storage.local.get('installDate');
-        if (!data.installDate) {
-            await browser.storage.local.set({ installDate: Date.now() });
-            console.log('📬 Install date recorded for feedback system');
-        }
-    } else if (details.reason === 'update') {
-        console.log('🔄 Extension updated to version', browser.runtime.getManifest().version);
-    }
-});
-
-/**
- * Check if extension is pinned to toolbar
- * Firefox: Always returns true (auto-pinned by Firefox)
- * Chrome: Uses getUserSettings() API to detect pin status
- */
-async function checkIfPinned() {
-    try {
-        // Firefox auto-pins extensions, so always return true
-        if (browserDetector.isFirefox()) {
-            console.log('🦊 Firefox detected - extensions are auto-pinned, returning true');
-            return true;
-        }
-
-        // Chrome: Use getUserSettings API (available Chrome 90+)
-        const action = getBrowserAction();
-        if (action && action.getUserSettings) {
-            const settings = await action.getUserSettings();
-            const isPinned = settings.isOnToolbar || false;
-            console.log('📌 Pin status (getUserSettings):', isPinned);
-            return isPinned;
-        } else {
-            // Older Chrome versions without getUserSettings
-            console.warn('⚠️ getUserSettings API not available, assuming pinned');
-            return true;
-        }
-    } catch (error) {
-        console.error('Error checking pin status:', error);
-        // If API not available, assume pinned to avoid showing unnecessary prompts
-        return true;
-    }
-}
-
-/**
- * Check if badge should be shown and update it
- */
-async function checkAndShowPinBadge() {
-    try {
-        const action = getBrowserAction();
-        if (!action) {
-            console.warn('⚠️ Browser action API not available, skipping badge check');
-            return;
-        }
-
-        // Check if already pinned
-        const isPinned = await checkIfPinned();
-        if (isPinned) {
-            // Clear badge if pinned
-            if (action.setBadgeText) {
-                await action.setBadgeText({ text: '' });
-            }
-            return;
-        }
-
-        // Check conditions for showing badge
-        const data = await browser.storage.local.get([
-            'hasAssignments',
-            'lastPopupOpen',
-            'dismissedExtractionBanner'
-        ]);
-
-        // Don't show if user dismissed banner or no assignments
-        if (data.dismissedExtractionBanner || !data.hasAssignments) {
-            return;
-        }
-
-        // Check if popup hasn't been opened in 24 hours
-        const dayInMs = 24 * 60 * 60 * 1000;
-        const timeSinceOpen = data.lastPopupOpen ? Date.now() - data.lastPopupOpen : Infinity;
-
-        console.log(`⏰ Badge check - unpinned: true, hasAssignments: ${data.hasAssignments}, dismissed: ${data.dismissedExtractionBanner}, timeSince: ${Math.round(timeSinceOpen / (60 * 60 * 1000))}h`);
-
-        if (timeSinceOpen > dayInMs) {
-            // Show badge - using '!' character
-            if (action.setBadgeText) {
-                await action.setBadgeText({ text: '!' });
-            }
-            if (action.setBadgeBackgroundColor) {
-                await action.setBadgeBackgroundColor({ color: '#FDB515' }); // California Gold
-            }
-            console.log('📌 Pin reminder badge shown');
-        }
-    } catch (error) {
-        console.error('Error checking pin badge status:', error);
-    }
-}
-
-// Set up pin status check alarm (runs every 5 minutes to detect pinning quickly)
-browser.alarms.create('checkPinStatus', { periodInMinutes: 5 });
-
-// Track when popup is opened (check pin status and clear badge if pinned)
-const action = getBrowserAction();
-if (action && action.onClicked) {
-    action.onClicked.addListener(async () => {
-        await browser.storage.local.set({ lastPopupOpen: Date.now() });
-
-        // Check if extension is now pinned
-        const isPinned = await checkIfPinned();
-        if (isPinned) {
-            // Clear badge immediately if pinned
-            if (action.setBadgeText) {
-                await action.setBadgeText({ text: '' });
-            }
-            console.log('✅ Extension is pinned - badge cleared');
-        }
-    });
-}
 
 // Initialize on service worker start
 (async () => {
     try {
-        console.log('🔄 Running async initialization...');
         await tokenManager.initializeFromStorage();
-        console.log('   ✓ Token manager initialized from storage');
-
-        // Initial pin status check
-        await checkAndShowPinBadge();
-        console.log('   ✓ Pin status checked');
-
-        console.log('');
-        console.log('╔════════════════════════════════════════════════════════════════════════╗');
-        console.log('║  ✅ BACKGROUND SCRIPT FULLY READY                                      ║');
-        console.log('╚════════════════════════════════════════════════════════════════════════╝');
-        console.log('');
-        console.log('📡 Ready to receive messages:');
-        console.log('   - authenticate');
-        console.log('   - getAuthStatus');
-        console.log('   - syncToCalendar');
-        console.log('   - checkForNewAssignments  ← Smart sync trigger');
-        console.log('   - performBackgroundSync   ← 24-hour auto-sync');
-        console.log('');
-        console.log('🕐 Current time:', new Date().toISOString());
-        console.log('');
+        await onboardingManager.initialize();
+        await backgroundPollingManager.initialize();
+        console.log('✅ Background script initialized with dual authentication');
     } catch (error) {
-        console.error('');
-        console.error('❌ INITIALIZATION ERROR:', error);
-        console.error('   Background script may not function correctly!');
-        console.error('');
+        console.error('Initialization error:', error);
     }
 })();
+
+console.log('✅ Enhanced background script with dual authentication ready');

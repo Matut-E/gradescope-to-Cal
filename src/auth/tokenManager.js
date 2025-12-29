@@ -30,79 +30,36 @@ class TokenManager {
                 'google_auth_method'
             ]);
 
-            // Log what we found in storage for diagnostics
-            const hasAccessToken = !!stored.google_access_token;
-            const hasRefreshToken = !!stored.google_refresh_token;
-            const hasExpiry = !!stored.google_token_expiry;
-            const authMethod = stored.google_auth_method || 'none';
-
-            console.log('🔍 TokenManager.initializeFromStorage() - Storage contents:');
-            console.log(`   - Access token: ${hasAccessToken ? '✓ found' : '✗ missing'}`);
-            console.log(`   - Refresh token: ${hasRefreshToken ? '✓ found' : '✗ missing'}`);
-            console.log(`   - Token expiry: ${hasExpiry ? '✓ found' : '✗ missing'}`);
-            console.log(`   - Auth method: ${authMethod}`);
-
             if (stored.google_access_token && stored.google_token_expiry) {
                 this.accessToken = stored.google_access_token;
                 this.refreshToken = stored.google_refresh_token;
                 this.tokenExpiry = stored.google_token_expiry;
                 this.authMethod = stored.google_auth_method;
 
-                console.log('✅ Restored auth state from storage');
+                console.log('🔄 Restored auth state from storage');
 
                 // Clear expired access tokens but keep refresh tokens
                 if (Date.now() >= this.tokenExpiry - 60000) {
-                    console.log('⚠️ Access token expired (clearing from memory, refresh token retained)');
+                    console.log('⚠️ Access token expired');
                     this.accessToken = null;
                 }
-            } else if (!hasAccessToken && !hasRefreshToken) {
-                console.log('ℹ️ No auth tokens found in storage (user not authenticated)');
-            } else {
-                console.warn('⚠️ Incomplete auth data in storage - may indicate corrupted state');
             }
         } catch (error) {
-            console.error('❌ Error loading stored auth:', error);
+            console.error('Error loading stored auth:', error);
         }
     }
 
     async saveTokenState() {
         try {
-            const dataToSave = {
+            await browser.storage.local.set({
                 google_access_token: this.accessToken,
                 google_refresh_token: this.refreshToken,
                 google_token_expiry: this.tokenExpiry,
                 google_auth_method: this.authMethod
-            };
-
-            await browser.storage.local.set(dataToSave);
-
-            // Diagnostic logging: Confirm what was written to storage
-            console.log('');
-            console.log('💾 TokenManager.saveTokenState() - Writing to browser.storage.local:');
-            console.log('   Storage Keys:');
-            console.log('     - google_access_token:', this.accessToken ? `SAVED ✓ (${this.accessToken.substring(0, 20)}...)` : 'NULL (not saved)');
-            console.log('     - google_refresh_token:', this.refreshToken ? `SAVED ✓ (${this.refreshToken.substring(0, 20)}...)` : 'NULL (not saved)');
-            console.log('     - google_token_expiry:', this.tokenExpiry ? `SAVED ✓ (${new Date(this.tokenExpiry).toISOString()})` : 'NULL');
-            console.log('     - google_auth_method:', this.authMethod || 'NULL');
-            console.log('');
-
-            // Verify by reading back immediately
-            const verification = await browser.storage.local.get([
-                'google_access_token',
-                'google_refresh_token',
-                'google_token_expiry',
-                'google_auth_method'
-            ]);
-
-            console.log('✅ Verification - Reading back from storage:');
-            console.log('   - google_access_token:', !!verification.google_access_token ? 'EXISTS ✓' : 'MISSING ✗');
-            console.log('   - google_refresh_token:', !!verification.google_refresh_token ? 'EXISTS ✓' : 'MISSING ✗');
-            console.log('   - google_token_expiry:', !!verification.google_token_expiry ? 'EXISTS ✓' : 'MISSING ✗');
-            console.log('   - google_auth_method:', verification.google_auth_method || 'MISSING ✗');
-            console.log('');
-
+            });
+            console.log('💾 Auth state saved');
         } catch (error) {
-            console.error('❌ Error saving token state:', error);
+            console.error('Error saving token state:', error);
         }
     }
 
@@ -224,16 +181,6 @@ class TokenManager {
         this.refreshToken = refreshToken;
         this.tokenExpiry = Date.now() + (expiresIn * 1000);
         this.authMethod = authMethod;
-
-        // Diagnostic logging: Confirm tokens are set in memory
-        console.log('');
-        console.log('💾 TokenManager.setTokens() called:');
-        console.log('   - Access Token:', accessToken ? `SET ✓ (${accessToken.substring(0, 20)}...)` : 'NOT SET ✗');
-        console.log('   - Refresh Token:', refreshToken ? `SET ✓ (${refreshToken.substring(0, 20)}...)` : 'NOT SET ✗');
-        console.log('   - Expires In:', expiresIn, 'seconds');
-        console.log('   - Token Expiry:', new Date(this.tokenExpiry).toISOString());
-        console.log('   - Auth Method:', authMethod);
-        console.log('');
     }
 
     setChromeToken(token) {
