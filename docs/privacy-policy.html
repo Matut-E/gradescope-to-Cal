@@ -270,11 +270,11 @@
     <div class="container">
         <div class="header">
             <h1>Privacy Policy</h1>
-            <p><em>Last Updated: October 25, 2025</em></p>
+            <p><em>Last Updated: December 28, 2025</em></p>
         </div>
 
         <h2>Overview</h2>
-        <p>Gradescope to Cal is a browser extension that automatically syncs your Gradescope assignments to Google Calendar. We are committed to protecting your privacy through a zero-server architecture that processes all data locally in your browser.</p>
+        <p>Gradescope to Cal is a browser extension that automatically syncs your Gradescope assignments to Google Calendar and displays your grades at a glance. We are committed to protecting your privacy through a zero-server architecture that processes all data locally in your browser.</p>
 
         <h2>Permissions Required</h2>
         <p>Our extension requests only the minimal permissions necessary to function. Here's exactly what we need and why:</p>
@@ -296,38 +296,53 @@
         <div class="card">
             <h3>🎓 Content Script Access to *.gradescope.com</h3>
             <p><strong>Domain:</strong> <code>*.gradescope.com</code></p>
-            <p><strong>Purpose:</strong> To extract assignment information from Gradescope pages you visit</p>
+            <p><strong>Purpose:</strong> To extract assignment and grade information from Gradescope pages you visit</p>
             <p><strong>Usage:</strong></p>
             <ul>
                 <li>Read assignment names, due dates, and course information from visible page content</li>
                 <li>Parse assignment status (submitted, graded, not submitted)</li>
                 <li>Extract assignment URLs and identifiers for calendar event tracking</li>
+                <li>Read grade information to display in the extension popup (stored locally only)</li>
                 <li>Detect page type (dashboard, course page, assignment page) to optimize extraction</li>
             </ul>
-            <p style="margin-bottom: 0;"><strong>Important:</strong> We only access Gradescope.com pages you actively visit. We do not track your browsing history, access other websites, or monitor activity in the background.</p>
+            <p style="margin-bottom: 0;"><strong>Important:</strong> We only access Gradescope.com pages you actively visit. We do not track your browsing history, access other websites, or monitor activity in the background. <strong>Your grades are displayed locally in your browser and are never sent anywhere.</strong></p>
+        </div>
+
+        <div class="card">
+            <h3>🔔 Notifications</h3>
+            <p><strong>Permission:</strong> <code>notifications</code></p>
+            <p><strong>Purpose:</strong> To alert you when your Gradescope login session has expired</p>
+            <p><strong>Usage:</strong></p>
+            <ul>
+                <li>Display a notification when background sync fails due to an expired session</li>
+                <li>Prompt you to re-visit Gradescope to refresh your login</li>
+            </ul>
+            <p style="margin-bottom: 0;"><strong>Important:</strong> Notifications are only triggered when a sync issue is detected. We do not send marketing messages, reminders, or any other type of notification.</p>
         </div>
 
         <div class="highlight-box">
-            <p><strong>No other permissions are requested.</strong> We do not ask for access to your browsing history, tabs, downloads, cookies, or any other sensitive data. The extension operates entirely within these two clearly defined scopes.</p>
+            <p><strong>Minimal permissions only.</strong> We do not ask for access to your browsing history, tabs, downloads, cookies, or any other sensitive data. The extension operates entirely within these clearly defined scopes.</p>
         </div>
 
         <h2>Information Collection and Use</h2>
 
-        <h3>What We Collect</h3>
+        <h3>What We Collect (Stored Locally in Your Browser)</h3>
         <ul>
             <li><strong>Assignment Data</strong>: Assignment titles, due dates, course names, course IDs, assignment URLs, and assignment IDs from Gradescope pages you visit</li>
+            <li><strong>Grade Display Data</strong>: Your grades from Gradescope, stored locally in your browser to display in the extension popup. <strong>This data never leaves your device.</strong></li>
             <li><strong>Extraction Metadata</strong>: Timestamps of when data was extracted, source page URLs, and extraction method used</li>
             <li><strong>Authentication Tokens</strong>: Google Calendar OAuth access and refresh tokens stored securely in your browser</li>
             <li><strong>Auto-Sync Data</strong>: Timestamps and results of automatic background sync operations</li>
             <li><strong>User Preferences</strong>: Sync frequency settings, notification preferences, and auto-sync enable/disable status</li>
         </ul>
 
-        <h3>What We DON'T Collect</h3>
+        <h3>What We DON'T Collect (We Never See This Data)</h3>
         <div class="highlight-box">
             <ul style="margin-bottom: 0;">
                 <li><strong>Personal Information</strong>: We do not collect names, email addresses, or any personally identifiable information</li>
-                <li><strong>Browsing History</strong>: We only access Gradescope.com pages when yous visit them</li>
-                <li><strong>Assignment Content</strong>: We do not read or store assignment descriptions, submissions, or grades</li>
+                <li><strong>Browsing History</strong>: We only access Gradescope.com pages when you visit them</li>
+                <li><strong>Assignment Content</strong>: We do not read or store assignment descriptions or submissions</li>
+                <li><strong>Your Grades (Remotely)</strong>: While we display grades locally in your browser, we <strong>never transmit your grades to any server</strong>. We have no idea what courses you take or what your grades are.</li>
                 <li><strong>Analytics</strong>: We do not track usage, collect statistics, or send any data to external servers</li>
             </ul>
         </div>
@@ -450,12 +465,13 @@
 
         <h3>Permissions Explained</h3>
         <ul>
-            <li><code>storage</code>: Store your preferences and assignment data locally</li>
+            <li><code>storage</code>: Store your preferences, assignment data, and grades locally</li>
             <li><code>identity</code>: Handle Google OAuth authentication</li>
-            <li><code>scripting</code>: Inject content scripts to extract assignment data from Gradescope pages</li>
+            <li><code>scripting</code>: Inject content scripts to extract assignment and grade data from Gradescope pages</li>
             <li><code>activeTab</code>: Access the currently active Gradescope tab for assignment extraction</li>
             <li><code>alarms</code>: Schedule automatic background sync every 24 hours</li>
-            <li><code>*://*.gradescope.com/*</code>: Access Gradescope pages to extract assignment data</li>
+            <li><code>notifications</code>: Alert you when your Gradescope session expires during background sync</li>
+            <li><code>*://*.gradescope.com/*</code>: Access Gradescope pages to extract assignment and grade data</li>
             <li><code>https://www.googleapis.com/*</code>: Communicate with Google Calendar API</li>
         </ul>
 
