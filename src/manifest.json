@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Gradescope to Cal",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Automatically sync Gradescope assignments to Google Calendar with comprehensive grade calculator",
 
   "permissions": [

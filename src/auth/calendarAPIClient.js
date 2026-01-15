@@ -192,7 +192,8 @@ class CalendarAPIClient {
             body: JSON.stringify(event)
         });
 
-        this.eventCache.invalidateAssignment(assignment.assignmentId);
+        // Add newly created event to cache (prevents duplicates on rapid re-sync)
+        this.eventCache.addToCache(assignment.assignmentId, response);
         return response;
     }
 

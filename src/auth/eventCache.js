@@ -30,8 +30,8 @@ class EventCache {
                 return { id: cachedData.eventId, ...cachedData.eventData };
             }
 
-            console.log(`💾 Cache miss for assignment ${assignmentId}`);
-            return null;
+            console.log(`💾 Cache miss for assignment ${assignmentId}, attempting fallback API...`);
+            return await this.fallbackToDirectAPI(assignmentId);
 
         } catch (cacheError) {
             console.warn('🔄 Cache failed, using fallback API:', cacheError.message);
@@ -136,25 +136,19 @@ class EventCache {
 
     async fallbackToDirectAPI(assignmentId) {
         try {
-            const searchParams = new URLSearchParams({
-                q: `gradescope_assignment_id:${assignmentId}`,
-                singleEvents: 'true',
-                maxResults: '10'
-            });
+            // Force a full cache refresh to get the latest events
+            // This is more reliable than searching by q parameter (which doesn't search extended properties)
+            console.log('🔄 Fallback: forcing full cache refresh...');
+            await this.refreshCache();
 
-            const response = await this.client.makeAPIRequest(`/calendars/primary/events?${searchParams}`);
-
-            if (response.items && response.items.length > 0) {
-                const exactMatch = response.items.find(event =>
-                    event.extendedProperties?.private?.gradescope_assignment_id === assignmentId
-                );
-
-                if (exactMatch) {
-                    console.log(`✅ Fallback API found event: ${exactMatch.id}`);
-                    return exactMatch;
-                }
+            // Check cache again after refresh
+            const cachedData = this.cache.get(assignmentId);
+            if (cachedData) {
+                console.log(`✅ Fallback found event after cache refresh: ${cachedData.eventId}`);
+                return { id: cachedData.eventId, ...cachedData.eventData };
             }
 
+            console.log('⚠️ Fallback: event not found even after cache refresh');
             return null;
 
         } catch (error) {
@@ -182,6 +176,20 @@ class EventCache {
 
     invalidateAssignment(assignmentId) {
         this.cache.delete(assignmentId);
+    }
+
+    addToCache(assignmentId, eventData) {
+        this.cache.set(assignmentId, {
+            eventId: eventData.id,
+            lastUpdated: Date.now(),
+            eventData: {
+                summary: eventData.summary,
+                start: eventData.start,
+                end: eventData.end,
+                htmlLink: eventData.htmlLink
+            }
+        });
+        console.log(`💾 Added event to cache: ${assignmentId} → ${eventData.id}`);
     }
 
     async forceRefresh() {
