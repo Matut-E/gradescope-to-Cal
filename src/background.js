@@ -260,7 +260,8 @@ async function handleCalendarSync(assignments) {
 
         await browser.storage.local.set({
             last_auto_sync: new Date().toISOString(),
-            last_sync_results: results
+            last_sync_results: results,
+            lastSyncType: 'manual'
         });
 
         return { success: true, results };

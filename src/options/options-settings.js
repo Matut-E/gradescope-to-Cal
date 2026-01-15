@@ -728,7 +728,7 @@ class OptionsSettings {
             });
 
             // Get sync statistics
-            const syncStats = await browser.storage.local.get(['last_auto_sync', 'last_sync_results']);
+            const syncStats = await browser.storage.local.get(['last_auto_sync', 'last_sync_results', 'lastSyncType']);
 
             let statsMessage = `📊 GRADESCOPE TO CAL STATISTICS\n\n`;
             statsMessage += `📚 Assignment Data:\n`;
@@ -754,7 +754,16 @@ class OptionsSettings {
 
             if (syncStats.last_auto_sync) {
                 const lastSync = new Date(syncStats.last_auto_sync);
+                const syncTypeLabel = {
+                    'manual': 'Manual',
+                    'auto': 'Auto (24-hour)',
+                    'first_time': 'First-time',
+                    'smart': 'Smart (on extraction)',
+                    'background_poll': 'Background poll'
+                }[syncStats.lastSyncType] || syncStats.lastSyncType || 'Unknown';
+
                 statsMessage += `🔄 Last Calendar Sync: ${lastSync.toLocaleString()}\n`;
+                statsMessage += `• Sync Type: ${syncTypeLabel}\n`;
 
                 if (syncStats.last_sync_results) {
                     const r = syncStats.last_sync_results;

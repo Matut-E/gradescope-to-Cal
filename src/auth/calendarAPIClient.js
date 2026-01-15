@@ -292,7 +292,8 @@ class CalendarAPIClient {
             if (assignments.length === 0) {
                 await browser.storage.local.set({
                     last_auto_sync: new Date().toISOString(),
-                    last_sync_results: { created: 0, skipped: 0, errors: 0 }
+                    last_sync_results: { created: 0, skipped: 0, errors: 0 },
+                    lastSyncType: 'auto'
                 });
                 return {
                     success: true,
@@ -305,7 +306,8 @@ class CalendarAPIClient {
 
             await browser.storage.local.set({
                 last_auto_sync: new Date().toISOString(),
-                last_sync_results: results
+                last_sync_results: results,
+                lastSyncType: 'auto'
             });
 
             return { success: true, results };
