@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Key characteristics**:
 - **Open source**: MIT licensed, publicly available
 - **Automatic sync**: First-time sync + manual sync + 24-hour auto-sync + smart sync on extraction
-- **Production version**: v1.9.1 on Chrome Web Store
+- **Production version**: v2.0.1 on Chrome Web Store
 - **Privacy-first**: Zero-server architecture, all processing in browser
 
 ## Core Features
@@ -186,6 +186,48 @@ The extension creates two possible event formats based on user preferences:
 - Converts dates to ISO format for calendar events
 - Filters out past assignments automatically
 
+### Deduplication Strategy (CRITICAL)
+
+**⚠️ CRITICAL**: The deduplication system prevents duplicate calendar events. This logic was accidentally broken during the v2.0 merge and caused severe bugs (2x, 4x, 8x duplicate events). Follow these rules strictly:
+
+**How Deduplication Works:**
+1. Events are identified by `gradescope_assignment_id` in extended properties
+2. `EventCache` maintains in-memory cache of `assignmentId → eventId` mappings
+3. Before creating an event, `findExistingEvent()` checks the cache
+4. On cache miss, falls back to full cache refresh + re-check
+
+**CRITICAL RULE: After Creating Events**
+```js
+// ❌ WRONG - Causes duplicates on rapid re-sync
+await this.createEventFromAssignment(assignment);
+this.eventCache.invalidateAssignment(assignment.assignmentId);
+
+// ✅ CORRECT - Immediately cache the new event
+const response = await this.createEventFromAssignment(assignment);
+this.eventCache.addToCache(assignment.assignmentId, response);
+```
+
+**Why This Matters:**
+- After `invalidateAssignment()`, the cache has no record of the event
+- If user syncs again before 10-minute cache refresh → cache miss → creates duplicate
+- `addToCache()` immediately adds the newly created event to cache
+- Subsequent syncs find the event in cache → skip creation
+
+**Fallback API Behavior:**
+- On cache miss, `fallbackToDirectAPI()` MUST be called, not `return null`
+- Fallback forces a full cache refresh to find the event
+- This catches edge cases where cache is stale but event exists
+
+**Files Involved:**
+- `src/auth/eventCache.js`: Cache logic, `addToCache()`, `fallbackToDirectAPI()`
+- `src/auth/calendarAPIClient.js`: Event creation, must call `addToCache()`
+
+**Testing Deduplication:**
+1. Extract assignments → sync to calendar
+2. Immediately sync again (rapid re-sync test)
+3. Wait 5 minutes → sync again (cache validity test)
+4. Check Google Calendar → should see only 1 copy of each assignment
+
 ### Event Cache Performance
 
 `EventCache` class reduces API calls:
@@ -232,6 +274,59 @@ The extension has **four sync mechanisms** to ensure assignments reach the calen
 - **Smart sync**: No need to wait 24 hours for new assignments
 - **Rate limiting**: Prevents excessive API calls (60-minute cooldown for smart sync)
 - **Redundancy**: Multiple sync paths ensure assignments always reach calendar
+
+### lastSyncType Tracking
+
+**Purpose**: Track which sync mechanism last updated the calendar, providing visibility into extension behavior and helping debug sync issues.
+
+**Sync Type Values:**
+```js
+'manual'           // User clicked "Sync to Calendar" button
+'auto'             // 24-hour scheduled alarm triggered sync
+'first_time'       // Initial sync on first authentication
+'smart'            // Instant sync after extracting new assignments
+'background_poll'  // Automatic background polling (if enabled)
+```
+
+**Implementation Requirements:**
+Every sync operation MUST set `lastSyncType` when updating `last_auto_sync`:
+
+```js
+// ✅ CORRECT - Always include lastSyncType
+await browser.storage.local.set({
+    last_auto_sync: new Date().toISOString(),
+    last_sync_results: results,
+    lastSyncType: 'manual'  // or 'auto', 'first_time', 'smart', 'background_poll'
+});
+
+// ❌ WRONG - Missing lastSyncType
+await browser.storage.local.set({
+    last_auto_sync: new Date().toISOString(),
+    last_sync_results: results
+    // Missing lastSyncType!
+});
+```
+
+**Files to Update When Adding New Sync Mechanisms:**
+1. Add `lastSyncType: 'your_type'` in the sync function
+2. Update `options-settings.js` to display new type with human-readable label
+3. Update this CLAUDE.md section with the new sync type
+
+**Where lastSyncType is Set:**
+- `background.js` → `handleCalendarSync()`: `'manual'`
+- `background.js` → `handleFirstTimeSync()`: `'first_time'`
+- `calendarAPIClient.js` → `performBackgroundSync()`: `'auto'`
+- `smartSyncManager.js` → `performSmartSync()`: `'smart'`
+- `backgroundPollingManager.js` → `handlePollAlarm()`: `'background_poll'`
+
+**Where lastSyncType is Displayed:**
+- Options page → "View Statistics" → Shows sync type with human-readable label
+- Example: `Sync Type: Auto (24-hour)`
+
+**Testing:**
+1. Trigger each sync type manually
+2. Check Options → Statistics → verify correct sync type displayed
+3. Verify `chrome.storage.local` contains `lastSyncType` with correct value
 
 ### Calendar Event Customization
 
@@ -300,6 +395,46 @@ testEnhancedStorage() // Inspect stored data
 ### Claude Code Tips
 
 - **Use relative paths**: When you get `Error: File has been unexpectedly modified`, use relative paths instead of absolute paths when reading/writing files.
+
+### Branch Merging Best Practices
+
+**⚠️ CRITICAL**: When merging branches (especially long-lived feature branches), bug fixes from the main branch may be lost. Follow this checklist:
+
+**Before Merging a Feature Branch:**
+1. **Check commit history** between branches:
+   ```bash
+   git log main..feature-branch --oneline
+   git log feature-branch..main --oneline
+   ```
+
+2. **Identify bug fix commits** in main that aren't in feature branch:
+   ```bash
+   # Look for commits with "fix", "bug", "issue"
+   git log feature-branch..main --oneline | grep -iE "(fix|bug|issue)"
+   ```
+
+3. **Review critical files** for changes:
+   ```bash
+   # Check if critical deduplication files changed
+   git diff feature-branch..main -- src/auth/eventCache.js src/auth/calendarAPIClient.js
+   ```
+
+4. **After merge, verify critical systems:**
+   - Deduplication logic (see "Deduplication Strategy" section)
+   - lastSyncType tracking (see "lastSyncType Tracking" section)
+   - Firefox compatibility (browser.* namespace usage)
+   - Auto-sync mechanisms
+
+**Real Example (v2.0 merge):**
+- Lost: Deduplication fix from commit `57e4eb0` (v1.9.2)
+- Cause: Grade calculator branch diverged before fix was implemented
+- Result: Duplicate calendar events bug (2x, 4x, 8x duplicates)
+- Lesson: Always check for bug fixes in main before merging large features
+
+**Best Practice:**
+- Keep feature branches short-lived (merge within 1-2 weeks)
+- Regularly rebase feature branches on main to catch bug fixes
+- After merging, run full test suite and check for regressions
 
 ## Firefox & Chromium Compatibility
 
@@ -726,6 +861,24 @@ When making changes, test:
 
 ## Version History
 
+- **v2.0.1**: Critical deduplication fix and lastSyncType tracking
+  - **CRITICAL FIX**: Fixed duplicate calendar events bug caused by v2.0 merge
+  - Restored fallback API call on cache miss (was returning null, causing duplicates)
+  - Changed event creation to use `addToCache()` instead of `invalidateAssignment()`
+  - Improved fallback to force full cache refresh (more reliable than q-parameter search)
+  - Reimplemented comprehensive lastSyncType tracking for all sync mechanisms
+  - Added lastSyncType display in Options → Statistics with human-readable labels
+  - Bug reported by user via email: assignments duplicating 2x, 4x, 8x on repeated syncs
+  - Files modified: `eventCache.js`, `calendarAPIClient.js`, `background.js`, `options-settings.js`
+- **v2.0**: Grade calculator launch
+  - Comprehensive grade calculator with automatic categorization
+  - Course-specific grade configuration and weighting
+  - Enhanced assignment tracking with submission status
+  - Note: Accidentally lost deduplication fix from v1.9.2 during branch merge (restored in v2.0.1)
+- **v1.9.2**: Deduplication logic fix (lost in v2.0 merge, restored in v2.0.1)
+  - Fixed content script to use `assignmentId` instead of `id` for deduplication
+  - Updated assignment counting to show only upcoming assignments
+  - Version: Chromium 1.9.2, Firefox 1.9.2
 - **v1.9.1**: Firefox compatibility fix for iCal export
   - **CRITICAL FIX**: Changed popup to use `browser.runtime.sendMessage` instead of `chrome.runtime.sendMessage`
   - Fixed background script to use hybrid callback pattern (sendResponse + return true)
